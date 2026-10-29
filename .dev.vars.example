@@ -1,0 +1,3 @@
+ADMIN_EMAIL=admin@thelu.it
+ADMIN_PASSWORD_SHA256=replace_with_sha256_hex
+AUTH_SECRET=replace_with_a_long_random_secret
