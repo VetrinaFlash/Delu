@@ -157,7 +157,7 @@ function HomeInner(){
     <motion.section id="editorial" ref={editorialRef} className="ph-editorial" style={reducedMotion?undefined:{clipPath:editorialClip}}>
       <motion.div className="ph-editorial-image" style={reducedMotion?undefined:{scale:editorialScale,y:editorialY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2200&q=90" alt="DeLù style"/></motion.div>
       <div className="ph-editorial-shade"/>
-      <div className="ph-editorial-copy"><span>{c.editorialLabel}</span><motion.h2 initial={{clipPath:'inset(0 0 100% 0)'}} whileInView={{clipPath:'inset(0 0 0% 0)'}} viewport={{once:true,amount:.45}} transition={{duration:1.05,ease:[.16,1,.3,1]}}>{c.editorialTitle}</motion.h2><p>{c.editorialText}</p><Link to="/shop">{c.editorialCta}<ArrowRight/></Link></div>
+      <div className="ph-editorial-copy"><span>{c.editorialLabel}</span><motion.h2 initial={{opacity:.25,y:24}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.45}} transition={{duration:1.05,ease:[.16,1,.3,1]}}>{c.editorialTitle}</motion.h2><p>{c.editorialText}</p><Link to="/shop">{c.editorialCta}<ArrowRight/></Link></div>
       <div className="ph-editorial-word">DELÙ</div>
     </motion.section>
 

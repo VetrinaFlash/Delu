@@ -152,6 +152,8 @@ test('chapter navigation reaches the collection and editorial aperture responds 
   await chapters.locator('a[href="#editorial"]').click()
   await expect(page).toHaveURL(/#editorial$/)
   await expect(page.locator('.ph-editorial-copy')).toBeInViewport()
+  await expect(page.locator('.ph-editorial-copy h2')).toHaveCSS('opacity','1')
+  await expect(page.locator('.ph-editorial-copy h2')).toHaveCSS('clip-path','none')
   const section=page.locator('.ph-editorial')
   const before=await section.evaluate(el=>getComputedStyle(el).clipPath)
   await section.evaluate(el=>window.scrollTo({top:window.scrollY+el.getBoundingClientRect().top-window.innerHeight*.8,behavior:'instant'}))
