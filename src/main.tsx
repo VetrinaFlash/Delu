@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import AdminSecure from './AdminSecure'
 import './styles.css'
+import './admin-secure.css'
 
 const isAdminRoute = window.location.pathname.startsWith('/admin')
 
