@@ -1,204 +1,41 @@
-type Env = {
-  DB: any
-  ADMIN_EMAIL: string
-  ADMIN_PASSWORD_SHA256: string
-  AUTH_SECRET: string
-}
+type Env={DB:any;ADMIN_EMAIL:string;ADMIN_PASSWORD_SHA256:string;AUTH_SECRET:string;NEXI_XPAY_API_KEY?:string;NEXI_XPAY_BASE_URL?:string;SITE_URL?:string}
+type Ctx={request:Request;env:Env;params:Record<string,unknown>}
+const json=(data:unknown,status=200,headers:Record<string,string>={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}})
+const enc=new TextEncoder()
+const bytesToHex=(bytes:Uint8Array)=>[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('')
+const toBase64Url=(v:string)=>btoa(v).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')
+const fromBase64Url=(v:string)=>atob(v.replaceAll('-','+').replaceAll('_','/').padEnd(Math.ceil(v.length/4)*4,'='))
+const text=(v:unknown,max=500)=>String(v??'').trim().slice(0,max)
+const int=(v:unknown,min=0,max=99999999)=>Math.max(min,Math.min(max,Math.round(Number(v)||0)))
+const array=(v:unknown)=>Array.isArray(v)?v.map(String).map(x=>x.trim()).filter(Boolean).slice(0,50):[]
+const slugify=(v:string)=>v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
+async function sha256(v:string){return bytesToHex(new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(v))))}
+async function hmac(v:string,secret:string){const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);return toBase64Url(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign('HMAC',key,enc.encode(v)))))}
+function safeEqual(a:string,b:string){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
+async function makeSession(email:string,secret:string){const payload=toBase64Url(JSON.stringify({email,exp:Date.now()+1000*60*60*12}));return`${payload}.${await hmac(payload,secret)}`}
+async function getSession(request:Request,env:Env){const cookie=request.headers.get('cookie')||'';const token=cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('delu_session='))?.slice('delu_session='.length);if(!token)return null;const[payload,sig]=token.split('.');if(!payload||!sig)return null;const expected=await hmac(payload,env.AUTH_SECRET);if(!safeEqual(sig,expected))return null;try{const data=JSON.parse(fromBase64Url(payload));if(!data?.email||!data?.exp||Date.now()>data.exp)return null;return data}catch{return null}}
+const sessionCookie=(token:string)=>`delu_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200`
+const clearSessionCookie='delu_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'
 
-type Ctx = { request: Request; env: Env; params: Record<string, unknown> }
+function mapProduct(row:any){return{id:row.id,name:row.name,slug:row.slug,description:row.description,price:row.price_cents/100,compareAt:row.compare_at_cents==null?undefined:row.compare_at_cents/100,category:row.category,colors:JSON.parse(row.colors_json||'[]'),sizes:JSON.parse(row.sizes_json||'[]'),tags:JSON.parse(row.tags_json||'[]'),stock:row.stock,image:row.image_url,featured:!!row.featured,new:!!row.is_new,active:!!row.active}}
+async function login(request:Request,env:Env){const b:any=await request.json().catch(()=>null);if(!b)return json({error:'Richiesta non valida'},400);const email=text(b.email,200).toLowerCase();const passwordHash=await sha256(String(b.password??''));if(!safeEqual(email,String(env.ADMIN_EMAIL||'').toLowerCase())||!safeEqual(passwordHash,String(env.ADMIN_PASSWORD_SHA256||'').toLowerCase()))return json({error:'Credenziali non valide'},401);return json({ok:true,user:{email}},200,{'set-cookie':sessionCookie(await makeSession(email,env.AUTH_SECRET))})}
+async function listProducts(env:Env,includeInactive=false){const q=includeInactive?'SELECT * FROM products ORDER BY created_at DESC':'SELECT * FROM products WHERE active=1 ORDER BY featured DESC, created_at DESC';const{results}=await env.DB.prepare(q).all();return results.map(mapProduct)}
+async function createProduct(request:Request,env:Env){const b:any=await request.json().catch(()=>null);if(!b?.name||b.price==null||!b.category)return json({error:'Nome, prezzo e categoria sono obbligatori'},400);const id=crypto.randomUUID(),name=text(b.name,180),baseSlug=slugify(text(b.slug||name,180))||id,slug=`${baseSlug}-${id.slice(0,6)}`;await env.DB.prepare(`INSERT INTO products (id,name,slug,description,price_cents,compare_at_cents,category,colors_json,sizes_json,tags_json,stock,image_url,featured,is_new,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`).bind(id,name,slug,text(b.description,4000),int(Number(b.price)*100),b.compareAt==null?null:int(Number(b.compareAt)*100),text(b.category,100),JSON.stringify(array(b.colors)),JSON.stringify(array(b.sizes)),JSON.stringify(array(b.tags)),int(b.stock,0,100000),text(b.image,1500),b.featured?1:0,b.new?1:0).run();return json(mapProduct(await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first()),201)}
+async function updateProduct(request:Request,env:Env,id:string){const c=await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first();if(!c)return json({error:'Prodotto non trovato'},404);const b:any=await request.json().catch(()=>({}));const f={name:b.name==null?c.name:text(b.name,180),description:b.description==null?c.description:text(b.description,4000),price:b.price==null?c.price_cents:int(Number(b.price)*100),compareAt:b.compareAt===undefined?c.compare_at_cents:(b.compareAt==null?null:int(Number(b.compareAt)*100)),category:b.category==null?c.category:text(b.category,100),colors:b.colors==null?c.colors_json:JSON.stringify(array(b.colors)),sizes:b.sizes==null?c.sizes_json:JSON.stringify(array(b.sizes)),tags:b.tags==null?c.tags_json:JSON.stringify(array(b.tags)),stock:b.stock==null?c.stock:int(b.stock,0,100000),image:b.image==null?c.image_url:text(b.image,1500),featured:b.featured==null?c.featured:(b.featured?1:0),isNew:b.new==null?c.is_new:(b.new?1:0),active:b.active==null?c.active:(b.active?1:0)};await env.DB.prepare(`UPDATE products SET name=?,description=?,price_cents=?,compare_at_cents=?,category=?,colors_json=?,sizes_json=?,tags_json=?,stock=?,image_url=?,featured=?,is_new=?,active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(f.name,f.description,f.price,f.compareAt,f.category,f.colors,f.sizes,f.tags,f.stock,f.image,f.featured,f.isNew,f.active,id).run();return json(mapProduct(await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first()))}
 
-const json = (data: unknown, status = 200, headers: Record<string,string> = {}) => new Response(JSON.stringify(data), {
-  status,
-  headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers },
-})
+const EU=new Set(['FR','DE','ES','AT','BE','NL','LU','PT','IE','GR','FI','SE','DK','PL','CZ','HR','RO','BG','HU','SI','SK','EE','LV','LT','CY','MT'])
+const EUROPE=new Set(['CH','GB','NO','IS','LI','AL','BA','ME','MK','RS','MD','UA'])
+const alpha3:Record<string,string>={IT:'ITA',FR:'FRA',DE:'DEU',ES:'ESP',AT:'AUT',BE:'BEL',NL:'NLD',LU:'LUX',PT:'PRT',IE:'IRL',GR:'GRC',FI:'FIN',SE:'SWE',DK:'DNK',PL:'POL',CZ:'CZE',HR:'HRV',RO:'ROU',BG:'BGR',HU:'HUN',SI:'SVN',SK:'SVK',EE:'EST',LV:'LVA',LT:'LTU',CY:'CYP',MT:'MLT',CH:'CHE',GB:'GBR',NO:'NOR',IS:'ISL',LI:'LIE',AL:'ALB',BA:'BIH',ME:'MNE',MK:'MKD',RS:'SRB',MD:'MDA',UA:'UKR',US:'USA',CA:'CAN',AU:'AUS',JP:'JPN',AE:'ARE'}
+const nexiLanguage:Record<string,string>={it:'ita',en:'eng',fr:'fra',de:'deu',es:'spa'}
+function zoneFor(c:string){return c==='IT'?'IT':EU.has(c)?'EU':EUROPE.has(c)?'EUROPE':'WORLD'}
+function shippingCents(country:string,subtotal:number){const z=zoneFor(country);if(z==='IT')return subtotal>=7900?0:690;if(z==='EU')return subtotal>=15000?0:1490;if(z==='EUROPE')return 1990;return 2990}
+function nexiBase(env:Env){return(text(env.NEXI_XPAY_BASE_URL,500)||'https://xpaysandbox.nexigroup.com/api/phoenix-0.0/psp').replace(/\/$/,'')}
+async function ensurePayments(env:Env){await env.DB.prepare(`CREATE TABLE IF NOT EXISTS payments (order_id TEXT PRIMARY KEY,provider TEXT NOT NULL DEFAULT 'NEXI_XPAY',status TEXT NOT NULL DEFAULT 'PENDING',amount_cents INTEGER NOT NULL,security_token TEXT NOT NULL DEFAULT '',operation_id TEXT NOT NULL DEFAULT '',operation_result TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE)`).run()}
+async function validateCart(env:Env,b:any){if(!b||!Array.isArray(b.items)||!b.items.length||!b.customer?.email||!b.customer?.name||!b.shipping?.address||!b.shipping?.city||!b.shipping?.postcode||!b.shipping?.country)throw new Error('Dati checkout incompleti');const items=b.items.slice(0,40).map((x:any)=>({id:text(x.id,80),qty:int(x.qty,1,20),size:text(x.size,30),color:text(x.color,60)}));const ids=[...new Set(items.map((x:any)=>x.id))];const placeholders=ids.map(()=>'?').join(',');const{results}=await env.DB.prepare(`SELECT * FROM products WHERE active=1 AND id IN (${placeholders})`).bind(...ids).all();if(results.length!==ids.length)throw new Error('Uno o più prodotti non sono più disponibili');const byId=new Map(results.map((r:any)=>[r.id,r]));let subtotal=0;for(const item of items){const p:any=byId.get(item.id);if(!p||p.stock<item.qty)throw new Error(`Stock insufficiente per ${p?.name||'un prodotto'}`);subtotal+=p.price_cents*item.qty}const country=text(b.shipping.country,2).toUpperCase(),shipping=shippingCents(country,subtotal);return{items,byId,subtotal,shipping,total:subtotal+shipping,country,orderItems:items.map((i:any)=>{const p:any=byId.get(i.id);return{...i,name:p.name,unitPrice:p.price_cents/100}})}}
+function newOrderId(){return`DL${Date.now().toString().slice(-12)}${crypto.randomUUID().replaceAll('-','').slice(0,4)}`.slice(0,27)}
+async function checkoutNexi(request:Request,env:Env){if(!env.NEXI_XPAY_API_KEY)return json({error:'Pagamento Nexi non ancora configurato: manca NEXI_XPAY_API_KEY'},503);await ensurePayments(env);const b:any=await request.json().catch(()=>null);let c:any;try{c=await validateCart(env,b)}catch(e:any){return json({error:e.message||'Checkout non valido'},400)}const orderId=newOrderId(),origin=(text(env.SITE_URL,500)||new URL(request.url).origin).replace(/\/$/,'');const shippingData={address:text(b.shipping.address,250),city:text(b.shipping.city,120),postcode:text(b.shipping.postcode,30),province:text(b.shipping.province,80),country:c.country,zone:zoneFor(c.country),cost:c.shipping/100};await env.DB.prepare(`INSERT INTO orders (id,customer_name,customer_email,customer_phone,total_cents,status,items_json,shipping_json,notes) VALUES (?,?,?,?,?,'Pagamento in attesa',?,?,?)`).bind(orderId,text(b.customer.name,160),text(b.customer.email,220).toLowerCase(),text(b.customer.phone,80),c.total,JSON.stringify(c.orderItems),JSON.stringify(shippingData),text(b.notes,1000)).run();await env.DB.prepare(`INSERT INTO payments (order_id,provider,status,amount_cents) VALUES (?,'NEXI_XPAY','PENDING',?)`).bind(orderId,c.total).run();const locale=nexiLanguage[text(b.locale,2)]||'ita';const payload={order:{orderId,amount:String(c.total),currency:'EUR',description:`DeLu Clothes Shop ${orderId}`,customerInfo:{cardHolderName:text(b.customer.name,160),cardHolderEmail:text(b.customer.email,220),billingAddress:{name:text(b.customer.name,160),street:shippingData.address,city:shippingData.city,postCode:shippingData.postcode,province:shippingData.province,country:alpha3[c.country]||c.country}}},paymentSession:{actionType:'PAY',amount:String(c.total),captureType:'IMPLICIT',exemptions:'NO_PREFERENCE',language:locale,resultUrl:`${origin}/payment/result?orderId=${encodeURIComponent(orderId)}`,cancelUrl:`${origin}/checkout?cancelled=1`,notificationUrl:`${origin}/api/payments/nexi/notification`}};let r:Response;try{r=await fetch(`${nexiBase(env)}/api/v1/orders/hpp`,{method:'POST',headers:{'content-type':'application/json','X-API-KEY':env.NEXI_XPAY_API_KEY,'Correlation-Id':crypto.randomUUID(),'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify(payload)})}catch{await env.DB.prepare('DELETE FROM orders WHERE id=?').bind(orderId).run();return json({error:'Nexi non raggiungibile'},502)}const data:any=await r.json().catch(()=>({}));if(!r.ok||!data.hostedPage){await env.DB.prepare('DELETE FROM orders WHERE id=?').bind(orderId).run();return json({error:data?.errors?.[0]?.description||'Impossibile inizializzare Nexi XPay'},502)}await env.DB.prepare('UPDATE payments SET security_token=?,updated_at=CURRENT_TIMESTAMP WHERE order_id=?').bind(text(data.securityToken,300),orderId).run();return json({orderId,hostedPage:data.hostedPage,total:c.total/100,shipping:c.shipping/100},201)}
+async function finalizePaid(env:Env,orderId:string,operation:any){await ensurePayments(env);const payment=await env.DB.prepare('SELECT * FROM payments WHERE order_id=?').bind(orderId).first();if(!payment)return false;if(payment.status==='PAID')return true;const order=await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(orderId).first();if(!order)return false;const items=JSON.parse(order.items_json||'[]');for(const item of items){const p=await env.DB.prepare('SELECT stock,name FROM products WHERE id=?').bind(item.id).first();if(!p||p.stock<item.qty){await env.DB.prepare("UPDATE payments SET status='PAID_STOCK_REVIEW',operation_id=?,operation_result=?,updated_at=CURRENT_TIMESTAMP WHERE order_id=?").bind(text(operation?.operationId,120),text(operation?.operationResult,80),orderId).run();await env.DB.prepare("UPDATE orders SET status='Pagato - verifica stock',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(orderId).run();return true}}const statements:any[]=[];for(const item of items){statements.push(env.DB.prepare('UPDATE products SET stock=stock-?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND stock>=?').bind(item.qty,item.id,item.qty));statements.push(env.DB.prepare(`INSERT INTO inventory_movements (product_id,quantity_delta,reason,order_id) VALUES (?,?,'paid_order',?)`).bind(item.id,-item.qty,orderId))}statements.push(env.DB.prepare("UPDATE payments SET status='PAID',operation_id=?,operation_result=?,updated_at=CURRENT_TIMESTAMP WHERE order_id=?").bind(text(operation?.operationId,120),text(operation?.operationResult,80),orderId));statements.push(env.DB.prepare("UPDATE orders SET status='Nuovo',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(orderId));await env.DB.batch(statements);return true}
+async function paymentNotification(request:Request,env:Env){await ensurePayments(env);const b:any=await request.json().catch(()=>null),orderId=text(b?.operation?.orderId,80),token=text(b?.securityToken,300);if(!orderId||!token)return json({error:'Notifica non valida'},400);const p=await env.DB.prepare('SELECT * FROM payments WHERE order_id=?').bind(orderId).first();if(!p||!p.security_token||!safeEqual(String(p.security_token),token))return json({error:'Security token non valido'},401);const result=text(b?.operation?.operationResult,80);if(result==='EXECUTED'||result==='AUTHORIZED')await finalizePaid(env,orderId,b.operation);else await env.DB.prepare('UPDATE payments SET status=?,operation_id=?,operation_result=?,updated_at=CURRENT_TIMESTAMP WHERE order_id=?').bind(result||'UNKNOWN',text(b?.operation?.operationId,120),result,orderId).run();if(['DECLINED','DENIED_BY_RISK','THREEDS_FAILED','CANCELED','FAILED'].includes(result))await env.DB.prepare("UPDATE orders SET status='Pagamento fallito',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(orderId).run();return json({ok:true})}
+async function paymentStatus(request:Request,env:Env){if(!env.NEXI_XPAY_API_KEY)return json({paid:false,status:'NOT_CONFIGURED'},503);await ensurePayments(env);const orderId=text(new URL(request.url).searchParams.get('orderId'),80);if(!orderId)return json({error:'orderId richiesto'},400);const p=await env.DB.prepare('SELECT * FROM payments WHERE order_id=?').bind(orderId).first();if(!p)return json({error:'Ordine non trovato'},404);if(p.status==='PAID'||p.status==='PAID_STOCK_REVIEW')return json({paid:true,status:p.status});const r=await fetch(`${nexiBase(env)}/api/v1/orders/${encodeURIComponent(orderId)}`,{headers:{'X-API-KEY':env.NEXI_XPAY_API_KEY,'Correlation-Id':crypto.randomUUID()}});const data:any=await r.json().catch(()=>({}));if(!r.ok)return json({paid:false,status:p.status});const ops=data?.operations||data?.orderStatus?.operations||[];const op=Array.isArray(ops)?ops[ops.length-1]:null;const result=text(op?.operationResult||data?.operationResult||p.operation_result,80);if(result==='EXECUTED'||result==='AUTHORIZED'){await finalizePaid(env,orderId,op||{operationResult:result});return json({paid:true,status:'PAID'})}return json({paid:false,status:result||p.status})}
 
-const enc = new TextEncoder()
-const bytesToHex = (bytes: Uint8Array) => [...bytes].map(b => b.toString(16).padStart(2,'0')).join('')
-const toBase64Url = (value: string) => btoa(value).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')
-const fromBase64Url = (value: string) => atob(value.replaceAll('-','+').replaceAll('_','/').padEnd(Math.ceil(value.length/4)*4,'='))
-
-async function sha256(value: string) {
-  return bytesToHex(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(value))))
-}
-
-async function hmac(value: string, secret: string) {
-  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name:'HMAC', hash:'SHA-256' }, false, ['sign'])
-  return toBase64Url(String.fromCharCode(...new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(value)))))
-}
-
-function safeEqual(a: string, b: string) {
-  if (a.length !== b.length) return false
-  let diff = 0
-  for (let i=0;i<a.length;i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
-
-async function makeSession(email: string, secret: string) {
-  const payload = toBase64Url(JSON.stringify({ email, exp: Date.now() + 1000*60*60*12 }))
-  return `${payload}.${await hmac(payload, secret)}`
-}
-
-async function getSession(request: Request, env: Env) {
-  const cookie = request.headers.get('cookie') || ''
-  const token = cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('thelu_session='))?.slice('thelu_session='.length)
-  if (!token) return null
-  const [payload, sig] = token.split('.')
-  if (!payload || !sig) return null
-  const expected = await hmac(payload, env.AUTH_SECRET)
-  if (!safeEqual(sig, expected)) return null
-  try {
-    const data = JSON.parse(fromBase64Url(payload))
-    if (!data?.email || !data?.exp || Date.now() > data.exp) return null
-    return data as {email:string;exp:number}
-  } catch { return null }
-}
-
-const sessionCookie = (token: string) => `thelu_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=43200`
-const clearSessionCookie = 'thelu_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'
-
-function mapProduct(row: any) {
-  return {
-    id: row.id, name: row.name, slug: row.slug, description: row.description,
-    price: row.price_cents / 100, compareAt: row.compare_at_cents == null ? undefined : row.compare_at_cents / 100,
-    category: row.category, colors: JSON.parse(row.colors_json || '[]'), sizes: JSON.parse(row.sizes_json || '[]'),
-    tags: JSON.parse(row.tags_json || '[]'), stock: row.stock, image: row.image_url,
-    featured: !!row.featured, new: !!row.is_new, active: !!row.active,
-  }
-}
-
-const slugify = (v:string) => v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
-const array = (v:unknown) => Array.isArray(v) ? v.map(String).map(x=>x.trim()).filter(Boolean).slice(0,50) : []
-const text = (v:unknown,max=500) => String(v ?? '').trim().slice(0,max)
-const int = (v:unknown,min=0,max=99999999) => Math.max(min,Math.min(max,Math.round(Number(v)||0)))
-
-async function requireAdmin(request: Request, env: Env) {
-  return await getSession(request, env)
-}
-
-async function login(request: Request, env: Env) {
-  const body:any = await request.json().catch(()=>null)
-  if (!body) return json({error:'Richiesta non valida'},400)
-  const email = text(body.email,200).toLowerCase()
-  const passwordHash = await sha256(String(body.password ?? ''))
-  const validEmail = safeEqual(email, String(env.ADMIN_EMAIL || '').toLowerCase())
-  const validPassword = safeEqual(passwordHash, String(env.ADMIN_PASSWORD_SHA256 || '').toLowerCase())
-  if (!validEmail || !validPassword) return json({error:'Credenziali non valide'},401)
-  const token = await makeSession(email, env.AUTH_SECRET)
-  return json({ok:true,user:{email}},200,{'set-cookie':sessionCookie(token)})
-}
-
-async function listProducts(env: Env, includeInactive=false) {
-  const q = includeInactive ? 'SELECT * FROM products ORDER BY created_at DESC' : 'SELECT * FROM products WHERE active=1 ORDER BY featured DESC, created_at DESC'
-  const { results } = await env.DB.prepare(q).all()
-  return results.map(mapProduct)
-}
-
-async function createProduct(request: Request, env: Env) {
-  const b:any = await request.json().catch(()=>null)
-  if (!b?.name || b.price == null || !b.category) return json({error:'Nome, prezzo e categoria sono obbligatori'},400)
-  const id = crypto.randomUUID()
-  const name = text(b.name,180)
-  const baseSlug = slugify(text(b.slug || name,180)) || id
-  const slug = `${baseSlug}-${id.slice(0,6)}`
-  await env.DB.prepare(`INSERT INTO products (id,name,slug,description,price_cents,compare_at_cents,category,colors_json,sizes_json,tags_json,stock,image_url,featured,is_new,active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`)
-    .bind(id,name,slug,text(b.description,4000),int(Number(b.price)*100),b.compareAt==null?null:int(Number(b.compareAt)*100),text(b.category,100),JSON.stringify(array(b.colors)),JSON.stringify(array(b.sizes)),JSON.stringify(array(b.tags)),int(b.stock,0,100000),text(b.image,1500),b.featured?1:0,b.new?1:0).run()
-  const row = await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first()
-  return json(mapProduct(row),201)
-}
-
-async function updateProduct(request: Request, env: Env, id: string) {
-  const current = await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first()
-  if (!current) return json({error:'Prodotto non trovato'},404)
-  const b:any = await request.json().catch(()=>({}))
-  const name = b.name == null ? current.name : text(b.name,180)
-  const fields = {
-    name,
-    description: b.description == null ? current.description : text(b.description,4000),
-    price: b.price == null ? current.price_cents : int(Number(b.price)*100),
-    compareAt: b.compareAt === undefined ? current.compare_at_cents : (b.compareAt==null?null:int(Number(b.compareAt)*100)),
-    category: b.category == null ? current.category : text(b.category,100),
-    colors: b.colors == null ? current.colors_json : JSON.stringify(array(b.colors)),
-    sizes: b.sizes == null ? current.sizes_json : JSON.stringify(array(b.sizes)),
-    tags: b.tags == null ? current.tags_json : JSON.stringify(array(b.tags)),
-    stock: b.stock == null ? current.stock : int(b.stock,0,100000),
-    image: b.image == null ? current.image_url : text(b.image,1500),
-    featured: b.featured == null ? current.featured : (b.featured?1:0),
-    isNew: b.new == null ? current.is_new : (b.new?1:0),
-    active: b.active == null ? current.active : (b.active?1:0),
-  }
-  await env.DB.prepare(`UPDATE products SET name=?,description=?,price_cents=?,compare_at_cents=?,category=?,colors_json=?,sizes_json=?,tags_json=?,stock=?,image_url=?,featured=?,is_new=?,active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-    .bind(fields.name,fields.description,fields.price,fields.compareAt,fields.category,fields.colors,fields.sizes,fields.tags,fields.stock,fields.image,fields.featured,fields.isNew,fields.active,id).run()
-  const row = await env.DB.prepare('SELECT * FROM products WHERE id=?').bind(id).first()
-  return json(mapProduct(row))
-}
-
-async function placeOrder(request: Request, env: Env) {
-  const b:any = await request.json().catch(()=>null)
-  if (!b || !Array.isArray(b.items) || !b.items.length || !b.customer?.email || !b.customer?.name) return json({error:'Ordine non valido'},400)
-  const items = b.items.slice(0,40).map((x:any)=>({id:text(x.id,80),qty:int(x.qty,1,20),size:text(x.size,30),color:text(x.color,60)}))
-  const ids = [...new Set(items.map((x:any)=>x.id))]
-  const placeholders = ids.map(()=>'?').join(',')
-  const {results} = await env.DB.prepare(`SELECT * FROM products WHERE active=1 AND id IN (${placeholders})`).bind(...ids).all()
-  if (results.length !== ids.length) return json({error:'Uno o più prodotti non sono disponibili'},409)
-  const byId = new Map(results.map((r:any)=>[r.id,r]))
-  let total = 0
-  for (const item of items) {
-    const p:any = byId.get(item.id)
-    if (!p || p.stock < item.qty) return json({error:`Stock insufficiente per ${p?.name || 'un prodotto'}`},409)
-    total += p.price_cents * item.qty
-  }
-  const id = `TH${String(Date.now()).slice(-8)}`
-  const orderItems = items.map((i:any)=>{ const p:any=byId.get(i.id); return {...i,name:p.name,unitPrice:p.price_cents/100} })
-  const statements:any[] = [env.DB.prepare(`INSERT INTO orders (id,customer_name,customer_email,customer_phone,total_cents,status,items_json,shipping_json,notes) VALUES (?,?,?,?,?,'Nuovo',?,?,?)`).bind(id,text(b.customer.name,160),text(b.customer.email,220).toLowerCase(),text(b.customer.phone,80),total,JSON.stringify(orderItems),JSON.stringify(b.shipping||{}),text(b.notes,1000))]
-  for (const item of items) {
-    statements.push(env.DB.prepare('UPDATE products SET stock=stock-?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND stock>=?').bind(item.qty,item.id,item.qty))
-    statements.push(env.DB.prepare(`INSERT INTO inventory_movements (product_id,quantity_delta,reason,order_id) VALUES (?,?,'order',?)`).bind(item.id,-item.qty,id))
-  }
-  await env.DB.batch(statements)
-  return json({ok:true,orderId:id,total:total/100},201)
-}
-
-export async function onRequest({request,env}: Ctx) {
-  try {
-    const url = new URL(request.url)
-    const path = url.pathname.replace(/^\/api\/?/,'').replace(/\/$/,'')
-    const method = request.method.toUpperCase()
-
-    if (path === 'auth/login' && method === 'POST') return await login(request,env)
-    if (path === 'auth/logout' && method === 'POST') return json({ok:true},200,{'set-cookie':clearSessionCookie})
-    if (path === 'auth/me' && method === 'GET') {
-      const s = await getSession(request,env)
-      return s ? json({authenticated:true,user:{email:s.email}}) : json({authenticated:false},401)
-    }
-    if (path === 'products' && method === 'GET') return json(await listProducts(env,false),200,{'cache-control':'public, max-age=60'})
-    if (path === 'orders' && method === 'POST') return await placeOrder(request,env)
-
-    if (path.startsWith('admin/')) {
-      if (!await requireAdmin(request,env)) return json({error:'Non autorizzato'},401)
-      if (path === 'admin/products' && method === 'GET') return json(await listProducts(env,true))
-      if (path === 'admin/products' && method === 'POST') return await createProduct(request,env)
-      const productMatch = path.match(/^admin\/products\/([^/]+)$/)
-      if (productMatch && method === 'PATCH') return await updateProduct(request,env,productMatch[1])
-      if (productMatch && method === 'DELETE') {
-        await env.DB.prepare('UPDATE products SET active=0,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(productMatch[1]).run()
-        return json({ok:true})
-      }
-      if (path === 'admin/orders' && method === 'GET') {
-        const {results} = await env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 250').all()
-        return json(results.map((r:any)=>({id:r.id,customer:r.customer_name,email:r.customer_email,phone:r.customer_phone,total:r.total_cents/100,status:r.status,items:JSON.parse(r.items_json||'[]'),shipping:JSON.parse(r.shipping_json||'{}'),notes:r.notes,createdAt:r.created_at})))
-      }
-      const orderMatch = path.match(/^admin\/orders\/([^/]+)$/)
-      if (orderMatch && method === 'PATCH') {
-        const b:any = await request.json().catch(()=>({}))
-        const allowed=['Nuovo','In preparazione','Spedito','Completato','Annullato']
-        if (!allowed.includes(b.status)) return json({error:'Stato non valido'},400)
-        await env.DB.prepare('UPDATE orders SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status,orderMatch[1]).run()
-        return json({ok:true})
-      }
-    }
-    return json({error:'Endpoint non trovato'},404)
-  } catch (error:any) {
-    console.error(error)
-    return json({error:'Errore interno'},500)
-  }
-}
+export async function onRequest({request,env}:Ctx){try{const url=new URL(request.url),path=url.pathname.replace(/^\/api\/?/,'').replace(/\/$/,''),method=request.method.toUpperCase();if(path==='auth/login'&&method==='POST')return login(request,env);if(path==='auth/logout'&&method==='POST')return json({ok:true},200,{'set-cookie':clearSessionCookie});if(path==='auth/me'&&method==='GET'){const s=await getSession(request,env);return s?json({authenticated:true,user:{email:s.email}}):json({authenticated:false},401)}if(path==='products'&&method==='GET')return json(await listProducts(env,false),200,{'cache-control':'public, max-age=60'});if(path==='checkout/nexi'&&method==='POST')return checkoutNexi(request,env);if(path==='payments/nexi/notification'&&method==='POST')return paymentNotification(request,env);if(path==='payments/nexi/status'&&method==='GET')return paymentStatus(request,env);if(path.startsWith('admin/')){if(!await getSession(request,env))return json({error:'Non autorizzato'},401);if(path==='admin/products'&&method==='GET')return json(await listProducts(env,true));if(path==='admin/products'&&method==='POST')return createProduct(request,env);const pm=path.match(/^admin\/products\/([^/]+)$/);if(pm&&method==='PATCH')return updateProduct(request,env,pm[1]);if(pm&&method==='DELETE'){await env.DB.prepare('UPDATE products SET active=0,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(pm[1]).run();return json({ok:true})}if(path==='admin/orders'&&method==='GET'){const{results}=await env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 250').all();return json(results.map((r:any)=>({id:r.id,customer:r.customer_name,email:r.customer_email,phone:r.customer_phone,total:r.total_cents/100,status:r.status,items:JSON.parse(r.items_json||'[]'),shipping:JSON.parse(r.shipping_json||'{}'),notes:r.notes,createdAt:r.created_at})))}const om=path.match(/^admin\/orders\/([^/]+)$/);if(om&&method==='PATCH'){const b:any=await request.json().catch(()=>({}));const allowed=['Pagamento in attesa','Pagamento fallito','Pagato - verifica stock','Nuovo','In preparazione','Spedito','Completato','Annullato'];if(!allowed.includes(b.status))return json({error:'Stato non valido'},400);await env.DB.prepare('UPDATE orders SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status,om[1]).run();return json({ok:true})}}return json({error:'Endpoint non trovato'},404)}catch(error:any){console.error(error);return json({error:'Errore interno'},500)}}
