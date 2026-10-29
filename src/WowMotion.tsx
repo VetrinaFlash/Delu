@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useMotionValue, useScroll, useSpring, useTransform } from 'motion/react'
+import { AnimatePresence, motion, useMotionValue, useScroll, useSpring, useTransform, useReducedMotion } from 'motion/react'
 import { useLocation } from 'react-router-dom'
 
 const continueCopy:Record<string,string>={it:'CONTINUA GLI ACQUISTI',en:'CONTINUE SHOPPING',fr:'CONTINUER LES ACHATS',de:'WEITER EINKAUFEN',es:'SEGUIR COMPRANDO'}
 
 export default function WowMotion(){
   const location=useLocation()
+  const reducedMotion=useReducedMotion()
   const {scrollYProgress}=useScroll()
   const progress=useSpring(scrollYProgress,{stiffness:170,damping:32,mass:.25})
   const homeGhostX=useTransform(scrollYProgress,[0,.16,.34],['5vw','-20vw','-48vw'])
@@ -23,7 +24,8 @@ export default function WowMotion(){
   useEffect(()=>{
     const timer=intro?window.setTimeout(()=>setIntro(false),900):undefined
     const move=(e:PointerEvent)=>{mouseX.set(e.clientX-150);mouseY.set(e.clientY-150)}
-    window.addEventListener('pointermove',move,{passive:true})
+    const pointer=window.matchMedia('(pointer: fine) and (prefers-reduced-motion: no-preference)')
+    if(pointer.matches)window.addEventListener('pointermove',move,{passive:true})
     return()=>{if(timer)window.clearTimeout(timer);window.removeEventListener('pointermove',move)}
   },[])
 
@@ -69,7 +71,7 @@ export default function WowMotion(){
     </AnimatePresence>
 
     <AnimatePresence>
-      {intro&&<motion.div data-testid="intro" className="wow-intro" exit={{y:'-100%'}} transition={{duration:.8,ease:[.76,0,.24,1]}}>
+      {intro&&!reducedMotion&&<motion.div data-testid="intro" className="wow-intro" exit={{y:'-100%'}} transition={{duration:.8,ease:[.76,0,.24,1]}}>
         <motion.img src="/delu-logo.svg" alt="" initial={{opacity:0,scale:.92}} animate={{opacity:1,scale:1}} transition={{duration:.55,ease:[.16,1,.3,1]}}/>
         <motion.span initial={{opacity:0,y:8}} animate={{opacity:.62,y:0}} transition={{delay:.18,duration:.45}}>CLOTHES SHOP · FOLLONICA</motion.span>
         <motion.i initial={{scaleX:0}} animate={{scaleX:1}} transition={{delay:.15,duration:.55,ease:[.16,1,.3,1]}}/>

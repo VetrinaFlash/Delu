@@ -133,7 +133,7 @@
 .ph-hero-copy{top:auto;bottom:12%;transform:none}
 .ph-statement-line{white-space:normal;overflow-wrap:normal;font-size:clamp(42px,9.5vw,180px);line-height:1.04}
 .ph-campaign-copy h2{font-size:clamp(58px,9vw,160px);line-height:1.03;overflow-wrap:anywhere}
-.ph-campaign-copy[inert]{pointer-events:none}
+.ph-campaign-copy[inert]{pointer-events:none;visibility:hidden}
 .ph-showcase-sticky{grid-template-columns:27vw minmax(0,1fr)}
 .ph-showcase-title{background:#f7f4f5;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
 .ph-card{min-width:0;width:min(31vw,calc((100svh - 210px)*.75));flex-shrink:0}

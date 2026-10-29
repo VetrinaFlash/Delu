@@ -54,7 +54,7 @@ function HomeInner(){
   const campaignOneY=useTransform(campaignProgress,[0,.38],['0%','-6%'])
   const campaignTwoY=useTransform(campaignProgress,[.22,.66],['5%','-4%'])
   const campaignThreeY=useTransform(campaignProgress,[.52,1],['6%','-3%'])
-  const campaignCopyA=useTransform(campaignProgress,[0,.16,.32,.40],[0,1,1,0])
+  const campaignCopyA=useTransform(campaignProgress,[0,.16,.32,.40],[1,1,1,0])
   const campaignCopyB=useTransform(campaignProgress,[.28,.41,.56,.68],[0,1,1,0])
   const campaignCopyC=useTransform(campaignProgress,[.58,.72,.92,1],[0,1,1,1])
   const campaignWordX=useTransform(campaignProgress,[0,1],['18vw','-58vw'])
