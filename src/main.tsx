@@ -1,11 +1,7 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
-import App from './App'
-import AdminSecure from './AdminSecure'
 import NavigationGuard from './NavigationGuard'
-import PremiumHome from './PremiumHome'
-import WowMotion from './WowMotion'
 import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
@@ -17,35 +13,49 @@ import './wow-motion.css'
 import './premium-home.css'
 import './unified-storefront.css'
 import './navigation-guard.css'
+import './performance.css'
+
+const App = React.lazy(()=>import('./App'))
+const AdminSecure = React.lazy(()=>import('./AdminSecure'))
+const PremiumHome = React.lazy(()=>import('./PremiumHome'))
+const WowMotion = React.lazy(()=>import('./WowMotion'))
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
 
-function PublicEntry(){
-  const{pathname}=useLocation()
-  return <><WowMotion/>{pathname==='/'?<PremiumHome/>:<><NavigationGuard/><App/></>}</>
+function RouteFallback(){
+  return <div className="route-fallback" role="status" aria-label="Caricamento DeLù"><img src="/delu-logo.svg" alt=""/></div>
 }
 
-async function bootstrap() {
-  if (!isAdminRoute) {
-    try {
-      const response = await fetch('/api/products', { headers: { accept: 'application/json' } })
-      if (response.ok) {
-        const liveProducts = await response.json()
-        if (Array.isArray(liveProducts) && liveProducts.length) products.splice(0, products.length, ...liveProducts)
-      }
-    } catch {
-      // Seed products keep the storefront available before D1 is initialized.
-    }
-  }
+function PublicEntry(){
+  const{pathname}=useLocation()
+  return <Suspense fallback={<RouteFallback/>}><WowMotion/>{pathname==='/'?<PremiumHome/>:<><NavigationGuard/><App/></>}</Suspense>
+}
 
+function renderApp(){
   root.render(
     <React.StrictMode>
       <BrowserRouter>
-        {isAdminRoute ? <AdminSecure /> : <PublicEntry/>}
+        <Suspense fallback={<RouteFallback/>}>
+          {isAdminRoute ? <AdminSecure /> : <PublicEntry/>}
+        </Suspense>
       </BrowserRouter>
     </React.StrictMode>,
   )
 }
 
-bootstrap()
+renderApp()
+
+if (!isAdminRoute) {
+  fetch('/api/products', { headers: { accept: 'application/json' } })
+    .then(async response=>response.ok?response.json():null)
+    .then(liveProducts=>{
+      if (Array.isArray(liveProducts) && liveProducts.length) {
+        products.splice(0, products.length, ...liveProducts)
+        renderApp()
+      }
+    })
+    .catch(()=>{
+      // Seed products keep the storefront instantly usable if D1 is unavailable.
+    })
+}
