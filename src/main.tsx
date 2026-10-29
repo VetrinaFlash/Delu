@@ -14,6 +14,7 @@ import './admin-commerce.css'
 import './luxury-home.css'
 import './wow-motion.css'
 import './premium-home.css'
+import './unified-storefront.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
