@@ -13,3 +13,6 @@
 
 /delu-logo.svg
   Cache-Control: public, max-age=86400
+
+/release.json
+  Cache-Control: no-store, max-age=0

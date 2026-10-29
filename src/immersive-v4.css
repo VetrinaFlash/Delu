@@ -1,0 +1,126 @@
+/* DeLù immersive v4 — cinematic where it helps perception, quiet where it helps conversion. */
+
+:root{--delu-pink:#efbdd0;--delu-ink:#111014;--delu-ease:cubic-bezier(.16,1,.3,1)}
+
+/* ---------- HOME: scroll narrative ---------- */
+.ph-campaign{height:320svh;position:relative;background:#0e0d10;color:#fff}
+.ph-campaign-sticky{position:sticky;top:0;height:100svh;min-height:680px;overflow:hidden;isolation:isolate;background:#0e0d10}
+.ph-campaign-media{position:absolute;z-index:0;inset:-7%;transform-origin:center;will-change:transform,opacity}
+.ph-campaign-media img{width:100%;height:100%;object-fit:cover;object-position:center 28%;filter:saturate(.68) contrast(1.08) brightness(.86)}
+.ph-campaign-shade{position:absolute;z-index:1;inset:0;background:linear-gradient(90deg,rgba(6,5,7,.72) 0%,rgba(6,5,7,.2) 54%,rgba(6,5,7,.46) 100%),linear-gradient(180deg,rgba(0,0,0,.18),transparent 42%,rgba(0,0,0,.38));pointer-events:none}
+.ph-campaign-top{position:absolute;z-index:5;left:4.5vw;right:4.5vw;top:102px;display:flex;align-items:center;gap:16px;font-size:8px;font-weight:800;letter-spacing:.22em}
+.ph-campaign-top i{height:1px;flex:1;background:rgba(255,255,255,.28)}
+.ph-campaign-top b{font-weight:600;color:rgba(255,255,255,.72)}
+.ph-campaign-word{position:absolute;z-index:2;left:0;bottom:-.12em;white-space:nowrap;font:400 clamp(170px,27vw,490px)/.72 var(--serif,'Italiana',serif);letter-spacing:-.09em;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.18);pointer-events:none;will-change:transform}
+.ph-campaign-copy{position:absolute;z-index:4;left:7vw;bottom:9vh;width:min(720px,62vw);will-change:opacity}
+.ph-campaign-copy small{display:block;font-size:9px;font-weight:800;letter-spacing:.22em;color:var(--delu-pink);margin-bottom:13px}
+.ph-campaign-copy h2{font:400 clamp(88px,11.6vw,205px)/.76 var(--serif,'Italiana',serif);letter-spacing:-.072em;margin:0 0 28px;text-wrap:balance}
+.ph-campaign-copy p{max-width:470px;font-size:14px;line-height:1.8;color:rgba(255,255,255,.78);margin:0}
+.ph-campaign-copy--b{left:auto;right:7vw;text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+.ph-campaign-copy--c a{margin-top:28px;display:flex;width:max-content;align-items:center;gap:20px;font-size:9px;font-weight:800;letter-spacing:.15em;border-bottom:1px solid rgba(255,255,255,.65);padding-bottom:8px}
+.ph-campaign-copy--c a svg{width:16px}
+.ph-campaign-progress{position:absolute;z-index:6;left:4.5vw;right:4.5vw;bottom:27px;height:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.ph-campaign-progress i{display:block;width:100%;height:100%;background:var(--delu-pink);transform-origin:left center}
+
+.ph-statement{box-shadow:0 -1px 0 rgba(255,255,255,.12)}
+.ph-statement-line{will-change:transform,opacity}
+.ph-showcase{border-top:1px solid rgba(17,16,20,.04)}
+
+.ph-header{transition:background .45s ease,border-color .45s ease}
+.ph-head-link{position:relative}
+.ph-head-link:after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .45s var(--delu-ease)}
+.ph-head-link:hover:after{transform:scaleX(1);transform-origin:left}
+.ph-card{perspective:1000px}
+.ph-card-image{transform-style:preserve-3d}
+.ph-card-image img{will-change:transform}
+.ph-mood-card img{will-change:transform}
+
+/* ---------- SHOP ---------- */
+.ds-shop-hero{min-height:clamp(340px,48svh,520px)!important;padding-top:96px!important;padding-bottom:54px!important;display:flex!important;justify-content:flex-end!important;isolation:isolate!important}
+.ds-shop-hero:before{font-size:clamp(200px,25vw,470px)!important;opacity:.9}
+.ds-shop-hero:after{content:"DELÙ / COLLECTION / 2026"!important;right:3.2vw!important;bottom:30px!important}
+.ds-shop-hero>span{margin-bottom:18px!important}
+.ds-shop-hero h1{font-size:clamp(78px,9vw,150px)!important;line-height:.78!important;letter-spacing:-.072em!important;max-width:78%!important;text-wrap:balance}
+.ds-shop-hero p{margin-top:28px!important}
+.ds-toolbar{transition:box-shadow .35s ease,background .35s ease!important}
+.ds-toolbar:hover{box-shadow:0 18px 46px rgba(17,16,20,.06)!important}
+.ds-products{perspective:1400px}
+.ds-product{position:relative;transform-style:preserve-3d}
+.ds-product-image{background:linear-gradient(135deg,#f5f1f3,#ebe5e8)!important}
+.ds-product-image img{transform-origin:50% 45%}
+.ds-product:hover .ds-product-image img{transform:scale(1.035)!important}
+.ds-product:after{content:"";position:absolute;pointer-events:none;left:10%;right:10%;bottom:56px;height:30px;border-radius:50%;background:rgba(17,16,20,.10);filter:blur(20px);opacity:0;transform:scale(.75);transition:opacity .5s ease,transform .5s var(--delu-ease);z-index:-1}
+.ds-product:hover:after{opacity:.48;transform:scale(1)}
+
+.ds-product-main-image{position:relative;isolation:isolate}
+.ds-product-main-image:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.32) 49%,transparent 60%);transform:translateX(-120%);animation:deluDetailSheen 1.05s .45s var(--delu-ease) both}
+.ds-product-detail>.ds-pay{position:relative;overflow:hidden;isolation:isolate}
+.ds-product-detail>.ds-pay:after{content:"";position:absolute;z-index:-1;inset:0;background:var(--delu-pink);transform:translateX(-102%);transition:transform .55s var(--delu-ease)}
+.ds-product-detail>.ds-pay:hover:after{transform:none}
+.ds-product-detail>.ds-pay:hover{color:#111014!important}
+
+/* ---------- CART ---------- */
+.ds-drawer-head{gap:8px!important}
+.ds-cart-footer{display:flex!important;flex-direction:column!important;align-items:stretch!important}
+.ds-cart-footer>div{order:1!important}
+.ds-cart-footer>small{order:2!important}
+.wow-cart-continue{order:3!important;width:100%!important;min-height:46px!important;margin:0 0 9px!important;padding:0 14px!important;border:1px solid #edcad8!important;border-radius:0!important;background:#fff3f7!important;color:#111014!important;box-shadow:none!important;font-size:8px!important;font-weight:900!important;letter-spacing:.14em!important;text-transform:uppercase!important;display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;z-index:20!important}
+.wow-cart-continue:after{content:'↗';font-size:15px;margin-left:12px;line-height:1;transform:rotate(-45deg)}
+.wow-cart-continue:hover{background:var(--delu-pink)!important;transform:none!important}
+.ds-cart-footer>.ds-pay{order:4!important;transition:transform .3s var(--delu-ease),box-shadow .3s ease!important}
+.ds-cart-footer>.ds-pay:hover{transform:translateY(-2px)!important;box-shadow:0 16px 34px rgba(17,16,20,.16)!important}
+
+/* ---------- ROUTE MOTION ---------- */
+.wow-route-v3__ribbon{top:38%!important;height:64px!important;background:rgba(239,189,208,.96)!important;backdrop-filter:blur(14px)}
+.wow-route-v3__word{-webkit-text-stroke:1px rgba(231,138,170,.55);color:transparent!important}
+.wow-route-v3__tag{padding:7px 9px;background:rgba(255,255,255,.72);backdrop-filter:blur(10px);border:1px solid rgba(17,16,20,.07)}
+
+@keyframes deluDetailSheen{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+
+@media(max-width:900px){
+  .ph-campaign{height:270svh}
+  .ph-campaign-sticky{min-height:620px}
+  .ph-campaign-top{left:20px;right:20px;top:88px}
+  .ph-campaign-word{font-size:42vw;bottom:7vh;-webkit-text-stroke-color:rgba(255,255,255,.16)}
+  .ph-campaign-copy,.ph-campaign-copy--b{left:22px;right:22px;bottom:72px;width:auto;text-align:left;align-items:flex-start}
+  .ph-campaign-copy h2{font-size:clamp(74px,22vw,130px);line-height:.78;margin-bottom:19px}
+  .ph-campaign-copy p{max-width:520px;font-size:13px;line-height:1.65}
+  .ph-campaign-progress{left:20px;right:20px;bottom:24px}
+  .ph-campaign-media{inset:-5%}
+  .ph-campaign-media img{object-position:center 24%}
+  .ds-shop-hero{min-height:330px!important;padding:74px 18px 40px!important}
+  .ds-shop-hero h1{font-size:clamp(60px,16vw,94px)!important;max-width:94%!important}
+  .ds-shop-hero:before{font-size:68vw!important;right:-.16em!important}
+  /* Motion's +25px x entrance caused a real 25px horizontal bounce on mobile. Keep the fade, remove the lateral shift. */
+  .ds-product-detail{transform:none!important}
+  .wow-cart-continue{min-height:48px!important;font-size:8px!important;letter-spacing:.12em!important;margin-bottom:10px!important}
+}
+
+@media(max-width:620px){
+  .ph-campaign{height:245svh}
+  .ph-campaign-sticky{height:100svh;min-height:590px}
+  .ph-campaign-top{top:82px}
+  .ph-campaign-top b{display:none}
+  .ph-campaign-copy h2{font-size:clamp(68px,23vw,108px)}
+  .ph-campaign-copy p{font-size:12px;max-width:90%}
+  .ph-campaign-copy--c a{margin-top:22px;font-size:8px}
+  .ds-shop-hero{min-height:300px!important;padding-top:68px!important}
+  .ds-shop-hero h1{font-size:clamp(54px,16vw,78px)!important}
+  .wow-route-v3__ribbon{top:41%!important;height:52px!important}
+  .wow-route-v3__ribbon span{font-size:26px!important}
+  .wow-cart-continue{width:100%!important;max-width:none!important;padding:0 10px!important}
+}
+
+@media(hover:none){
+  .ds-product:after{display:none}
+  .ds-product:hover .ds-product-image img{transform:none!important}
+  .ph-card:hover .ph-card-image{box-shadow:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ph-campaign{height:auto!important}
+  .ph-campaign-sticky{position:relative!important;height:80svh!important;min-height:600px!important}
+  .ph-campaign-media:nth-child(n+2),.ph-campaign-copy--b,.ph-campaign-copy--c,.ph-campaign-word,.ph-campaign-progress{display:none!important}
+  .ph-campaign-media,.ph-campaign-copy{opacity:1!important;transform:none!important}
+  .ds-product-main-image:after{animation:none!important;display:none!important}
+}

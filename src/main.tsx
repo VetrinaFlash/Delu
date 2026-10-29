@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import NavigationGuard from './NavigationGuard'
+import SmoothScroll from './SmoothScroll'
 import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
@@ -16,6 +17,7 @@ import './navigation-guard.css'
 import './performance.css'
 import './conversion-ux.css'
 import './wow-v3.css'
+import './immersive-v4.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))
@@ -31,7 +33,7 @@ function RouteFallback(){
 
 function PublicEntry(){
   const{pathname}=useLocation()
-  return <Suspense fallback={<RouteFallback/>}><WowMotion/>{pathname==='/'?<PremiumHome/>:<><NavigationGuard/><App/></>}</Suspense>
+  return <Suspense fallback={<RouteFallback/>}><SmoothScroll/><WowMotion/>{pathname==='/'?<PremiumHome/>:<><NavigationGuard/><App/></>}</Suspense>
 }
 
 function renderApp(){
