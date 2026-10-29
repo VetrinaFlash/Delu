@@ -1,0 +1,38 @@
+name: Production Smoke
+
+on:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
+
+jobs:
+  production-smoke:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Wait for the exact Cloudflare release
+        env:
+          PRODUCTION_URL: https://delu-49u.pages.dev
+        run: node scripts/wait-production.mjs
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser QA against published Cloudflare site
+        env:
+          PLAYWRIGHT_BASE_URL: https://delu-49u.pages.dev
+        run: npm run test:e2e
+      - name: Upload production QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-playwright-${{ github.event.workflow_run.head_sha }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
