@@ -38,7 +38,11 @@ export function ChapterNav({labels}:{labels:string[]}){
     },{rootMargin:'-25% 0px -65% 0px',threshold:0})
     const elements=['home',...ids].map(id=>document.getElementById(id)).filter(Boolean) as HTMLElement[]
     elements.forEach(el=>observer.observe(el))
-    return()=>observer.disconnect()
+    const frame=requestAnimationFrame(()=>{
+      const id=window.location.hash.slice(1)
+      if(ids.includes(id))document.getElementById(id)?.scrollIntoView({behavior:'instant',block:'start'})
+    })
+    return()=>{observer.disconnect();cancelAnimationFrame(frame)}
   },[])
   return <nav className="ph-chapters" aria-label="DeLù chapters">
     {ids.map((id,index)=><a href={'#'+id} key={id} aria-current={active===id?'location':undefined}>

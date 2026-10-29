@@ -208,3 +208,9 @@ test('mood cards respond to desktop pointer movement',async({page},testInfo)=>{
   await expect.poll(()=>card.evaluate(el=>getComputedStyle(el).transform)).not.toBe(before)
   await page.screenshot({path:testInfo.outputPath('mood-interaction.png')})
 })
+
+test('shared chapter URL opens the requested section after lazy loading',async({page})=>{
+  await page.goto('/#editorial')
+  await expect(page.locator('.ph-editorial-copy')).toBeInViewport()
+  await expect(page.locator('.ph-chapters a[href="#editorial"]')).toHaveAttribute('aria-current','location')
+})
