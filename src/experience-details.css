@@ -44,3 +44,10 @@
  .ph-editorial{clip-path:none!important}
  .ph-chapters *{transition:none!important}
 }
+
+.delu-recovery{min-height:100svh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:32px;background:#fff5f8;text-align:center}
+.delu-recovery img{width:140px;height:70px;object-fit:contain}
+.delu-recovery h1{font:400 clamp(36px,6vw,70px)/1.1 var(--serif);margin:36px 0 18px}
+.delu-recovery p{max-width:440px;line-height:1.7;color:#62545c}
+.delu-recovery button{margin:20px 0;padding:18px 35px;background:#171417;color:white;border:0;cursor:pointer}
+.delu-recovery a{font-size:11px;letter-spacing:.1em;text-decoration:underline}

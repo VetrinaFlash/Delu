@@ -1,3 +1,4 @@
+import RenderBoundary from './RenderBoundary'
 import { MotionConfig } from 'motion/react'
 import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
@@ -26,6 +27,21 @@ const AdminSecure = React.lazy(()=>import('./AdminSecure'))
 const PremiumHome = React.lazy(()=>import('./PremiumHome'))
 const WowMotion = React.lazy(()=>import('./WowMotion'))
 
+// A tab opened before a deployment may still reference retired lazy chunks.
+window.addEventListener('vite:preloadError',event=>{
+  if(!navigator.onLine)return
+  try{
+    const key='delu-chunk-retry'
+    const previous=Number(sessionStorage.getItem(key)||0)
+    if(Date.now()-previous<30000)return
+    sessionStorage.setItem(key,String(Date.now()))
+    event.preventDefault()
+    window.location.reload()
+  }catch{
+    // Storage can be unavailable; the error boundary supplies a manual retry.
+  }
+})
+
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
 
@@ -41,11 +57,11 @@ function PublicEntry(){
 function renderApp(){
   root.render(
     <React.StrictMode>
-      <MotionConfig reducedMotion="user"><BrowserRouter>
+      <RenderBoundary><MotionConfig reducedMotion="user"><BrowserRouter>
         <Suspense fallback={<RouteFallback/>}>
           {isAdminRoute ? <AdminSecure /> : <PublicEntry/>}
         </Suspense>
-      </BrowserRouter></MotionConfig>
+      </BrowserRouter></MotionConfig></RenderBoundary>
     </React.StrictMode>,
   )
 }

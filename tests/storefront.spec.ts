@@ -184,3 +184,27 @@ test('chapter dock fits the narrow viewport and reduced motion removes the apert
   await expect(page.locator('.ph-editorial')).toHaveCSS('clip-path','none')
   await expectNoHorizontalOverflow(page)
 })
+
+test('retired deployment chunks recover instead of leaving a blank screen',async({page})=>{
+  let intercepted=0
+  await page.route('**/assets/App-*.js',async route=>{
+    intercepted++
+    if(intercepted===1)await route.abort('failed')
+    else await route.continue()
+  })
+  await page.goto('/')
+  await page.locator('.ph-head-link').click()
+  await expect(page.locator('.ds-products')).toBeVisible({timeout:15000})
+  expect(intercepted).toBeGreaterThanOrEqual(2)
+})
+test('mood cards respond to desktop pointer movement',async({page},testInfo)=>{
+  test.skip(testInfo.project.name.startsWith('mobile'),'Touch keeps native gestures')
+  await page.goto('/')
+  const card=page.locator('.ph-tilt-card').first()
+  await card.scrollIntoViewIfNeeded()
+  const bounds=await card.boundingBox()
+  const before=await card.evaluate(el=>getComputedStyle(el).transform)
+  await page.mouse.move(bounds!.x+bounds!.width*.75,bounds!.y+bounds!.height*.3)
+  await expect.poll(()=>card.evaluate(el=>getComputedStyle(el).transform)).not.toBe(before)
+  await page.screenshot({path:testInfo.outputPath('mood-interaction.png')})
+})
