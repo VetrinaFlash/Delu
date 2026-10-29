@@ -72,8 +72,8 @@ html[lang^="es"] .ds-drawer-head .ds-icon::before{content:'SEGUIR'}
 @keyframes deluHeroReveal{from{clip-path:inset(0 0 22% 0);opacity:.72}to{clip-path:inset(0 0 0 0);opacity:1}}
 @keyframes deluTextRise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 @keyframes deluToolbarIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@keyframes deluCardIn{from{opacity:0;transform:translateY(26px) scale(.988)}to{opacity:1;transform:none}}
-@keyframes deluImageReveal{from{clip-path:inset(0 0 100% 0);transform:scale(1.025)}to{clip-path:inset(0);transform:scale(1)}}
+@keyframes deluCardIn{from{opacity:0;clip-path:inset(0 0 7% 0);filter:blur(1.5px)}to{opacity:1;clip-path:inset(0);filter:none}}
+@keyframes deluImageReveal{from{clip-path:inset(0 0 100% 0);opacity:.7}to{clip-path:inset(0);opacity:1}}
 @keyframes deluCheckoutLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
 @keyframes deluCheckoutRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
 
