@@ -16,3 +16,5 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - name: Type-check Cloudflare Pages API
+        run: npx tsc --noEmit --target ES2022 --lib ES2022,DOM --skipLibCheck --module ESNext --moduleResolution Bundler 'functions/api/[[path]].ts'
