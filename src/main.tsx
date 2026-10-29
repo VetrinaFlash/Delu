@@ -9,6 +9,7 @@ import './admin-secure.css'
 import './storefront.css'
 import './polish.css'
 import './admin-commerce.css'
+import './luxury-home.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
