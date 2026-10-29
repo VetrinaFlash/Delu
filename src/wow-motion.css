@@ -1,0 +1,98 @@
+/* DeLù — premium motion + simplified public navigation */
+
+/* Keep the private back office private: no public navigation entry. */
+a[href="/admin"]{display:none!important}
+.ds-header nav a:not(:first-child){display:none!important}
+.ds-mobile-menu>a[href="/shop?new=1"],
+.ds-mobile-menu>a[href="/shop?edit=1"],
+.ds-mobile-menu>a[href="/admin"]{display:none!important}
+.ds-header nav{gap:0!important}
+.ds-header nav a:first-child{position:relative;padding:10px 2px}
+.ds-header nav a:first-child::after{content:"";position:absolute;left:2px;right:100%;bottom:4px;height:1px;background:#111014;transition:right .45s cubic-bezier(.16,1,.3,1)}
+.ds-header nav a:first-child:hover::after{right:2px}
+
+/* Motion for React global layer */
+.wow-progress{position:fixed;z-index:520;top:0;left:0;right:0;height:2px;background:#111014;transform-origin:0 50%;pointer-events:none}
+.wow-orb{position:fixed;z-index:5;left:0;top:0;width:280px;height:280px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(239,139,180,.20) 0%,rgba(239,139,180,.08) 38%,rgba(239,139,180,0) 72%);filter:blur(2px);mix-blend-mode:multiply}
+.wow-page-wipe{position:fixed;z-index:480;inset:0;background:#efbdd0;pointer-events:none;transform-origin:top}
+.wow-intro{position:fixed;z-index:600;inset:0;background:#efbdd0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:none}
+.wow-intro img{width:min(330px,58vw);height:auto;object-fit:contain}
+.wow-intro span{font-size:9px;letter-spacing:.28em;font-weight:700;color:#111014}
+.wow-intro i{display:block;width:min(260px,48vw);height:1px;background:rgba(17,16,20,.5);transform-origin:center}
+
+/* Hero entrance: image is revealed rather than simply appearing. */
+.ds-hero>img{animation:wowHeroReveal 1.35s cubic-bezier(.76,0,.24,1) both}
+.ds-hero-copy>span{animation:wowCopyUp .7s .45s cubic-bezier(.16,1,.3,1) both}
+.ds-hero-copy h1{animation:wowCopyUp .9s .5s cubic-bezier(.16,1,.3,1) both}
+.ds-hero-copy p{animation:wowCopyUp .8s .62s cubic-bezier(.16,1,.3,1) both}
+.ds-hero-copy .ds-button{animation:wowCopyUp .8s .72s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden}
+.ds-hero-copy .ds-button::before{content:"";position:absolute;inset:0;background:#f4b4cd;transform:translateX(-102%);transition:transform .55s cubic-bezier(.16,1,.3,1);z-index:-1}
+.ds-hero-copy .ds-button:hover::before{transform:none}
+.ds-hero-copy .ds-button svg{transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.ds-hero-copy .ds-button:hover svg{transform:translateX(5px)}
+
+/* Logo and icons feel tactile, not static. */
+.ds-brand img{transition:transform .65s cubic-bezier(.16,1,.3,1),filter .4s ease}
+.ds-brand:hover img{transform:scale(1.035) rotate(-.35deg)}
+.ds-icon{transition:transform .35s cubic-bezier(.16,1,.3,1),background .3s ease!important}
+.ds-icon:hover{transform:translateY(-2px) scale(1.04)}
+.ds-icon:active{transform:scale(.94)}
+
+/* Product cards: soft image reveal + light sweep + details that move a few pixels. */
+.ds-product{transform:translateZ(0)}
+.ds-product-image{isolation:isolate}
+.ds-product-image::after{content:"";position:absolute;z-index:3;inset:-30%;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.28) 48%,transparent 61%);transform:translateX(-90%) rotate(5deg);transition:transform 1s cubic-bezier(.16,1,.3,1)}
+.ds-product:hover .ds-product-image::after{transform:translateX(90%) rotate(5deg)}
+.ds-product-image img{filter:saturate(.9);transition:transform 1.15s cubic-bezier(.16,1,.3,1),filter .7s ease!important}
+.ds-product:hover .ds-product-image img{transform:scale(1.045)!important;filter:saturate(1)}
+.ds-product-info{transition:transform .55s cubic-bezier(.16,1,.3,1)}
+.ds-product:hover .ds-product-info{transform:translateY(-3px)}
+.ds-wish{transition:transform .35s cubic-bezier(.16,1,.3,1),background .3s ease!important}
+.ds-wish:hover{transform:scale(1.09)!important}
+.ds-wish:active{transform:scale(.9)!important}
+
+/* Final editorial image becomes cinematic on hover/scroll. */
+.ds-story{isolation:isolate}
+.ds-story>img{transition:transform 1.8s cubic-bezier(.16,1,.3,1),filter .8s ease!important}
+.ds-story:hover>img{transform:scale(1.025)!important;filter:saturate(.9) contrast(1.04)!important}
+.ds-story h2{transition:letter-spacing .8s cubic-bezier(.16,1,.3,1)}
+.ds-story:hover h2{letter-spacing:-.065em!important}
+.ds-story a svg{transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.ds-story a:hover svg{transform:translateX(6px)}
+
+/* Shop toolbar is deliberately quieter: categories remain available inside filters. */
+.ds-toolbar>div{display:none!important}
+.ds-toolbar{grid-template-columns:auto 1fr auto!important}
+.ds-toolbar>button{grid-column:1}
+.ds-toolbar>select{grid-column:3}
+
+/* Drawer/search motion details */
+.ds-search-overlay{background:rgba(255,255,255,.985)!important}
+.ds-search-results>a{transition:transform .45s cubic-bezier(.16,1,.3,1),background .3s ease,padding .3s ease}
+.ds-search-results>a:hover{transform:translateX(8px);background:#fff7fa;padding-left:10px;padding-right:10px}
+.ds-cart-row img{transition:transform .65s cubic-bezier(.16,1,.3,1)}
+.ds-cart-row:hover img{transform:scale(1.035)}
+
+@keyframes wowHeroReveal{from{clip-path:inset(0 0 100% 0);filter:saturate(.45) blur(3px)}to{clip-path:inset(0 0 0 0);filter:saturate(.72) blur(0)}}
+@keyframes wowCopyUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:900px){
+  .wow-orb{display:none}
+  .ds-mobile-menu{padding-top:22px!important}
+  .ds-mobile-menu>a{font-size:clamp(38px,11vw,58px)!important;padding:17px 0!important}
+  .ds-mobile-menu>a[href="/wishlist"]{display:flex!important}
+  .ds-mobile-search{font-size:clamp(38px,11vw,58px)!important}
+  .ds-mobile-menu .ds-language{margin-top:auto!important}
+}
+
+@media(max-width:560px){
+  .wow-intro img{width:56vw}
+  .wow-intro span{font-size:7px;letter-spacing:.22em}
+  .ds-toolbar{grid-template-columns:1fr auto!important;padding-left:18px!important;padding-right:18px!important}
+  .ds-toolbar>select{grid-column:2}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wow-intro,.wow-page-wipe,.wow-progress,.wow-orb{display:none!important}
+  .ds-hero>img,.ds-hero-copy>span,.ds-hero-copy h1,.ds-hero-copy p,.ds-hero-copy .ds-button{animation:none!important}
+}
