@@ -23,12 +23,12 @@ export const defaultShopConfig: ShopConfig = {
 
 const EU = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'])
 const EUROPE = new Set(['AL','AD','AM','AZ','BA','BY','CH','FO','GB','GE','GI','IS','LI','MC','MD','ME','MK','NO','RS','SM','TR','UA','VA'])
-
-export const COUNTRIES: Array<[string,string]> = [
-  ['IT','Italia'],['AT','Austria'],['BE','Belgio'],['BG','Bulgaria'],['HR','Croazia'],['CY','Cipro'],['CZ','Repubblica Ceca'],['DK','Danimarca'],['EE','Estonia'],['FI','Finlandia'],['FR','Francia'],['DE','Germania'],['GR','Grecia'],['HU','Ungheria'],['IE','Irlanda'],['LV','Lettonia'],['LT','Lituania'],['LU','Lussemburgo'],['MT','Malta'],['NL','Paesi Bassi'],['PL','Polonia'],['PT','Portogallo'],['RO','Romania'],['SK','Slovacchia'],['SI','Slovenia'],['ES','Spagna'],['SE','Svezia'],
-  ['CH','Svizzera'],['GB','Regno Unito'],['NO','Norvegia'],['IS','Islanda'],['AL','Albania'],['BA','Bosnia ed Erzegovina'],['ME','Montenegro'],['MK','Macedonia del Nord'],['RS','Serbia'],['TR','Turchia'],['UA','Ucraina'],
-  ['US','Stati Uniti'],['CA','Canada'],['MX','Messico'],['BR','Brasile'],['AR','Argentina'],['AE','Emirati Arabi Uniti'],['SA','Arabia Saudita'],['IL','Israele'],['MA','Marocco'],['TN','Tunisia'],['ZA','Sudafrica'],['AU','Australia'],['NZ','Nuova Zelanda'],['JP','Giappone'],['KR','Corea del Sud'],['SG','Singapore'],['HK','Hong Kong'],['IN','India']
-]
+const COUNTRY_CODES=['IT','AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','CH','GB','NO','IS','AL','BA','ME','MK','RS','TR','UA','US','CA','MX','BR','AR','AE','SA','IL','MA','TN','ZA','AU','NZ','JP','KR','SG','HK','IN']
+const LANGUAGE_TAGS:Record<string,string>={it:'it-IT',en:'en-GB',fr:'fr-FR',de:'de-DE',es:'es-ES'}
+function selectedLanguage(){if(typeof window==='undefined')return'it';const saved=window.localStorage.getItem('delu_locale')||window.navigator.language.slice(0,2).toLowerCase();return LANGUAGE_TAGS[saved]?saved:'it'}
+function countryName(code:string){try{return new Intl.DisplayNames([LANGUAGE_TAGS[selectedLanguage()]],{type:'region'}).of(code)||code}catch{return code}}
+function countryTuple(code:string){const tuple=[code,code] as [string,string];Object.defineProperty(tuple,1,{enumerable:true,configurable:true,get:()=>countryName(code)});return tuple}
+export const COUNTRIES:Array<[string,string]>=COUNTRY_CODES.map(countryTuple)
 
 export function zoneFor(country: string): ShippingZone {
   const code = country.toUpperCase()
