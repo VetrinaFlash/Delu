@@ -6,6 +6,7 @@ import AdminSecure from './AdminSecure'
 import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
+import './storefront.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
@@ -19,7 +20,7 @@ async function bootstrap() {
         if (Array.isArray(liveProducts) && liveProducts.length) products.splice(0, products.length, ...liveProducts)
       }
     } catch {
-      // The seed catalog keeps local development and first deploy visually complete.
+      // Seed products keep the storefront available before D1 is initialized.
     }
   }
 
