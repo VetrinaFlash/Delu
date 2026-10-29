@@ -130,3 +130,11 @@ test('reduced motion retains the hero image and all featured products',async({pa
   await expect(page.locator('.ph-card').last()).toBeInViewport()
   await expectNoHorizontalOverflow(page)
 })
+
+test('shop logo stays centered when navigation is hidden',async({page})=>{
+  await page.goto('/shop')
+  const logo=await page.locator('.ds-header>.ds-brand').boundingBox()
+  const header=await page.locator('.ds-header').boundingBox()
+  expect(logo).not.toBeNull()
+  expect(Math.abs(logo!.x+logo!.width/2-(header!.x+header!.width/2))).toBeLessThan(2)
+})

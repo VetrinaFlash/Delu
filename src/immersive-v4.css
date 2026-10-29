@@ -170,3 +170,9 @@
  .ph-editorial-image,.ph-hero-copy{transform:none!important}
  .ph-scroll-cue,.wow-intro,.wow-orb{display:none!important}
 }
+
+/* Hidden navigation must not auto-place the brand in the first grid column. */
+.ds-header>.ds-brand{grid-column:2;grid-row:1}
+.ds-header>.ds-actions{grid-column:3;grid-row:1}
+.ds-shop-hero h1{align-self:center;line-height:1!important;margin-inline:auto!important}
+.ds-shop-hero h1:after{margin-inline:auto}
