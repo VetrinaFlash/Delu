@@ -15,7 +15,7 @@ export default function SmoothScroll(){
       anchors:true,
       stopInertiaOnNavigate:true,
       respectReducedMotion:true,
-      prevent:node=>Boolean((node as HTMLElement).closest?.('.ds-drawer,.ds-search-overlay,.ds-filter-panel,.ds-mobile-menu')),
+      prevent:node=>Boolean((node as HTMLElement).closest?.('.ds-size-guide,.ds-drawer,.ds-search-overlay,.ds-filter-panel,.ds-mobile-menu')),
     })
 
     return()=>lenis.destroy()

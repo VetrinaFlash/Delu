@@ -214,3 +214,42 @@ test('shared chapter URL opens the requested section after lazy loading',async({
   await expect(page.locator('.ph-editorial-copy')).toBeInViewport()
   await expect(page.locator('.ph-chapters a[href="#editorial"]')).toHaveAttribute('aria-current','location')
 })
+
+test('brand tagline translates in every language without overflowing on mobile',async({page})=>{
+  await page.setViewportSize({width:320,height:740})
+  await page.goto('/')
+  const expected={it:'Date a una donna',en:'Give a woman',fr:'Donnez à une femme',de:'Gib einer Frau',es:'Dale a una mujer'}
+  for(const [locale,text] of Object.entries(expected)){
+    await page.locator('.ph-language select').selectOption(locale)
+    await expect(page.locator('.ph-logo .delu-tagline')).toContainText(text)
+    const logo=await page.locator('.ph-logo').boundingBox()
+    expect(logo!.x).toBeGreaterThanOrEqual(0)
+    expect(logo!.x+logo!.width).toBeLessThanOrEqual(320)
+    await expectNoHorizontalOverflow(page)
+  }
+})
+test('size guide is accessible, converts units and preserves the selected size',async({page})=>{
+  await page.goto('/product/delu-01')
+  await page.locator('.ds-option').nth(1).getByRole('button',{name:'M',exact:true}).click()
+  const trigger=page.locator('.ds-size-guide-trigger')
+  await trigger.click()
+  const dialog=page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('tr.is-selected th')).toHaveText('M')
+  await expect(dialog.locator('tbody tr').nth(1).locator('td').nth(1)).toHaveText('76–79')
+  await dialog.getByRole('button',{name:'in',exact:true}).click()
+  await expect(dialog.locator('tbody tr').nth(1).locator('td').nth(1)).toHaveText(/29[.,]9–31[.,]1/)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await expect(page.locator('.ds-option').nth(1).getByRole('button',{name:'M',exact:true})).toHaveClass('active')
+  await expectNoHorizontalOverflow(page)
+})
+test('size guide and tagline follow the storefront language',async({page})=>{
+  await page.goto('/product/delu-01')
+  await page.locator('.ds-language select').selectOption('en',{force:true})
+  await expect(page.locator('.ds-header .delu-tagline')).toContainText('Give a woman')
+  await page.locator('.ds-size-guide-trigger').click()
+  await expect(page.getByRole('dialog')).toContainText('Find your fit.')
+  await expect(page.getByRole('dialog')).toContainText('How to measure')
+})

@@ -28,7 +28,7 @@ const localeTag:Record<Locale,string>={it:'it-IT',en:'en-GB',fr:'fr-FR',de:'de-D
 const money=(value:number,locale:Locale)=>new Intl.NumberFormat(localeTag[locale],{style:'currency',currency:'EUR'}).format(value)
 
 function HomeInner(){
-  const{locale,setLocale,localeNames}=useLocale()
+  const{locale,setLocale,localeNames,t}=useLocale()
   const c=copy[locale]
   const reducedMotion=useReducedMotion()
   const [scene,setScene]=useState(0)
@@ -83,7 +83,7 @@ function HomeInner(){
   return <main className="ph-root">
     <header className={`ph-header${scrolled?' is-scrolled':''}`}>
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
-      <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>
+      <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/><span className="delu-tagline">{t('brandTagline')}</span></Link>
       <div className="ph-head-actions">
         <Link to="/shop?search=1" aria-label={c.search}><Search/></Link>
         <Link to="/wishlist" aria-label={c.wishlist}><Heart/></Link>

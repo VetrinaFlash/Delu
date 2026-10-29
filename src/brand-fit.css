@@ -1,0 +1,69 @@
+/* Text remains translatable and scales independently from the logo artwork. */
+.ph-header,.ds-header{height:112px!important;min-height:112px!important}
+.ph-logo,.ds-header>.ds-brand{width:260px!important;text-align:center}
+.ph-logo img,.ds-header>.ds-brand img{display:block;width:124px!important;height:46px!important;object-fit:contain!important;margin:0 auto}
+.delu-tagline{display:block;font-family:var(--sans);font-size:10px;font-weight:400;line-height:1.4;letter-spacing:.015em;text-align:center;text-transform:none;margin:5px auto 0;max-width:260px}
+.ds-brand:not(.ds-header>.ds-brand){width:230px}
+.ds-brand:not(.ds-header>.ds-brand) img{object-fit:contain}
+.ph-campaign-top{top:136px}
+.ds-toolbar{top:112px!important}
+.commerce-home-link{height:112px!important}
+.ph-hero-copy{max-height:calc(100% - 230px)}
+.ds-size-heading{display:flex!important;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px!important;flex-wrap:wrap}
+.ds-size-heading>b{font-size:9px;letter-spacing:.1em}
+.ds-size-heading>b small{display:block;margin-top:4px;font-weight:400}
+.ds-option .ds-size-guide-trigger{display:inline-flex;align-items:center;gap:7px;border:0;border-bottom:1px solid #b58d9e;background:transparent;color:#33232b;min-height:44px;padding:4px 0;font-size:11px;letter-spacing:0;white-space:nowrap}
+.ds-size-guide{position:fixed;inset:0;margin:auto;width:min(760px,calc(100% - 32px));max-width:none;max-height:88dvh;padding:0;border:1px solid #eadbe2;border-radius:16px;background:#fff;color:#201a1e;box-shadow:0 30px 100px #0003;overflow:hidden}
+.ds-size-guide[open]{display:flex;flex-direction:column;animation:fitEnter .25s ease-out}
+.ds-size-guide::backdrop{background:#17121799;backdrop-filter:blur(5px)}
+.ds-size-guide>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:26px 30px 20px;background:#fff6fa;border-bottom:1px solid #ecdde3;flex-shrink:0}
+.ds-size-guide header span{font-size:9px;letter-spacing:.2em}
+.ds-size-guide h2{font:400 clamp(30px,5vw,48px)/1.12 var(--serif);margin:10px 0 0}
+.ds-size-guide header button{width:44px;height:44px;flex-shrink:0;border:1px solid #e3d2da;border-radius:50%;display:grid;place-items:center;background:#fff;cursor:pointer}
+.ds-size-guide-content{padding:22px 30px 28px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+.ds-size-guide-content>p{font-size:13px;line-height:1.7;margin:0 0 22px;color:#65535d}
+.ds-size-guide-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.ds-size-guide-tools>span{font-size:11px;font-weight:600}
+.ds-size-guide-tools>div{display:flex;gap:4px}
+.ds-size-guide-tools button{border:1px solid #e5d8de;border-radius:5px;padding:8px 12px;min-height:38px;background:#fff;cursor:pointer}
+.ds-size-guide-tools button[aria-pressed="true"]{background:#251d22;color:#fff;border-color:#251d22}
+.ds-size-table-wrap{overflow-x:auto;border:1px solid #ebdfe4;border-radius:8px}
+.ds-size-guide table{width:100%;border-collapse:collapse;font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.ds-size-guide th,.ds-size-guide td{padding:12px 9px;border-bottom:1px solid #eee5e9;white-space:nowrap}
+.ds-size-guide thead{background:#f8f4f6}
+.ds-size-guide tbody tr:last-child>*{border-bottom:0}
+.ds-size-guide tr.is-selected{background:#f7d9e6}
+.ds-size-guide tbody tr:hover{background:#fff0f6}
+.ds-size-guide h3{font:400 28px/1.2 var(--serif);margin:28px 0 18px}
+.ds-measure-help{display:grid;grid-template-columns:140px 1fr;gap:28px;align-items:center}
+.ds-measure-help svg{width:140px;max-width:100%}
+.ds-measure-help ol{padding-left:20px;margin:0}
+.ds-measure-help li{padding-left:5px;margin:0 0 16px;font-size:12px}
+.ds-measure-help p{font-size:12px;line-height:1.6;color:#65535d;margin:5px 0 0}
+.ds-size-guide-content>.ds-size-tip{background:#fff6fa;padding:14px;border-left:2px solid #d18aa8;font-size:12px;margin-top:20px}
+.ds-size-source{display:flex;align-items:center;gap:4px;font-size:10px;color:#75616c;text-decoration:underline}
+.ds-size-contact{display:flex;justify-content:center;align-items:center;gap:10px;background:#251d22;color:#fff;min-height:48px;margin-top:24px;padding:12px;font-size:12px;text-align:center}
+.ds-size-guide :focus-visible{outline:2px solid #a3456d;outline-offset:3px}
+@keyframes fitEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:980px){
+ .ph-logo,.ds-header>.ds-brand{width:170px!important}
+ .ph-logo img,.ds-header>.ds-brand img{width:100px!important;height:40px!important}
+ .delu-tagline{font-size:8px;max-width:170px;line-height:1.35}
+ .ph-campaign-top{top:128px}
+}
+@media(max-width:620px){
+ .ph-header,.ds-header{height:108px!important;min-height:108px!important}
+ .commerce-home-link{height:108px!important}
+ .ds-toolbar{top:108px!important}
+ .ph-logo,.ds-header>.ds-brand{width:164px!important}
+ .ph-hero-copy{max-height:none}
+ .ph-campaign-top{top:125px}
+ .ds-size-guide{width:calc(100% - 16px);max-height:92dvh;border-radius:14px}
+ .ds-size-guide>header{padding:20px 18px 16px}
+ .ds-size-guide-content{padding:18px}
+ .ds-size-guide table{font-size:10px}
+ .ds-size-guide th,.ds-size-guide td{padding:11px 7px}
+ .ds-measure-help{grid-template-columns:90px 1fr;gap:16px}
+ .ds-size-guide h2{font-size:34px}
+}
+@media(prefers-reduced-motion:reduce){.ds-size-guide[open]{animation:none}}
