@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#fff4f8" />
+    <meta name="theme-color" content="#efbdd0" />
     <meta name="color-scheme" content="light" />
     <meta name="description" content="DeLù Clothes Shop — moda femminile, nuovi arrivi e selezioni curate a Follonica. Spedizioni in Italia e all'estero." />
     <meta name="robots" content="index,follow,max-image-preview:large" />
@@ -20,10 +20,17 @@
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
     <link rel="icon" href="/delu-logo.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
+    <link href="https://fonts.googleapis.com/css2?family=Playball&display=swap" rel="stylesheet" />
+    <style>
+      html,body{margin:0;background:#efbdd0}
+      .delu-startup,.route-fallback{position:fixed;inset:0;z-index:999;background:#efbdd0!important;display:flex;align-items:center;justify-content:center;min-height:100svh}
+      .delu-startup img,.route-fallback img{width:min(330px,58vw)!important;height:auto;animation:none!important;opacity:1!important}
+      @media(max-width:620px){.delu-startup img,.route-fallback img{width:56vw!important}}
+    </style>
     <title>DeLù Clothes Shop — Follonica</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="delu-startup" role="status" aria-label="Caricamento DeLù"><img src="/delu-logo.svg" alt="DeLù" fetchpriority="high" /></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

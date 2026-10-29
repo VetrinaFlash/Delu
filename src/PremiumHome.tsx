@@ -52,6 +52,9 @@ function HomeInner(){
   const campaignOneScale=useTransform(campaignProgress,[0,.38],[1.02,1.13])
   const campaignTwoScale=useTransform(campaignProgress,[.22,.66],[1.12,1.01])
   const campaignThreeScale=useTransform(campaignProgress,[.52,1],[1.12,1.02])
+  const depthA=useTransform(campaignProgress,[0,.38],[0,150])
+  const depthB=useTransform(campaignProgress,[.22,.66],[-35,130])
+  const depthC=useTransform(campaignProgress,[.52,1],[-35,100])
   const campaignOneY=useTransform(campaignProgress,[0,.38],['0%','-6%'])
   const campaignTwoY=useTransform(campaignProgress,[.22,.66],['5%','-4%'])
   const campaignThreeY=useTransform(campaignProgress,[.52,1],['6%','-3%'])
@@ -119,9 +122,9 @@ function HomeInner(){
     <ScrollSignature/>
     <section id="experience" ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
       <div className="ph-campaign-sticky">
-        <motion.div className="ph-campaign-media" style={{opacity:campaignOneOpacity,scale:campaignOneScale,y:campaignOneY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2000&q=88" alt="DeLù feminine edit"/></motion.div>
-        <motion.div className="ph-campaign-media" style={{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
-        <motion.div className="ph-campaign-media" style={{opacity:campaignThreeOpacity,scale:campaignThreeScale,y:campaignThreeY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=88" alt="DeLù personal style"/></motion.div>
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignOneOpacity,scale:campaignOneScale,y:campaignOneY,z:depthA,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2000&q=88" alt="DeLù feminine edit"/></motion.div>
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY,z:depthB,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignThreeOpacity,scale:campaignThreeScale,y:campaignThreeY,z:depthC,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=88" alt="DeLù personal style"/></motion.div>
         <div className="ph-campaign-shade"/>
         <div className="ph-campaign-top"><span>{c.campaignLabel}</span><i/><b>{String(scene+1).padStart(2,'0')} — 03</b></div>
         <motion.div className="ph-campaign-word" style={{x:campaignWordX}} aria-hidden="true">DELÙ · DELÙ · DELÙ</motion.div>
@@ -142,12 +145,12 @@ function HomeInner(){
         </div>
         <motion.div ref={trackRef} className="ph-product-track" style={reducedMotion?undefined:{x:track}}>
           {featured.map((p,index)=><motion.article className="ph-card" key={p.id} whileHover={{y:-12}} transition={{type:'spring',stiffness:260,damping:22}}>
-            <Link className="ph-card-image" to={`/product/${p.id}`}>
+            <TiltCard><Link className="ph-card-image" to={`/product/${p.id}`}>
               <motion.img loading="lazy" decoding="async" src={p.image} alt={p.name} whileHover={{scale:1.035}} transition={{duration:.75,ease:[.16,1,.3,1]}}/>
               <span>{String(index+1).padStart(2,'0')}</span>
               {p.new&&<b>NEW</b>}
               <i>{c.open}<ArrowDownRight/></i>
-            </Link>
+            </Link></TiltCard>
             <div className="ph-card-meta"><div><small>{p.category}</small><Link to={`/product/${p.id}`}>{p.name}</Link></div><strong>{money(p.price,locale)}</strong></div>
           </motion.article>)}
         </motion.div>
@@ -160,14 +163,6 @@ function HomeInner(){
       <div className="ph-editorial-copy"><span>{c.editorialLabel}</span><motion.h2 initial={{opacity:.25,y:24}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.45}} transition={{duration:1.05,ease:[.16,1,.3,1]}}>{c.editorialTitle}</motion.h2><p>{c.editorialText}</p><Link to="/shop">{c.editorialCta}<ArrowRight/></Link></div>
       <div className="ph-editorial-word">DELÙ</div>
     </motion.section>
-
-    <section className="ph-moods">
-      <div className="ph-moods-head"><span>{c.moods}</span><b>02 / 02</b></div>
-      <div className="ph-mood-grid">
-        <TiltCard><Link to="/shop?new=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1600&q=88" alt="New in"/><div><span>01</span><h3>{c.newIn}</h3><ArrowDownRight/></div></Link></TiltCard>
-        <TiltCard><Link to="/shop?edit=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1600&q=88" alt="DeLù Edit"/><div><span>02</span><h3>{c.edit}</h3><ArrowDownRight/></div></Link></TiltCard>
-      </div>
-    </section>
 
     <section id="visit" className="ph-visit">
       <div className="ph-visit-top"><MapPin/><span>42.9257° N · 10.7616° E</span></div>
