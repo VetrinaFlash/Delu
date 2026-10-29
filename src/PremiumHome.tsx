@@ -52,6 +52,9 @@ function HomeInner(){
   const campaignOneScale=useTransform(campaignProgress,[0,.38],[1.02,1.13])
   const campaignTwoScale=useTransform(campaignProgress,[.22,.66],[1.12,1.01])
   const campaignThreeScale=useTransform(campaignProgress,[.52,1],[1.12,1.02])
+  const portalScale=useTransform(campaignProgress,[0,.32,.65,1],[.48,1.12,1.65,2.3])
+  const portalRotate=useTransform(campaignProgress,[0,1],[-12,8])
+  const portalOpacity=useTransform(campaignProgress,[0,.12,.75,1],[.8,.55,.3,0])
   const depthA=useTransform(campaignProgress,[0,.38],[0,150])
   const depthB=useTransform(campaignProgress,[.22,.66],[-35,130])
   const depthC=useTransform(campaignProgress,[.52,1],[-35,100])
@@ -68,7 +71,7 @@ function HomeInner(){
   useEffect(()=>{
     const element=trackRef.current
     if(!element)return
-    const measure=()=>setTravel(Math.max(0,element.scrollWidth-(window.innerWidth*.69)))
+    const measure=()=>setTravel(Math.max(0,element.scrollWidth-(window.innerWidth*(window.innerWidth<=980?.92:.69))))
     const observer=new ResizeObserver(measure)
     observer.observe(element)
     const mutations=new MutationObserver(measure)
@@ -126,6 +129,7 @@ function HomeInner(){
         <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY,z:depthB,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
         <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignThreeOpacity,scale:campaignThreeScale,y:campaignThreeY,z:depthC,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=88" alt="DeLù personal style"/></motion.div>
         <div className="ph-campaign-shade"/>
+        {!reducedMotion&&<motion.div className="ph-depth-portal" aria-hidden="true" style={{scale:portalScale,rotate:portalRotate,opacity:portalOpacity}}><i/><i/><i/></motion.div>}
         <div className="ph-campaign-top"><span>{c.campaignLabel}</span><i/><b>{String(scene+1).padStart(2,'0')} — 03</b></div>
         <motion.div className="ph-campaign-word" style={{x:campaignWordX}} aria-hidden="true">DELÙ · DELÙ · DELÙ</motion.div>
         <motion.div className="ph-campaign-copy ph-campaign-copy--a" inert={!reducedMotion&&scene!==0} aria-hidden={!reducedMotion&&scene!==0} style={{opacity:campaignCopyA}}><small>01</small><h2>{c.campaignA}</h2><p>{c.campaignAText}</p></motion.div>

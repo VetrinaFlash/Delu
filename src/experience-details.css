@@ -71,3 +71,26 @@
  .ph-visit{min-height:0;padding-top:52px}
 }
 @media(prefers-reduced-motion:reduce){.ph-campaign,.ph-showcase{height:auto!important}}
+
+/* Scroll through nested frames: an actual foreground/midground/background. */
+.ph-depth-portal{position:absolute;inset:12% 16%;z-index:3;pointer-events:none;border:1px solid #f7c9dd99;border-radius:45% 45% 4px 4px;transform-origin:50% 48%;will-change:transform,opacity}
+.ph-depth-portal i{position:absolute;inset:8%;border:1px solid #ffffff66;border-radius:inherit}
+.ph-depth-portal i:nth-child(2){inset:16%}
+.ph-depth-portal i:nth-child(3){inset:24%;border-color:#f7c9dd99}
+.ds-drawer-head>.ds-cart-close{display:grid!important;place-items:center!important;position:relative!important;inset:auto!important;flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;line-height:1!important;transform:none!important}
+.ds-drawer-head>.ds-cart-close svg{position:static!important;display:block!important;inset:auto!important;margin:0!important;width:20px!important;height:20px!important;transform:none!important;flex:none!important}
+@media(max-width:980px) and (prefers-reduced-motion:no-preference){
+ .ph-showcase{height:185svh;padding:0}
+ .ph-showcase-sticky{position:sticky;top:0;height:100svh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:112px 0 82px}
+ .ph-showcase-title{display:block;flex:none;margin:0;padding:0 5vw 14px}
+ .ph-showcase-title h2{font-size:clamp(36px,8vw,58px);margin:8px 0}
+ .ph-showcase-title>span{font-size:8px}
+ .ph-showcase-title a{position:absolute;right:5vw;bottom:20px;margin:0;font-size:8px}
+ .ph-product-track{display:flex;grid-template-columns:none;gap:5vw;width:max-content;padding:0 5vw;align-items:flex-start}
+ .ph-card{width:min(69vw,calc((100svh - 315px)*.70));min-width:160px;flex:none}
+ .ph-card:nth-child(even){transform:none}
+ .ph-card-image{aspect-ratio:3/4}
+ .ph-card-meta{padding-top:9px}
+ .ph-depth-portal{inset:20% 7%}
+}
+@media(prefers-reduced-motion:reduce){.ph-depth-portal{display:none}}
