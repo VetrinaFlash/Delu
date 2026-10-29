@@ -1,0 +1,89 @@
+/* DeLù conversion UX — loaded last. Keep motion premium, never in the way of buying. */
+
+/* ---------- Mobile cart: never trap the shopper ---------- */
+body:has(.ds-drawer){overflow:hidden}
+
+.ds-drawer-head,
+.ds-cart-footer{flex:0 0 auto;background:#fff;z-index:4}
+.ds-cart-items{min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.ds-drawer-head .ds-icon{width:auto!important;min-width:44px!important;padding:0 11px!important;gap:7px!important;display:flex!important;border:1px solid #eee5e9!important;background:#fff!important}
+.ds-drawer-head .ds-icon::before{font-size:8px;font-weight:800;letter-spacing:.12em;content:'CONTINUA'}
+html[lang^="en"] .ds-drawer-head .ds-icon::before{content:'CONTINUE'}
+html[lang^="fr"] .ds-drawer-head .ds-icon::before{content:'CONTINUER'}
+html[lang^="de"] .ds-drawer-head .ds-icon::before{content:'WEITER'}
+html[lang^="es"] .ds-drawer-head .ds-icon::before{content:'SEGUIR'}
+.ds-drawer-head .ds-icon svg{width:15px!important;height:15px!important}
+.ds-drawer-head .ds-icon:hover{background:#f8e5ed!important;border-color:#f3c6d7!important;transform:none!important}
+.ds-cart-footer{box-shadow:0 -14px 34px rgba(17,16,20,.055)}
+.ds-cart-footer .ds-pay{position:relative;overflow:hidden}
+.ds-cart-footer .ds-pay::before{content:'';position:absolute;inset:0;background:#efbdd0;transform:translateX(-102%);transition:transform .55s cubic-bezier(.16,1,.3,1);z-index:0}
+.ds-cart-footer .ds-pay:hover::before{transform:none}
+.ds-cart-footer .ds-pay>*{position:relative;z-index:1}
+
+@media(max-width:700px){
+  .ds-backdrop{background:rgba(17,16,20,.36)!important;backdrop-filter:blur(5px)!important}
+  .ds-drawer{
+    width:calc(100% - 14px)!important;
+    right:0!important;left:auto!important;
+    top:7px!important;bottom:7px!important;
+    border-radius:24px 0 0 24px!important;
+    overflow:hidden!important;
+    box-shadow:-18px 0 54px rgba(17,16,20,.18)!important;
+  }
+  .ds-drawer-head{
+    height:68px!important;
+    padding:0 16px 0 20px!important;
+    border-bottom:1px solid #eee8eb!important;
+  }
+  .ds-drawer-head b{font-size:19px!important}
+  .ds-drawer-head .ds-icon{height:38px!important;background:#fff5f8!important;border-color:#f2dbe4!important}
+  .ds-cart-items{padding:16px!important}
+  .ds-cart-row{grid-template-columns:76px minmax(0,1fr) auto!important;gap:11px!important;margin-bottom:14px!important;padding-bottom:14px!important}
+  .ds-cart-row img{width:76px!important;height:101px!important}
+  .ds-cart-row strong{font-size:11px!important}
+  .ds-qty{margin-top:4px!important}
+  .ds-cart-footer{
+    padding:15px 16px calc(15px + env(safe-area-inset-bottom))!important;
+    border-top:1px solid #eee8eb!important;
+  }
+  .ds-cart-footer>div{font-size:12px!important}
+  .ds-cart-footer small{margin:5px 0 11px!important;font-size:9px!important}
+  .ds-cart-footer .ds-pay{min-height:52px!important;font-size:9px!important;letter-spacing:.13em!important}
+}
+
+/* ---------- Route changes: motion without blocking navigation ---------- */
+.wow-route-accent{position:fixed;z-index:475;inset:0;pointer-events:none;overflow:hidden}
+.wow-route-accent__line{position:absolute;left:0;top:0;width:100%;height:4px;background:#efbdd0;transform-origin:left center}
+.wow-route-accent__ghost{position:absolute;right:-.035em;bottom:-.18em;font-family:var(--serif,'Italiana',serif);font-size:clamp(100px,20vw,330px);line-height:.8;letter-spacing:-.085em;color:#e885aa;white-space:nowrap;user-select:none}
+.wow-route-accent__label{position:absolute;right:3vw;top:20px;font-size:8px;font-weight:800;letter-spacing:.22em;color:#111014;text-transform:uppercase}
+
+/* The destination itself reveals: wow stays attached to content, not on top of it. */
+.ds-shop-hero{animation:deluHeroReveal .72s cubic-bezier(.16,1,.3,1) both}
+.ds-shop-hero>span{animation:deluTextRise .56s .08s cubic-bezier(.16,1,.3,1) both}
+.ds-shop-hero>h1{animation:deluTextRise .7s .12s cubic-bezier(.16,1,.3,1) both}
+.ds-shop-hero>p{animation:deluTextRise .58s .22s cubic-bezier(.16,1,.3,1) both}
+.ds-toolbar{animation:deluToolbarIn .55s .2s cubic-bezier(.16,1,.3,1) both}
+.ds-products>.ds-product{animation:deluCardIn .66s cubic-bezier(.16,1,.3,1) both}
+.ds-products>.ds-product:nth-child(2){animation-delay:.05s}.ds-products>.ds-product:nth-child(3){animation-delay:.10s}.ds-products>.ds-product:nth-child(4){animation-delay:.15s}.ds-products>.ds-product:nth-child(5){animation-delay:.20s}.ds-products>.ds-product:nth-child(6){animation-delay:.25s}.ds-products>.ds-product:nth-child(n+7){animation-delay:.28s}
+.ds-product-main-image{animation:deluImageReveal .78s cubic-bezier(.16,1,.3,1) both}
+.ds-checkout>section{animation:deluCheckoutLeft .62s cubic-bezier(.16,1,.3,1) both}
+.ds-checkout>.ds-summary{animation:deluCheckoutRight .7s .06s cubic-bezier(.16,1,.3,1) both}
+
+@keyframes deluHeroReveal{from{clip-path:inset(0 0 22% 0);opacity:.72}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes deluTextRise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes deluToolbarIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes deluCardIn{from{opacity:0;clip-path:inset(0 0 7% 0);filter:blur(1.5px)}to{opacity:1;clip-path:inset(0);filter:none}}
+@keyframes deluImageReveal{from{clip-path:inset(0 0 100% 0);opacity:.7}to{clip-path:inset(0);opacity:1}}
+@keyframes deluCheckoutLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes deluCheckoutRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+
+@media(max-width:700px){
+  .wow-route-accent__ghost{font-size:clamp(86px,34vw,170px);right:-.02em;bottom:-.08em}
+  .wow-route-accent__label{right:18px;top:15px}
+  .ds-products>.ds-product{animation-duration:.52s}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .wow-route-accent{display:none!important}
+  .ds-shop-hero,.ds-shop-hero>span,.ds-shop-hero>h1,.ds-shop-hero>p,.ds-toolbar,.ds-products>.ds-product,.ds-product-main-image,.ds-checkout>section,.ds-checkout>.ds-summary{animation:none!important}
+}
