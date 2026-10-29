@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import AdminSecure from './AdminSecure'
+import WowMotion from './WowMotion'
 import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
@@ -10,6 +11,7 @@ import './storefront.css'
 import './polish.css'
 import './admin-commerce.css'
 import './luxury-home.css'
+import './wow-motion.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
@@ -30,7 +32,7 @@ async function bootstrap() {
   root.render(
     <React.StrictMode>
       <BrowserRouter>
-        {isAdminRoute ? <AdminSecure /> : <App />}
+        {isAdminRoute ? <AdminSecure /> : <><WowMotion/><App/></>}
       </BrowserRouter>
     </React.StrictMode>,
   )
