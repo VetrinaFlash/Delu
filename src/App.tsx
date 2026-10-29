@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'motion/react'
 import {
-  ArrowRight, Bag, ChevronDown, CircleUserRound, Heart, LayoutDashboard,
+  ArrowRight, ShoppingBag as Bag, ChevronDown, CircleUserRound, Heart, LayoutDashboard,
   LockKeyhole, LogOut, Menu, Package, Search, ShoppingBag, SlidersHorizontal,
   Sparkles, Truck, X, Plus, Pencil, Eye, Box, TrendingUp, AlertTriangle,
 } from 'lucide-react'
