@@ -29,7 +29,7 @@ export default function WowMotion(){
 
   useEffect(()=>{
     const sync=()=>{
-      setCartTarget(document.querySelector('.ds-drawer-head') as HTMLElement|null)
+      setCartTarget(document.querySelector('.ds-cart-footer') as HTMLElement|null)
       const lang=(document.documentElement.lang||'it').slice(0,2)
       setCartLabel(continueCopy[lang]||continueCopy.it)
     }
