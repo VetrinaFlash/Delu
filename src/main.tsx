@@ -15,6 +15,7 @@ import './unified-storefront.css'
 import './navigation-guard.css'
 import './performance.css'
 import './conversion-ux.css'
+import './wow-v3.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))
