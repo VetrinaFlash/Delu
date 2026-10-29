@@ -1,0 +1,182 @@
+/* Unified DeLu storefront chrome and commerce layout.
+   Loaded last so every public route keeps the same premium visual language as PremiumHome. */
+
+/* ---------- Shared header language ---------- */
+.ds-announcement{display:none!important}
+.ds-header{
+  position:sticky!important;top:0!important;z-index:110!important;
+  height:76px!important;min-height:76px!important;
+  display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center!important;
+  padding:0 3.2vw!important;margin:0!important;
+  background:rgba(255,255,255,.94)!important;backdrop-filter:blur(22px)!important;
+  border:0!important;border-bottom:1px solid rgba(17,16,20,.075)!important;
+  box-shadow:none!important;color:#111014!important;
+}
+.ds-header nav{justify-self:start!important;display:flex!important;align-items:center!important;gap:0!important}
+.ds-header nav a{font-size:10px!important;line-height:1!important;font-weight:800!important;letter-spacing:.16em!important;text-transform:uppercase!important;padding:12px 0!important}
+.ds-header nav a:not(:first-child){display:none!important}
+.ds-header>.ds-brand{justify-self:center!important;width:124px!important;display:block!important}
+.ds-header>.ds-brand img{width:100%!important;height:46px!important;object-fit:contain!important;filter:none!important}
+.ds-actions{justify-self:end!important;display:flex!important;align-items:center!important;gap:2px!important}
+.ds-actions .ds-icon{width:40px!important;height:40px!important;border-radius:50%!important;background:transparent!important;border:0!important;display:grid!important;place-items:center!important}
+.ds-actions .ds-icon:hover{background:#f8eef2!important}
+.ds-actions .ds-icon svg{width:17px!important;height:17px!important}
+.ds-language{height:38px!important;border:0!important;background:transparent!important;padding:0 6px!important;gap:5px!important}
+.ds-language select{font-size:9px!important;font-weight:800!important;letter-spacing:.08em!important;background:transparent!important;border:0!important;max-width:88px!important}
+.ds-cart b,.ds-counter-icon b{font-size:8px!important}
+
+/* Kill the legacy flyout completely: public navigation is intentionally flat/minimal. */
+.ds-mobile{display:none!important}
+.ds-mobile-menu{display:none!important}
+
+/* ---------- Shop landing ---------- */
+.ds-shop-hero{
+  min-height:300px!important;padding:72px 4vw 46px!important;
+  display:flex!important;flex-direction:column!important;justify-content:flex-end!important;
+  background:#f4d2df!important;color:#111014!important;border:0!important;
+}
+.ds-shop-hero>span{font-size:9px!important;font-weight:800!important;letter-spacing:.22em!important;margin-bottom:15px!important}
+.ds-shop-hero h1{font-family:var(--serif,'Italiana',serif)!important;font-weight:400!important;font-size:clamp(64px,7.6vw,118px)!important;line-height:.86!important;letter-spacing:-.06em!important;margin:0!important;max-width:1100px!important}
+.ds-shop-hero p{font-size:9px!important;letter-spacing:.13em!important;text-transform:uppercase!important;margin:22px 0 0!important;color:rgba(17,16,20,.58)!important}
+
+.ds-toolbar{
+  position:sticky!important;top:76px!important;z-index:60!important;
+  min-height:64px!important;padding:0 4vw!important;
+  display:grid!important;grid-template-columns:auto 1fr auto!important;align-items:center!important;gap:24px!important;
+  background:rgba(255,255,255,.96)!important;backdrop-filter:blur(18px)!important;
+  border:0!important;border-bottom:1px solid #eee9eb!important;
+}
+.ds-toolbar>button{display:flex!important;align-items:center!important;gap:8px!important;border:0!important;background:none!important;padding:0!important;font-size:9px!important;font-weight:800!important;letter-spacing:.12em!important}
+.ds-toolbar>button svg{width:15px!important}
+.ds-toolbar>div{display:flex!important;justify-content:center!important;gap:22px!important;overflow:auto!important;scrollbar-width:none!important}
+.ds-toolbar>div::-webkit-scrollbar{display:none!important}
+.ds-toolbar>div button{border:0!important;background:none!important;padding:22px 0 18px!important;font-size:9px!important;letter-spacing:.11em!important;text-transform:uppercase!important;white-space:nowrap!important;color:#81787d!important;position:relative!important}
+.ds-toolbar>div button.active{color:#111014!important}
+.ds-toolbar>div button.active:after{content:"";position:absolute;left:0;right:0;bottom:13px;height:1px;background:#111014}
+.ds-toolbar select{border:0!important;background:transparent!important;font-size:9px!important;font-weight:700!important;letter-spacing:.08em!important;outline:0!important;text-align:right!important;max-width:155px!important}
+.ds-filter-panel{padding:24px 4vw 28px!important;background:#faf8f9!important;border-bottom:1px solid #eee9eb!important;overflow:hidden!important}
+.ds-filter-panel>div{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;margin:8px 0!important}
+.ds-filter-panel b{font-size:9px!important;letter-spacing:.12em!important;min-width:70px!important}
+.ds-filter-panel button{min-height:34px!important;padding:0 13px!important;border:1px solid #e2dcdf!important;background:white!important;font-size:9px!important}
+.ds-filter-panel button.active{background:#111014!important;color:white!important;border-color:#111014!important}
+
+/* ---------- Product grid ---------- */
+.ds-section{padding:72px 4vw 110px!important}
+.ds-products{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:42px 18px!important}
+.ds-product{min-width:0!important;transform:none!important}
+.ds-product-image{aspect-ratio:3/4!important;overflow:hidden!important;background:#f3eff1!important;border-radius:0!important}
+.ds-product-image img{width:100%!important;height:100%!important;object-fit:cover!important;transition:transform .9s cubic-bezier(.16,1,.3,1)!important}
+.ds-product:hover .ds-product-image img{transform:scale(1.025)!important}
+.ds-product-image>b{display:none!important}
+.ds-product-image>div{top:12px!important;left:12px!important;gap:5px!important}
+.ds-product-image>div span{font-size:7px!important;letter-spacing:.12em!important;padding:7px 8px!important;border-radius:0!important}
+.ds-wish{top:11px!important;right:11px!important;width:36px!important;height:36px!important;background:rgba(255,255,255,.88)!important;backdrop-filter:blur(10px)!important}
+.ds-product-info{padding:14px 1px 0!important;align-items:flex-start!important;gap:14px!important}
+.ds-product-info a{font-size:12px!important;font-weight:600!important;letter-spacing:.005em!important}
+.ds-product-info small{font-size:8px!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:#8c8488!important;margin-top:4px!important}
+.ds-product-info strong{font-size:11px!important;font-weight:600!important;white-space:nowrap!important}
+.ds-product-info del{display:block!important;font-size:9px!important;color:#a69fa2!important;margin-top:4px!important}
+.ds-product>button:not(.ds-wish){
+  height:38px!important;margin-top:12px!important;border:1px solid #e7e1e4!important;background:white!important;color:#111014!important;
+  font-size:8px!important;font-weight:800!important;letter-spacing:.12em!important;
+  opacity:0!important;transform:translateY(5px)!important;transition:.28s!important;
+}
+.ds-product:hover>button:not(.ds-wish){opacity:1!important;transform:none!important}
+
+/* ---------- Product detail ---------- */
+.ds-product-page{
+  max-width:1520px!important;margin:0 auto!important;padding:74px 4vw 120px!important;
+  display:grid!important;grid-template-columns:minmax(0,1.18fr) minmax(360px,.82fr)!important;gap:clamp(54px,7vw,120px)!important;align-items:start!important;
+}
+.ds-product-main-image{aspect-ratio:4/5!important;background:#f4f0f2!important;overflow:hidden!important}
+.ds-product-main-image img{width:100%!important;height:100%!important;object-fit:cover!important}
+.ds-thumbs{gap:7px!important;margin-top:8px!important}
+.ds-product-detail{position:sticky!important;top:116px!important;padding-top:10px!important}
+.ds-product-detail h1{font-family:var(--serif,'Italiana',serif)!important;font-size:clamp(54px,5.4vw,88px)!important;line-height:.92!important;letter-spacing:-.055em!important;font-weight:400!important;margin:18px 0 22px!important}
+.ds-product-detail>strong{font-size:14px!important;font-weight:600!important}
+.ds-product-detail>p{font-size:13px!important;line-height:1.8!important;color:#716a6e!important;max-width:510px!important;margin:28px 0 36px!important}
+.ds-option{padding:20px 0!important;border-top:1px solid #eee9eb!important}
+.ds-option:last-of-type{border-bottom:1px solid #eee9eb!important}
+.ds-option>b{font-size:9px!important;letter-spacing:.12em!important;text-transform:uppercase!important;margin-bottom:13px!important}
+.ds-option button{min-width:43px!important;height:37px!important;border:1px solid #ddd6d9!important;background:white!important;font-size:9px!important}
+.ds-option button.active{background:#111014!important;color:white!important;border-color:#111014!important}
+.ds-product-detail>.ds-pay{height:56px!important;margin-top:26px!important;background:#111014!important;color:white!important;border:0!important;border-radius:0!important;font-size:9px!important;letter-spacing:.14em!important}
+.ds-product-promises{border-top:0!important;margin-top:18px!important;padding-top:0!important;font-size:9px!important}
+.ds-related{border-top:1px solid #eee9eb!important}
+
+/* ---------- Wishlist / info / checkout ---------- */
+.ds-no-products{min-height:48vh!important}
+.ds-checkout{max-width:1440px!important;margin:0 auto!important;padding:78px 4vw 120px!important;gap:clamp(50px,7vw,110px)!important}
+.ds-checkout>section>h1{font-family:var(--serif,'Italiana',serif)!important;font-size:clamp(56px,6vw,96px)!important;letter-spacing:-.055em!important;line-height:.9!important}
+.ds-summary{border:1px solid #eee9eb!important;background:#faf8f9!important;padding:30px!important;box-shadow:none!important}
+.ds-info-page{padding-top:96px!important}
+
+/* ---------- Footer ---------- */
+.ds-footer{background:#111014!important;color:white!important;padding:72px 4vw 34px!important;grid-template-columns:1.3fr .8fr .8fr!important;gap:48px!important}
+.ds-footer>div:nth-of-type(3){display:none!important}
+.ds-footer .ds-brand img{filter:brightness(0) invert(1)!important}
+.ds-footer>small{grid-column:1/-1!important;border-top:1px solid rgba(255,255,255,.12)!important;padding-top:24px!important;margin-top:10px!important}
+
+/* ---------- Home header stays the dark/transparent twin of the same system ---------- */
+.ph-header{height:76px!important;padding:0 3.2vw!important;grid-template-columns:1fr auto 1fr!important}
+.ph-logo{width:124px!important}
+.ph-logo img{height:46px!important}
+.ph-head-actions>a{width:40px!important;height:40px!important}
+
+@media(max-width:1180px){
+  .ds-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(max-width:900px){
+  .ds-header{height:68px!important;min-height:68px!important;padding:0 18px!important}
+  .ds-header>.ds-brand{width:100px!important}.ds-header>.ds-brand img{height:40px!important}
+  .ds-header nav a{font-size:9px!important}
+  .ds-actions .ds-language,.ds-actions .ds-counter-icon{display:none!important}
+  .ds-actions .ds-desktop:first-of-type{display:grid!important}
+  .ds-actions{gap:0!important}
+  .ds-toolbar{top:68px!important;padding:0 18px!important;grid-template-columns:auto 1fr!important;gap:14px!important}
+  .ds-toolbar>div{justify-content:flex-start!important;grid-column:1/-1!important;order:3!important;width:100%!important;border-top:1px solid #f1edef!important}
+  .ds-toolbar select{justify-self:end!important}
+  .ds-shop-hero{min-height:260px!important;padding:62px 18px 38px!important}
+  .ds-shop-hero h1{font-size:clamp(54px,13vw,88px)!important}
+  .ds-section{padding:54px 18px 86px!important}
+  .ds-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:34px 10px!important}
+  .ds-product>button:not(.ds-wish){opacity:1!important;transform:none!important;height:36px!important}
+  .ds-product-page{padding:44px 18px 90px!important;grid-template-columns:1fr!important;gap:38px!important}
+  .ds-product-detail{position:relative!important;top:auto!important;padding-top:0!important}
+  .ds-product-detail h1{font-size:clamp(52px,12vw,78px)!important}
+  .ds-checkout{padding:50px 18px 90px!important;grid-template-columns:1fr!important}
+  .ds-footer{padding:58px 18px 28px!important;grid-template-columns:1fr 1fr!important;gap:34px 18px!important}
+  .ph-header{height:68px!important;padding:0 18px!important}.ph-logo{width:100px!important}.ph-logo img{height:40px!important}
+}
+
+@media(max-width:560px){
+  .ds-header{grid-template-columns:1fr auto 1fr!important}
+  .ds-header nav{display:flex!important}
+  .ds-header nav a:first-child{display:block!important}
+  .ds-actions .ds-desktop:first-of-type{display:none!important}
+  .ds-actions .ds-cart{display:grid!important;justify-self:end!important}
+  .ds-shop-hero{min-height:230px!important;padding-top:48px!important}
+  .ds-shop-hero h1{font-size:52px!important;line-height:.9!important}
+  .ds-toolbar{min-height:58px!important;padding:0 14px!important}
+  .ds-toolbar>button,.ds-toolbar select{font-size:8px!important}
+  .ds-toolbar>div{gap:18px!important}
+  .ds-toolbar>div button{font-size:8px!important;padding:17px 0 15px!important}
+  .ds-toolbar>div button.active:after{bottom:10px!important}
+  .ds-section{padding:42px 12px 72px!important}
+  .ds-products{gap:28px 8px!important}
+  .ds-product-info{display:block!important;padding-top:10px!important}
+  .ds-product-info strong{display:block!important;margin-top:7px!important;font-size:10px!important}
+  .ds-product-info a{font-size:11px!important}
+  .ds-product-info small{font-size:7px!important}
+  .ds-wish{width:32px!important;height:32px!important;top:8px!important;right:8px!important}
+  .ds-product>button:not(.ds-wish){margin-top:9px!important;height:34px!important;font-size:7px!important}
+  .ds-product-page{padding:30px 0 72px!important;gap:28px!important}
+  .ds-product-page .ds-gallery{padding:0 12px!important}
+  .ds-product-detail{padding:0 18px!important}
+  .ds-product-detail h1{font-size:49px!important}
+  .ds-thumbs{padding:0!important}
+  .ds-checkout{padding:42px 16px 72px!important}
+  .ds-summary{padding:20px!important}
+  .ds-footer{grid-template-columns:1fr!important}.ds-footer>div:nth-of-type(2){display:block!important}
+}
