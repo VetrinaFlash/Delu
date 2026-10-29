@@ -7,6 +7,8 @@ import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
 import './storefront.css'
+import './polish.css'
+import './admin-commerce.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
