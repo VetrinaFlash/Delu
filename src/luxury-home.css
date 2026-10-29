@@ -1,0 +1,109 @@
+/* DeLù luxury editorial redesign — intentionally quiet, image-led and spacious. */
+
+/* Global chrome: remove the promotional-strip feel and make navigation disappear into the brand. */
+.ds-announcement{display:none!important}
+.ds-header{height:76px!important;position:sticky!important;top:0;z-index:80!important;padding:0 3.5vw!important;background:rgba(255,255,255,.9)!important;backdrop-filter:blur(22px)!important;border-bottom:1px solid rgba(17,16,20,.07)!important}
+.ds-header nav{gap:34px!important;font-size:10px!important;letter-spacing:.12em!important;text-transform:uppercase}
+.ds-brand{width:138px!important}
+.ds-brand img{height:48px!important;object-fit:contain!important;object-position:center!important}
+.ds-brand--compact{width:130px!important}
+.ds-actions{gap:3px!important}
+.ds-language{border:0!important;background:transparent!important;padding:0 7px!important}
+.ds-icon:hover{background:rgba(244,180,205,.18)!important}
+
+/* HOME — one decisive hero instead of multiple competing messages. */
+.ds-hero{height:calc(100svh - 76px)!important;min-height:680px!important;background:#f2c8d7!important;color:#111014!important;overflow:hidden!important;isolation:isolate}
+.ds-hero::before{content:"DELÙ";position:absolute;z-index:0;left:-1.2vw;bottom:-4.5vw;font-family:var(--serif);font-size:clamp(170px,23vw,430px);font-weight:400;line-height:.78;letter-spacing:-.075em;color:rgba(17,16,20,.055);pointer-events:none;white-space:nowrap}
+.ds-hero>img{inset:0 0 0 auto!important;width:55%!important;height:100%!important;object-fit:cover!important;object-position:center 22%!important;filter:saturate(.72) contrast(1.02)!important;transform-origin:center center;z-index:1}
+.ds-hero-shade{display:none!important}
+.ds-hero-copy{z-index:3!important;left:5vw!important;top:50%!important;transform:translateY(-50%)!important;max-width:38vw!important;color:#111014!important}
+.ds-hero-copy>span{font-size:9px!important;letter-spacing:.24em!important;font-weight:700!important}
+.ds-hero h1{font-size:clamp(68px,7.2vw,132px)!important;line-height:.9!important;letter-spacing:-.055em!important;margin:18px 0 28px!important;max-width:650px!important}
+.ds-hero p{max-width:410px!important;color:rgba(17,16,20,.7)!important;font-size:14px!important;line-height:1.75!important;margin-bottom:34px!important}
+.ds-hero .ds-button--light{background:#111014!important;color:white!important;min-width:210px!important;height:56px!important;border-radius:0!important}
+.ds-hero .ds-button--light:hover{background:white!important;color:#111014!important}
+.ds-scroll{display:none!important}
+
+/* Remove the template-like layers from the home. */
+.ds-marquee,.ds-editorial,.ds-benefits{display:none!important}
+
+/* New-in becomes the quiet commercial moment. */
+.ds-editorial + .ds-section{padding:120px 4vw 150px!important;background:#fff!important}
+.ds-editorial + .ds-section .ds-title-row{margin-bottom:38px!important;align-items:flex-end!important}
+.ds-editorial + .ds-section .ds-title-row h2{font-size:clamp(48px,5.3vw,82px)!important;letter-spacing:-.045em!important}
+.ds-editorial + .ds-section .ds-title-row span{font-size:9px!important;letter-spacing:.2em!important}
+.ds-editorial + .ds-section .ds-title-row>a{font-size:9px!important;letter-spacing:.14em!important;border:0!important;gap:13px!important;padding:0 0 7px!important}
+.ds-editorial + .ds-section .ds-products{grid-template-columns:repeat(3,1fr)!important;gap:clamp(14px,2vw,32px)!important}
+.ds-editorial + .ds-section .ds-product:nth-child(4){display:none!important}
+.ds-editorial + .ds-section .ds-product-image{aspect-ratio:3/4.2!important;background:#f5f2f3!important}
+.ds-editorial + .ds-section .ds-product-image img{transition:transform 1s cubic-bezier(.16,1,.3,1),filter .6s ease!important}
+.ds-editorial + .ds-section .ds-product:hover .ds-product-image img{transform:scale(1.018)!important}
+.ds-editorial + .ds-section .ds-product-image>b{display:none!important}
+.ds-editorial + .ds-section .ds-product>button:not(.ds-wish){display:none!important}
+.ds-editorial + .ds-section .ds-product-info{padding:15px 1px 0!important}
+.ds-editorial + .ds-section .ds-product-info a{font-size:13px!important;font-weight:500!important;letter-spacing:.01em!important}
+.ds-editorial + .ds-section .ds-product-info small{margin-top:3px!important;font-size:9px!important;text-transform:uppercase!important;letter-spacing:.09em!important}
+.ds-editorial + .ds-section .ds-product-info strong{font-weight:500!important}
+
+/* One immersive editorial image closes the home. */
+.ds-story{position:relative!important;display:block!important;min-height:90svh!important;background:#111!important;color:white!important;overflow:hidden!important}
+.ds-story::after{content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.04) 10%,rgba(0,0,0,.18) 58%,rgba(0,0,0,.68) 100%)}
+.ds-story>img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center 28%!important;filter:saturate(.76) contrast(1.03)!important}
+.ds-story>div{position:absolute!important;z-index:2!important;inset:auto 6vw 7vw 6vw!important;padding:0!important;display:block!important;max-width:950px!important}
+.ds-story span{font-size:9px!important;letter-spacing:.24em!important}
+.ds-story h2{font-size:clamp(64px,8vw,138px)!important;line-height:.87!important;letter-spacing:-.055em!important;margin:18px 0 25px!important;max-width:930px!important}
+.ds-story p{max-width:480px!important;color:rgba(255,255,255,.78)!important;font-size:14px!important;line-height:1.75!important;margin:0 0 28px!important}
+.ds-story a{font-size:9px!important;letter-spacing:.15em!important;border-bottom:1px solid rgba(255,255,255,.7)!important;padding-bottom:7px!important}
+
+/* Product/shop pages stay functional but visually calmer. */
+.ds-shop-hero{padding:82px 5vw 62px!important;background:#f7f2f4!important}
+.ds-shop-hero h1{font-size:clamp(62px,7.5vw,118px)!important;letter-spacing:-.055em!important}
+.ds-toolbar{top:76px!important;min-height:66px!important;padding:0 4vw!important;background:rgba(255,255,255,.94)!important}
+.ds-section{padding-left:4vw!important;padding-right:4vw!important}
+.ds-products{gap:clamp(12px,1.7vw,26px)!important}
+.ds-product-image{background:#f5f2f3!important}
+.ds-product-image img{transition:transform .8s cubic-bezier(.16,1,.3,1)!important}
+.ds-product:hover .ds-product-image img{transform:scale(1.02)!important}
+.ds-product>button:not(.ds-wish){border-color:#e7e1e4!important;background:#fff!important;color:#111!important}
+.ds-product>button:not(.ds-wish):hover{background:#111!important;color:#fff!important;border-color:#111!important}
+
+/* Footer: much less visual noise. */
+.ds-footer{padding-top:72px!important;padding-bottom:34px!important;background:#111014!important;gap:42px!important}
+.ds-footer .ds-brand img{filter:invert(1)!important}
+
+@media(max-width:900px){
+  .ds-header{padding:0 18px!important;height:68px!important}
+  .ds-header nav,.ds-header .ds-language.ds-desktop{display:none!important}
+  .ds-brand{width:122px!important}
+  .ds-brand img{height:42px!important}
+  .ds-hero{height:calc(100svh - 68px)!important;min-height:620px!important;background:#111!important;color:white!important}
+  .ds-hero::before{display:none}
+  .ds-hero>img{inset:0!important;width:100%!important;height:100%!important;object-position:center 18%!important;filter:saturate(.72) brightness(.74)!important}
+  .ds-hero::after{content:"";position:absolute;z-index:2;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.02) 20%,rgba(0,0,0,.72) 100%)}
+  .ds-hero-copy{left:22px!important;right:22px!important;top:auto!important;bottom:42px!important;transform:none!important;max-width:none!important;color:white!important}
+  .ds-hero h1{font-size:clamp(58px,18vw,92px)!important;margin:12px 0 18px!important;max-width:620px!important}
+  .ds-hero p{color:rgba(255,255,255,.82)!important;font-size:13px!important;max-width:500px!important;margin-bottom:24px!important}
+  .ds-hero .ds-button--light{background:white!important;color:#111!important;min-width:180px!important;height:52px!important}
+  .ds-editorial + .ds-section{padding:78px 18px 90px!important}
+  .ds-editorial + .ds-section .ds-products{grid-template-columns:repeat(2,1fr)!important;gap:11px!important}
+  .ds-editorial + .ds-section .ds-product:nth-child(4){display:block!important}
+  .ds-editorial + .ds-section .ds-title-row h2{font-size:52px!important}
+  .ds-story{min-height:78svh!important}
+  .ds-story>div{inset:auto 22px 34px 22px!important}
+  .ds-story h2{font-size:clamp(54px,14vw,82px)!important}
+  .ds-toolbar{top:68px!important}
+}
+
+@media(max-width:560px){
+  .ds-header{grid-template-columns:42px 1fr auto!important}
+  .ds-mobile{display:grid!important}
+  .ds-header>.ds-brand{justify-self:center!important}
+  .ds-actions .ds-language{display:none!important}
+  .ds-actions{gap:0!important}
+  .ds-editorial + .ds-section .ds-title-row{align-items:flex-end!important}
+  .ds-editorial + .ds-section .ds-title-row>a{font-size:0!important}
+  .ds-editorial + .ds-section .ds-title-row>a svg{width:20px!important;height:20px!important}
+  .ds-editorial + .ds-section .ds-product-info{display:block!important}
+  .ds-editorial + .ds-section .ds-product-info strong{display:block!important;margin-top:5px!important;font-size:11px!important}
+  .ds-wish{width:32px!important;height:32px!important}
+}
