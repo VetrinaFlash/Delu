@@ -80,7 +80,7 @@ test.describe('DeLù customer experience',()=>{
     await expect(page.locator('.ds-product-detail')).toBeVisible()
     await expectNoHorizontalOverflow(page)
 
-    const sizeOptions=page.locator('.ds-option').nth(1).locator('button:not([disabled])')
+    const sizeOptions=page.locator('.ds-option').nth(1).locator(':scope > div:last-child > button:not([disabled])')
     if(await sizeOptions.count())await sizeOptions.first().click()
 
     const add=page.locator('.ds-product-detail > .ds-pay')
