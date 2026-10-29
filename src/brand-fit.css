@@ -67,3 +67,6 @@
  .ds-size-guide h2{font-size:34px}
 }
 @media(prefers-reduced-motion:reduce){.ds-size-guide[open]{animation:none}}
+
+.ds-size-heading>b small{display:block!important;font-family:var(--sans)!important;font-size:10px!important;line-height:1.5!important;letter-spacing:0!important;margin:5px 0 0!important}
+.ds-option .ds-size-guide-trigger{border:0!important;border-bottom:1px solid #b58d9e!important;background:transparent!important;font-size:11px!important;min-width:0!important;padding:4px 0!important;height:auto!important;color:#33232b!important}

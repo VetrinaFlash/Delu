@@ -19,6 +19,7 @@ export default function SizeGuide({selected,oneSize}:{selected:string;oneSize:bo
   const[open,setOpen]=useState(false)
   const[unit,setUnit]=useState<'cm'|'in'>('cm')
   const dialog=useRef<HTMLDialogElement>(null)
+  const trigger=useRef<HTMLButtonElement>(null)
   const title=useId(),description=useId()
   useEffect(()=>{
     if(!open)return
@@ -27,11 +28,11 @@ export default function SizeGuide({selected,oneSize}:{selected:string;oneSize:bo
     const overflow=document.documentElement.style.overflow
     document.documentElement.style.overflow='hidden'
     element.showModal()
-    return()=>{element.close();document.documentElement.style.overflow=overflow}
+    return()=>{element.close();document.documentElement.style.overflow=overflow;requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}))}
   },[open])
   const range=(values:number[])=>values.map(v=>new Intl.NumberFormat(locale,{maximumFractionDigits:unit==='cm'?0:1}).format(unit==='cm'?v:v/2.54)).join('–')
   return <>
-    <button type="button" className="ds-size-guide-trigger" onClick={()=>setOpen(true)}><Ruler size={16}/>{t('sizeGuide')}</button>
+    <button ref={trigger} type="button" className="ds-size-guide-trigger" onClick={()=>setOpen(true)}><Ruler size={16}/>{t('sizeGuide')}</button>
     {open&&createPortal(<dialog ref={dialog} className="ds-size-guide" aria-labelledby={title} aria-describedby={description}
       onCancel={()=>setOpen(false)} onClose={()=>setOpen(false)}
       onClick={event=>{
