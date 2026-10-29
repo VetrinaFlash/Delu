@@ -14,17 +14,17 @@ export default function WowMotion(){
   const mouseX=useMotionValue(-220),mouseY=useMotionValue(-220)
   const x=useSpring(mouseX,{stiffness:120,damping:24,mass:.25})
   const y=useSpring(mouseY,{stiffness:120,damping:24,mass:.25})
-  const[intro,setIntro]=useState(true)
+  const[intro,setIntro]=useState(()=>location.pathname==='/')
   const[routeSignal,setRouteSignal]=useState(0)
   const[cartTarget,setCartTarget]=useState<HTMLElement|null>(null)
   const[cartLabel,setCartLabel]=useState(continueCopy.it)
   const firstRoute=useRef(true)
 
   useEffect(()=>{
-    const timer=window.setTimeout(()=>setIntro(false),900)
+    const timer=intro?window.setTimeout(()=>setIntro(false),900):undefined
     const move=(e:PointerEvent)=>{mouseX.set(e.clientX-150);mouseY.set(e.clientY-150)}
     window.addEventListener('pointermove',move,{passive:true})
-    return()=>{window.clearTimeout(timer);window.removeEventListener('pointermove',move)}
+    return()=>{if(timer)window.clearTimeout(timer);window.removeEventListener('pointermove',move)}
   },[])
 
   useEffect(()=>{
