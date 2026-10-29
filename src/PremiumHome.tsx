@@ -1,3 +1,4 @@
+import { ChapterNav, ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
 import { ArrowDownRight, ArrowRight, AtSign, Globe2, Heart, MapPin, Search } from 'lucide-react'
@@ -67,11 +68,14 @@ function HomeInner(){
     const measure=()=>setTravel(Math.max(0,element.scrollWidth-(window.innerWidth*.69)))
     const observer=new ResizeObserver(measure)
     observer.observe(element)
+    const mutations=new MutationObserver(measure)
+    mutations.observe(element,{childList:true,subtree:true})
     window.addEventListener('resize',measure)
     measure()
-    return()=>{observer.disconnect();window.removeEventListener('resize',measure)}
+    return()=>{observer.disconnect();mutations.disconnect();window.removeEventListener('resize',measure)}
   },[])
   const track=useSpring(trackX,{stiffness:85,damping:22,mass:.35})
+  const editorialClip=useTransform(editorialProgress,[0,.42,.85,1],['inset(9% 6% 9% 6% round 12px)','inset(0% 0% 0% 0% round 0px)','inset(0% 0% 0% 0% round 0px)','inset(3% 2% 3% 2% round 8px)'])
   const editorialScale=useTransform(editorialProgress,[0,1],[1.08,1])
   const editorialY=useTransform(editorialProgress,[0,1],['-4%','4%'])
   const featured=(products.filter(p=>p.active!==false&&p.new).length?products.filter(p=>p.active!==false&&p.new):products.filter(p=>p.active!==false)).slice(0,4)
@@ -81,13 +85,13 @@ function HomeInner(){
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>
       <div className="ph-head-actions">
-        <Link to="/shop" aria-label={c.search}><Search/></Link>
+        <Link to="/shop?search=1" aria-label={c.search}><Search/></Link>
         <Link to="/wishlist" aria-label={c.wishlist}><Heart/></Link>
         <label className="ph-language"><Globe2 aria-hidden="true"/><select aria-label="Language" value={locale} onChange={e=>setLocale(e.target.value as Locale)}>{Object.entries(localeNames).map(([key,label])=><option key={key} value={key}>{key.toUpperCase()} · {label}</option>)}</select></label>
       </div>
     </header>
 
-    <section ref={heroRef} className="ph-hero" data-testid="home-hero">
+    <section id="home" ref={heroRef} className="ph-hero" data-testid="home-hero">
       <motion.div className="ph-hero-media" style={reducedMotion?undefined:{scale:heroScale,y:heroY}}>
         <img fetchPriority="high" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90" alt="DeLù editorial"/>
       </motion.div>
@@ -112,7 +116,8 @@ function HomeInner(){
       <motion.p initial={{opacity:0,y:26}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.7}} transition={{duration:.8}}>{c.statementText}</motion.p>
     </section>
 
-    <section ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
+    <ScrollSignature/>
+    <section id="experience" ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
       <div className="ph-campaign-sticky">
         <motion.div className="ph-campaign-media" style={{opacity:campaignOneOpacity,scale:campaignOneScale,y:campaignOneY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2000&q=88" alt="DeLù feminine edit"/></motion.div>
         <motion.div className="ph-campaign-media" style={{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
@@ -127,7 +132,7 @@ function HomeInner(){
       </div>
     </section>
 
-    <section ref={showcaseRef} className="ph-showcase">
+    <section id="new-icons" ref={showcaseRef} className="ph-showcase">
       <div className="ph-showcase-sticky">
         <div className="ph-showcase-title">
           <span>{c.newLabel}</span>
@@ -149,28 +154,29 @@ function HomeInner(){
       </div>
     </section>
 
-    <section ref={editorialRef} className="ph-editorial">
+    <motion.section id="editorial" ref={editorialRef} className="ph-editorial" style={reducedMotion?undefined:{clipPath:editorialClip}}>
       <motion.div className="ph-editorial-image" style={reducedMotion?undefined:{scale:editorialScale,y:editorialY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2200&q=90" alt="DeLù style"/></motion.div>
       <div className="ph-editorial-shade"/>
       <div className="ph-editorial-copy"><span>{c.editorialLabel}</span><motion.h2 initial={{clipPath:'inset(0 0 100% 0)'}} whileInView={{clipPath:'inset(0 0 0% 0)'}} viewport={{once:true,amount:.45}} transition={{duration:1.05,ease:[.16,1,.3,1]}}>{c.editorialTitle}</motion.h2><p>{c.editorialText}</p><Link to="/shop">{c.editorialCta}<ArrowRight/></Link></div>
       <div className="ph-editorial-word">DELÙ</div>
-    </section>
+    </motion.section>
 
     <section className="ph-moods">
       <div className="ph-moods-head"><span>{c.moods}</span><b>02 / 02</b></div>
       <div className="ph-mood-grid">
-        <Link to="/shop?new=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1600&q=88" alt="New in"/><div><span>01</span><h3>{c.newIn}</h3><ArrowDownRight/></div></Link>
-        <Link to="/shop?edit=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1600&q=88" alt="DeLù Edit"/><div><span>02</span><h3>{c.edit}</h3><ArrowDownRight/></div></Link>
+        <TiltCard><Link to="/shop?new=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1600&q=88" alt="New in"/><div><span>01</span><h3>{c.newIn}</h3><ArrowDownRight/></div></Link></TiltCard>
+        <TiltCard><Link to="/shop?edit=1" className="ph-mood-card"><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1600&q=88" alt="DeLù Edit"/><div><span>02</span><h3>{c.edit}</h3><ArrowDownRight/></div></Link></TiltCard>
       </div>
     </section>
 
-    <section className="ph-visit">
+    <section id="visit" className="ph-visit">
       <div className="ph-visit-top"><MapPin/><span>42.9257° N · 10.7616° E</span></div>
       <motion.h2 initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.5}} transition={{duration:.85,ease:[.16,1,.3,1]}}>{c.visit}</motion.h2>
       <p>{c.visitText}</p>
       <div className="ph-visit-links"><a href="https://maps.google.com/?q=Via+Roma+27+Follonica" target="_blank" rel="noreferrer">VIA ROMA 27 <ArrowRight/></a><a href="https://instagram.com/delu.clotheshop" target="_blank" rel="noreferrer"><AtSign/> @DELU.CLOTHESHOP</a></div>
       <div className="ph-visit-ghost">DELÙ</div>
     </section>
+    <ChapterNav labels={[c.campaignLabel.split(' / ').pop()!,c.newIn,'EDITORIAL','FOLLONICA']}/>
   </main>
 }
 
