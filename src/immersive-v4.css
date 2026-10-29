@@ -8,7 +8,7 @@
 .ph-campaign-media{position:absolute;z-index:0;inset:-7%;transform-origin:center;will-change:transform,opacity}
 .ph-campaign-media img{width:100%;height:100%;object-fit:cover;object-position:center 28%;filter:saturate(.68) contrast(1.08) brightness(.86)}
 .ph-campaign-shade{position:absolute;z-index:1;inset:0;background:linear-gradient(90deg,rgba(6,5,7,.72) 0%,rgba(6,5,7,.2) 54%,rgba(6,5,7,.46) 100%),linear-gradient(180deg,rgba(0,0,0,.18),transparent 42%,rgba(0,0,0,.38));pointer-events:none}
-.ph-campaign-top{position:absolute;z-index:5;left:4.5vw;right:4.5vw;top:34px;display:flex;align-items:center;gap:16px;font-size:8px;font-weight:800;letter-spacing:.22em}
+.ph-campaign-top{position:absolute;z-index:5;left:4.5vw;right:4.5vw;top:102px;display:flex;align-items:center;gap:16px;font-size:8px;font-weight:800;letter-spacing:.22em}
 .ph-campaign-top i{height:1px;flex:1;background:rgba(255,255,255,.28)}
 .ph-campaign-top b{font-weight:600;color:rgba(255,255,255,.72)}
 .ph-campaign-word{position:absolute;z-index:2;left:0;bottom:-.12em;white-space:nowrap;font:400 clamp(170px,27vw,490px)/.72 var(--serif,'Italiana',serif);letter-spacing:-.09em;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.18);pointer-events:none;will-change:transform}
@@ -64,9 +64,19 @@
 
 /* ---------- CART: obvious escape and zero dead-end feeling ---------- */
 .ds-drawer-head{gap:8px!important}
-.wow-cart-continue{box-shadow:0 6px 18px rgba(239,189,208,.17)!important}
-.ds-cart-footer .ds-pay{transition:transform .3s var(--delu-ease),box-shadow .3s ease!important}
-.ds-cart-footer .ds-pay:hover{transform:translateY(-2px)!important;box-shadow:0 16px 34px rgba(17,16,20,.16)!important}
+.ds-cart-footer{display:flex!important;flex-direction:column!important;align-items:stretch!important}
+.ds-cart-footer>div{order:1!important}
+.ds-cart-footer>small{order:2!important}
+.wow-cart-continue{
+  order:3!important;width:100%!important;min-height:46px!important;margin:0 0 9px!important;padding:0 14px!important;
+  border:1px solid #edcad8!important;border-radius:0!important;background:#fff3f7!important;color:#111014!important;
+  box-shadow:none!important;font-size:8px!important;font-weight:900!important;letter-spacing:.14em!important;text-transform:uppercase!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;z-index:20!important;
+}
+.wow-cart-continue:after{content:'↗';font-size:15px;margin-left:12px;line-height:1;transform:rotate(-45deg)}
+.wow-cart-continue:hover{background:var(--delu-pink)!important;transform:none!important}
+.ds-cart-footer>.ds-pay{order:4!important;transition:transform .3s var(--delu-ease),box-shadow .3s ease!important}
+.ds-cart-footer>.ds-pay:hover{transform:translateY(-2px)!important;box-shadow:0 16px 34px rgba(17,16,20,.16)!important}
 
 /* ---------- ROUTE MOTION: visible but never blocks reading ---------- */
 .wow-route-v3__ribbon{top:38%!important;height:64px!important;background:rgba(239,189,208,.96)!important;backdrop-filter:blur(14px)}
@@ -79,7 +89,7 @@
 @media(max-width:900px){
   .ph-campaign{height:270svh}
   .ph-campaign-sticky{min-height:620px}
-  .ph-campaign-top{left:20px;right:20px;top:24px}
+  .ph-campaign-top{left:20px;right:20px;top:88px}
   .ph-campaign-word{font-size:42vw;bottom:7vh;-webkit-text-stroke-color:rgba(255,255,255,.16)}
   .ph-campaign-copy,.ph-campaign-copy--b{left:22px;right:22px;bottom:72px;width:auto;text-align:left;align-items:flex-start}
   .ph-campaign-copy h2{font-size:clamp(74px,22vw,130px);line-height:.78;margin-bottom:19px}
@@ -90,11 +100,13 @@
   .ds-shop-hero{min-height:330px!important;padding:74px 18px 40px!important}
   .ds-shop-hero h1{font-size:clamp(60px,16vw,94px)!important;max-width:94%!important}
   .ds-shop-hero:before{font-size:68vw!important;right:-.16em!important}
+  .wow-cart-continue{min-height:48px!important;font-size:8px!important;letter-spacing:.12em!important;margin-bottom:10px!important}
 }
 
 @media(max-width:620px){
   .ph-campaign{height:245svh}
   .ph-campaign-sticky{height:100svh;min-height:590px}
+  .ph-campaign-top{top:82px}
   .ph-campaign-top b{display:none}
   .ph-campaign-copy h2{font-size:clamp(68px,23vw,108px)}
   .ph-campaign-copy p{font-size:12px;max-width:90%}
@@ -103,7 +115,7 @@
   .ds-shop-hero h1{font-size:clamp(54px,16vw,78px)!important}
   .wow-route-v3__ribbon{top:41%!important;height:52px!important}
   .wow-route-v3__ribbon span{font-size:26px!important}
-  .wow-cart-continue{font-size:7px!important;max-width:158px!important;padding:0 9px!important}
+  .wow-cart-continue{width:100%!important;max-width:none!important;padding:0 10px!important}
 }
 
 @media(hover:none){
