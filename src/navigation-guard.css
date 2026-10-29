@@ -1,0 +1,50 @@
+/* Commerce navigation safety: remove the legacy drawer/menu path entirely. */
+.ds-header>nav,
+.ds-header>.ds-mobile,
+.ds-mobile-menu{
+  display:none!important;
+}
+
+.commerce-home-link{
+  position:fixed;
+  z-index:140;
+  top:0;
+  left:3.2vw;
+  height:76px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#111014;
+  text-decoration:none;
+  font-size:10px;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.16em;
+}
+.commerce-home-link svg{width:15px;height:15px;stroke-width:1.7}
+.commerce-home-link:after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:21px;
+  height:1px;
+  background:#111014;
+  transform:scaleX(0);
+  transform-origin:right;
+  transition:transform .35s cubic-bezier(.16,1,.3,1);
+}
+.commerce-home-link:hover:after{transform:scaleX(1);transform-origin:left}
+
+@media(max-width:900px){
+  .commerce-home-link{left:18px;height:68px;font-size:9px;gap:6px}
+  .commerce-home-link svg{width:14px;height:14px}
+  .commerce-home-link:after{bottom:17px}
+}
+
+@media(max-width:560px){
+  .commerce-home-link span{display:none}
+  .commerce-home-link{width:40px;justify-content:flex-start}
+  .commerce-home-link svg{width:17px;height:17px}
+  .commerce-home-link:after{display:none}
+}

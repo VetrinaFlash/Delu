@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import App from './App'
 import AdminSecure from './AdminSecure'
+import NavigationGuard from './NavigationGuard'
 import PremiumHome from './PremiumHome'
 import WowMotion from './WowMotion'
 import { products } from './data'
@@ -15,13 +16,14 @@ import './luxury-home.css'
 import './wow-motion.css'
 import './premium-home.css'
 import './unified-storefront.css'
+import './navigation-guard.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
 
 function PublicEntry(){
   const{pathname}=useLocation()
-  return <><WowMotion/>{pathname==='/'?<PremiumHome/>:<App/>}</>
+  return <><WowMotion/>{pathname==='/'?<PremiumHome/>:<><NavigationGuard/><App/></>}</>
 }
 
 async function bootstrap() {
