@@ -5,7 +5,8 @@ import 'lenis/dist/lenis.css'
 export default function SmoothScroll(){
   useEffect(()=>{
     const media=window.matchMedia('(pointer: fine) and (min-width: 901px)')
-    if(!media.matches)return
+    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)')
+    if(!media.matches||reduced.matches)return
 
     const lenis=new Lenis({
       autoRaf:true,

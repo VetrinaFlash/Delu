@@ -1,5 +1,5 @@
-import { useRef } from 'react'
-import { motion, useScroll, useSpring, useTransform } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
 import { ArrowDownRight, ArrowRight, AtSign, Globe2, Heart, MapPin, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { products } from './data'
@@ -29,6 +29,11 @@ const money=(value:number,locale:Locale)=>new Intl.NumberFormat(localeTag[locale
 function HomeInner(){
   const{locale,setLocale,localeNames}=useLocale()
   const c=copy[locale]
+  const reducedMotion=useReducedMotion()
+  const [scene,setScene]=useState(0)
+  const [scrolled,setScrolled]=useState(false)
+  const [travel,setTravel]=useState(0)
+  const trackRef=useRef<HTMLDivElement>(null)
   const heroRef=useRef<HTMLElement>(null)
   const campaignRef=useRef<HTMLElement>(null)
   const showcaseRef=useRef<HTMLElement>(null)
@@ -53,31 +58,43 @@ function HomeInner(){
   const campaignCopyB=useTransform(campaignProgress,[.28,.41,.56,.68],[0,1,1,0])
   const campaignCopyC=useTransform(campaignProgress,[.58,.72,.92,1],[0,1,1,1])
   const campaignWordX=useTransform(campaignProgress,[0,1],['18vw','-58vw'])
-  const trackX=useTransform(showcaseProgress,[0,1],['0vw','-64vw'])
+  const trackX=useTransform(showcaseProgress,[0,1],[0,-travel])
+  useMotionValueEvent(heroProgress,'change',value=>setScrolled(value>.08))
+  useMotionValueEvent(campaignProgress,'change',value=>setScene(value<.34?0:value<.64?1:2))
+  useEffect(()=>{
+    const element=trackRef.current
+    if(!element)return
+    const measure=()=>setTravel(Math.max(0,element.scrollWidth-(window.innerWidth*.69)))
+    const observer=new ResizeObserver(measure)
+    observer.observe(element)
+    window.addEventListener('resize',measure)
+    measure()
+    return()=>{observer.disconnect();window.removeEventListener('resize',measure)}
+  },[])
   const track=useSpring(trackX,{stiffness:85,damping:22,mass:.35})
   const editorialScale=useTransform(editorialProgress,[0,1],[1.08,1])
   const editorialY=useTransform(editorialProgress,[0,1],['-4%','4%'])
   const featured=(products.filter(p=>p.active!==false&&p.new).length?products.filter(p=>p.active!==false&&p.new):products.filter(p=>p.active!==false)).slice(0,4)
 
   return <main className="ph-root">
-    <header className="ph-header">
+    <header className={`ph-header${scrolled?' is-scrolled':''}`}>
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>
       <div className="ph-head-actions">
         <Link to="/shop" aria-label={c.search}><Search/></Link>
         <Link to="/wishlist" aria-label={c.wishlist}><Heart/></Link>
-        <label className="ph-language"><Globe2/><select value={locale} onChange={e=>setLocale(e.target.value as Locale)}>{Object.entries(localeNames).map(([key,label])=><option key={key} value={key}>{key.toUpperCase()} · {label}</option>)}</select></label>
+        <label className="ph-language"><Globe2 aria-hidden="true"/><select aria-label="Language" value={locale} onChange={e=>setLocale(e.target.value as Locale)}>{Object.entries(localeNames).map(([key,label])=><option key={key} value={key}>{key.toUpperCase()} · {label}</option>)}</select></label>
       </div>
     </header>
 
     <section ref={heroRef} className="ph-hero" data-testid="home-hero">
-      <motion.div className="ph-hero-media" style={{scale:heroScale,y:heroY}}>
+      <motion.div className="ph-hero-media" style={reducedMotion?undefined:{scale:heroScale,y:heroY}}>
         <img fetchPriority="high" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90" alt="DeLù editorial"/>
       </motion.div>
       <div className="ph-hero-shade"/>
-      <motion.div className="ph-hero-copy" style={{y:heroTextY}}>
+      <motion.div className="ph-hero-copy" style={reducedMotion?undefined:{y:heroTextY}}>
         <motion.span initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.95,duration:.7}}>{c.season}</motion.span>
-        <div className="ph-hero-title" aria-label={`${c.heroA} ${c.heroB}`}>
+        <div className="ph-hero-title" role="heading" aria-level={1} aria-label={`${c.heroA} ${c.heroB}`}>
           <motion.div initial={{y:'115%'}} animate={{y:0}} transition={{delay:.82,duration:.9,ease:[.16,1,.3,1]}}>{c.heroA}</motion.div>
           <motion.div className="is-italic" initial={{y:'115%'}} animate={{y:0}} transition={{delay:.92,duration:.95,ease:[.16,1,.3,1]}}>{c.heroB}</motion.div>
         </div>
@@ -101,11 +118,11 @@ function HomeInner(){
         <motion.div className="ph-campaign-media" style={{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
         <motion.div className="ph-campaign-media" style={{opacity:campaignThreeOpacity,scale:campaignThreeScale,y:campaignThreeY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=88" alt="DeLù personal style"/></motion.div>
         <div className="ph-campaign-shade"/>
-        <div className="ph-campaign-top"><span>{c.campaignLabel}</span><i/><b>01 — 03</b></div>
+        <div className="ph-campaign-top"><span>{c.campaignLabel}</span><i/><b>{String(scene+1).padStart(2,'0')} — 03</b></div>
         <motion.div className="ph-campaign-word" style={{x:campaignWordX}} aria-hidden="true">DELÙ · DELÙ · DELÙ</motion.div>
-        <motion.div className="ph-campaign-copy ph-campaign-copy--a" style={{opacity:campaignCopyA}}><small>01</small><h2>{c.campaignA}</h2><p>{c.campaignAText}</p></motion.div>
-        <motion.div className="ph-campaign-copy ph-campaign-copy--b" style={{opacity:campaignCopyB}}><small>02</small><h2>{c.campaignB}</h2><p>{c.campaignBText}</p></motion.div>
-        <motion.div className="ph-campaign-copy ph-campaign-copy--c" style={{opacity:campaignCopyC}}><small>03</small><h2>{c.campaignC}</h2><p>{c.campaignCText}</p><Link to="/shop">{c.discover}<ArrowRight/></Link></motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--a" inert={!reducedMotion&&scene!==0} aria-hidden={!reducedMotion&&scene!==0} style={{opacity:campaignCopyA}}><small>01</small><h2>{c.campaignA}</h2><p>{c.campaignAText}</p></motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--b" inert={!reducedMotion&&scene!==1} aria-hidden={!reducedMotion&&scene!==1} style={{opacity:campaignCopyB}}><small>02</small><h2>{c.campaignB}</h2><p>{c.campaignBText}</p></motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--c" inert={!reducedMotion&&scene!==2} aria-hidden={!reducedMotion&&scene!==2} style={{opacity:campaignCopyC}}><small>03</small><h2>{c.campaignC}</h2><p>{c.campaignCText}</p><Link to="/shop">{c.discover}<ArrowRight/></Link></motion.div>
         <div className="ph-campaign-progress"><motion.i style={{scaleX:campaignProgress}}/></div>
       </div>
     </section>
@@ -115,10 +132,10 @@ function HomeInner(){
         <div className="ph-showcase-title">
           <span>{c.newLabel}</span>
           <h2>{c.newTitle}</h2>
-          <p>01 — 04</p>
+          <p>01 — {String(featured.length).padStart(2,'0')}</p>
           <Link to="/shop?new=1">{c.viewAll}<ArrowRight/></Link>
         </div>
-        <motion.div className="ph-product-track" style={{x:track}}>
+        <motion.div ref={trackRef} className="ph-product-track" style={reducedMotion?undefined:{x:track}}>
           {featured.map((p,index)=><motion.article className="ph-card" key={p.id} whileHover={{y:-12}} transition={{type:'spring',stiffness:260,damping:22}}>
             <Link className="ph-card-image" to={`/product/${p.id}`}>
               <motion.img loading="lazy" decoding="async" src={p.image} alt={p.name} whileHover={{scale:1.035}} transition={{duration:.75,ease:[.16,1,.3,1]}}/>
@@ -133,7 +150,7 @@ function HomeInner(){
     </section>
 
     <section ref={editorialRef} className="ph-editorial">
-      <motion.div className="ph-editorial-image" style={{scale:editorialScale,y:editorialY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2200&q=90" alt="DeLù style"/></motion.div>
+      <motion.div className="ph-editorial-image" style={reducedMotion?undefined:{scale:editorialScale,y:editorialY}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2200&q=90" alt="DeLù style"/></motion.div>
       <div className="ph-editorial-shade"/>
       <div className="ph-editorial-copy"><span>{c.editorialLabel}</span><motion.h2 initial={{clipPath:'inset(0 0 100% 0)'}} whileInView={{clipPath:'inset(0 0 0% 0)'}} viewport={{once:true,amount:.45}} transition={{duration:1.05,ease:[.16,1,.3,1]}}>{c.editorialTitle}</motion.h2><p>{c.editorialText}</p><Link to="/shop">{c.editorialCta}<ArrowRight/></Link></div>
       <div className="ph-editorial-word">DELÙ</div>

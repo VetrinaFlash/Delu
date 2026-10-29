@@ -108,3 +108,25 @@ test.describe('DeLù customer experience',()=>{
     expect(pageErrors).toEqual([])
   })
 })
+
+test('small screens and translated headings stay inside the viewport',async({page})=>{
+  for(const width of [320,390,768,1024]){
+    await page.setViewportSize({width,height:800})
+    await page.goto('/')
+    await page.locator('.ph-language select').selectOption('de')
+    await expect(page.locator('.ph-hero-title')).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+    const bounds=await page.locator('.ph-hero-title').boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(width+2)
+  }
+})
+test('reduced motion retains the hero image and all featured products',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'})
+  await page.goto('/')
+  await expect(page.locator('.ph-hero-media')).toHaveCSS('clip-path','none')
+  await expect(page.locator('.ph-showcase')).toHaveCSS('height',/px/)
+  await page.locator('.ph-card').last().scrollIntoViewIfNeeded()
+  await expect(page.locator('.ph-card').last()).toBeInViewport()
+  await expectNoHorizontalOverflow(page)
+})

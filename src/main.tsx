@@ -1,3 +1,4 @@
+import { MotionConfig } from 'motion/react'
 import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
@@ -39,11 +40,11 @@ function PublicEntry(){
 function renderApp(){
   root.render(
     <React.StrictMode>
-      <BrowserRouter>
+      <MotionConfig reducedMotion="user"><BrowserRouter>
         <Suspense fallback={<RouteFallback/>}>
           {isAdminRoute ? <AdminSecure /> : <PublicEntry/>}
         </Suspense>
-      </BrowserRouter>
+      </BrowserRouter></MotionConfig>
     </React.StrictMode>,
   )
 }

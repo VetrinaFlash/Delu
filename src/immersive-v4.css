@@ -124,3 +124,49 @@
   .ph-campaign-media,.ph-campaign-copy{opacity:1!important;transform:none!important}
   .ds-product-main-image:after{animation:none!important;display:none!important}
 }
+
+/* Layout and motion reliability: all sections remain readable at every viewport. */
+.ph-header.is-scrolled{background:rgba(20,17,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.15)}
+.ph-root :focus-visible{outline:2px solid #e875a4;outline-offset:6px}
+.ph-hero-title{margin:0;line-height:.98}
+.ph-hero-title>div{overflow:visible}
+.ph-hero-copy{top:auto;bottom:12%;transform:none}
+.ph-statement-line{white-space:normal;overflow-wrap:normal;font-size:clamp(42px,9.5vw,180px);line-height:1.04}
+.ph-campaign-copy h2{font-size:clamp(58px,9vw,160px);line-height:1.03;overflow-wrap:anywhere}
+.ph-campaign-copy[inert]{pointer-events:none}
+.ph-showcase-sticky{grid-template-columns:27vw minmax(0,1fr)}
+.ph-showcase-title{background:#f7f4f5;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.ph-card{min-width:0;width:min(31vw,calc((100svh - 210px)*.75));flex-shrink:0}
+.ph-card-meta>div{min-width:0}
+.ph-card-meta a{overflow-wrap:anywhere}
+.ph-editorial-copy h2,.ph-visit h2{line-height:1.03}
+.ph-hero-cta,.ph-editorial-copy a,.ph-campaign-copy--c a{min-height:44px;max-width:100%}
+.ph-head-link{min-height:44px;display:flex;align-items:center}
+.ph-hero-media{clip-path:none;animation:deluHeroCurtain .9s .15s var(--delu-ease) both}
+.ph-mood-card h3{overflow-wrap:anywhere}
+@media(max-width:980px){
+ .ph-hero-copy{bottom:8%;top:auto}
+ .ph-card{width:auto}
+ .ph-showcase-title{display:block}
+ .ph-campaign-sticky{min-height:0;height:100svh}
+ .ph-campaign-copy h2{font-size:clamp(48px,12vw,100px)}
+ .ph-hero-title{font-size:clamp(48px,13vw,112px);line-height:1.02}
+ .ph-hero-title .is-italic{padding-left:0}
+ .ph-campaign-copy{bottom:65px}
+}
+@media(max-height:600px) and (min-width:621px){
+ .ph-hero{min-height:560px}
+ .ph-campaign-copy h2{font-size:60px;margin-bottom:12px}
+ .ph-campaign-top{top:90px}
+ .ph-campaign-copy{bottom:48px}
+ .ph-campaign-copy p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .ph-hero-media{clip-path:none!important;transform:none!important}
+ .ph-showcase{height:auto!important;padding:100px 4vw}
+ .ph-showcase-sticky{position:relative;height:auto;display:block;overflow:visible}
+ .ph-product-track{transform:none!important;width:100%;padding:30px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ph-card{width:auto;max-width:none;transform:none!important}
+ .ph-editorial-image,.ph-hero-copy{transform:none!important}
+ .ph-scroll-cue,.wow-intro,.wow-orb{display:none!important}
+}
