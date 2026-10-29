@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useMotionValue, useScroll, useSpring, useTransform } from 'motion/react'
 import { useLocation } from 'react-router-dom'
+
+const continueCopy:Record<string,string>={it:'CONTINUA GLI ACQUISTI',en:'CONTINUE SHOPPING',fr:'CONTINUER LES ACHATS',de:'WEITER EINKAUFEN',es:'SEGUIR COMPRANDO'}
 
 export default function WowMotion(){
   const location=useLocation()
@@ -13,6 +16,8 @@ export default function WowMotion(){
   const y=useSpring(mouseY,{stiffness:120,damping:24,mass:.25})
   const[intro,setIntro]=useState(true)
   const[routeSignal,setRouteSignal]=useState(0)
+  const[cartTarget,setCartTarget]=useState<HTMLElement|null>(null)
+  const[cartLabel,setCartLabel]=useState(continueCopy.it)
   const firstRoute=useRef(true)
 
   useEffect(()=>{
@@ -23,16 +28,31 @@ export default function WowMotion(){
   },[])
 
   useEffect(()=>{
+    const sync=()=>{
+      setCartTarget(document.querySelector('.ds-drawer-head') as HTMLElement|null)
+      const lang=(document.documentElement.lang||'it').slice(0,2)
+      setCartLabel(continueCopy[lang]||continueCopy.it)
+    }
+    sync()
+    const observer=new MutationObserver(sync)
+    observer.observe(document.body,{childList:true,subtree:true})
+    return()=>observer.disconnect()
+  },[])
+
+  useEffect(()=>{
     if(firstRoute.current){firstRoute.current=false;return}
     setRouteSignal(v=>v+1)
   },[location.pathname,location.search])
 
   const routeLabel=location.pathname.startsWith('/shop')?'SHOP':location.pathname.startsWith('/product')?'DETAIL':location.pathname.startsWith('/checkout')?'CHECKOUT':location.pathname.startsWith('/wishlist')?'WISHLIST':'DELÙ'
   const isHome=location.pathname==='/'
+  const closeCart=()=>{(document.querySelector('.ds-drawer-head .ds-icon') as HTMLButtonElement|null)?.click()}
 
   return <>
     <motion.div className="wow-progress" style={{scaleX:progress}}/>
     <motion.div className="wow-orb" style={{x,y}}/>
+
+    {cartTarget&&createPortal(<button type="button" className="wow-cart-continue" onClick={closeCart}>{cartLabel}</button>,cartTarget)}
 
     {isHome&&<motion.div className="wow-home-kinetic" style={{x:homeGhostX,opacity:homeGhostOpacity}} aria-hidden="true">
       <span>DELÙ</span><i>FOLLONICA / 2026</i>
