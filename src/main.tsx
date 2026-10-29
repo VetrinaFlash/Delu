@@ -1,8 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, useLocation } from 'react-router-dom'
 import App from './App'
 import AdminSecure from './AdminSecure'
+import PremiumHome from './PremiumHome'
 import WowMotion from './WowMotion'
 import { products } from './data'
 import './styles.css'
@@ -12,9 +13,15 @@ import './polish.css'
 import './admin-commerce.css'
 import './luxury-home.css'
 import './wow-motion.css'
+import './premium-home.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
+
+function PublicEntry(){
+  const{pathname}=useLocation()
+  return <><WowMotion/>{pathname==='/'?<PremiumHome/>:<App/>}</>
+}
 
 async function bootstrap() {
   if (!isAdminRoute) {
@@ -32,7 +39,7 @@ async function bootstrap() {
   root.render(
     <React.StrictMode>
       <BrowserRouter>
-        {isAdminRoute ? <AdminSecure /> : <><WowMotion/><App/></>}
+        {isAdminRoute ? <AdminSecure /> : <PublicEntry/>}
       </BrowserRouter>
     </React.StrictMode>,
   )
