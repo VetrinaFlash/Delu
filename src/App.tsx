@@ -1,238 +1,58 @@
-import { useMemo, useState } from 'react'
-import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'motion/react'
-import {
-  ArrowRight, ShoppingBag as Bag, ChevronDown, CircleUserRound, Heart, LayoutDashboard,
-  LockKeyhole, LogOut, Menu, Package, Search, ShoppingBag, SlidersHorizontal,
-  Sparkles, Truck, X, Plus, Pencil, Eye, Box, TrendingUp, AlertTriangle,
-} from 'lucide-react'
-import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { orders as seedOrders, products as seedProducts, type Product } from './data'
+import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react'
+import { ArrowRight, ChevronDown, Globe2, Heart, LockKeyhole, Menu, Package, Plus, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Sparkles, Truck, X } from 'lucide-react'
+import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
+import { products, type Product } from './data'
+import { LocaleProvider, useLocale, type Locale } from './i18n'
 
-type CartItem = { product: Product; qty: number; size?: string; color?: string }
+type CartItem={product:Product;qty:number;size?:string;color?:string}
+type ShippingZone='IT'|'EU'|'EUROPE'|'WORLD'
+const EU=new Set(['FR','DE','ES','AT','BE','NL','LU','PT','IE','GR','FI','SE','DK','PL','CZ','HR','RO','BG','HU','SI','SK','EE','LV','LT','CY','MT'])
+const EUROPE=new Set(['CH','GB','NO','IS','LI','AL','BA','ME','MK','RS','MD','UA'])
+const COUNTRIES=[['IT','Italia'],['FR','France'],['DE','Deutschland'],['ES','España'],['AT','Austria'],['BE','Belgium'],['NL','Netherlands'],['PT','Portugal'],['IE','Ireland'],['GR','Greece'],['CH','Switzerland'],['GB','United Kingdom'],['NO','Norway'],['US','United States'],['CA','Canada'],['AU','Australia'],['JP','Japan'],['AE','United Arab Emirates']]
+const zoneFor=(c:string):ShippingZone=>c==='IT'?'IT':EU.has(c)?'EU':EUROPE.has(c)?'EUROPE':'WORLD'
+const shippingCost=(country:string,subtotal:number)=>{const z=zoneFor(country);if(z==='IT')return subtotal>=79?0:6.9;if(z==='EU')return subtotal>=150?0:14.9;if(z==='EUROPE')return 19.9;return 29.9}
+const localeTag:Record<Locale,string>={it:'it-IT',en:'en-GB',fr:'fr-FR',de:'de-DE',es:'es-ES'}
 
-const money = (value: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value)
-
-function Brand({ light = false }: { light?: boolean }) {
-  return (
-    <Link to="/" className={`brand ${light ? 'brand--light' : ''}`} aria-label="Thelu Clothes Shop home">
-      <span className="brand-mark">T</span>
-      <span className="brand-name">THELU</span>
-      <span className="brand-sub">CLOTHES SHOP</span>
-    </Link>
-  )
+function money(v:number,locale:Locale){return new Intl.NumberFormat(localeTag[locale],{style:'currency',currency:'EUR'}).format(v)}
+function useCart(){
+  const [items,setItems]=useState<CartItem[]>(()=>{try{return JSON.parse(localStorage.getItem('delu_cart')||'[]')}catch{return[]}})
+  useEffect(()=>localStorage.setItem('delu_cart',JSON.stringify(items)),[items])
+  const add=(product:Product,size?:string,color?:string)=>setItems(old=>{const i=old.findIndex(x=>x.product.id===product.id&&x.size===size&&x.color===color);if(i<0)return[...old,{product,qty:1,size,color}];return old.map((x,n)=>n===i?{...x,qty:x.qty+1}:x)})
+  const remove=(index:number)=>setItems(old=>old.filter((_,i)=>i!==index))
+  const count=items.reduce((s,x)=>s+x.qty,0), subtotal=items.reduce((s,x)=>s+x.product.price*x.qty,0)
+  return{items,setItems,add,remove,count,subtotal}
 }
 
-function Header({ cartCount, onCart }: { cartCount: number; onCart: () => void }) {
-  const [mobile, setMobile] = useState(false)
-  const location = useLocation()
-  if (location.pathname.startsWith('/admin')) return null
-  return (
-    <>
-      <div className="announcement">SPEDIZIONE GRATUITA DA 79€ <span>•</span> NUOVI DROP OGNI SETTIMANA <span>•</span> RESO FACILE</div>
-      <header className="site-header">
-        <button className="icon-btn mobile-only" onClick={() => setMobile(true)} aria-label="Apri menu"><Menu size={20}/></button>
-        <nav className="desktop-nav">
-          <Link to="/shop">SHOP</Link><Link to="/shop?new=1">NEW IN</Link><Link to="/shop?edit=1">THELU EDIT</Link>
-        </nav>
-        <Brand />
-        <div className="header-actions">
-          <Link className="icon-btn desktop-only" to="/shop" aria-label="Cerca"><Search size={19}/></Link>
-          <Link className="icon-btn desktop-only" to="/shop" aria-label="Preferiti"><Heart size={19}/></Link>
-          <button className="icon-btn cart-icon" onClick={onCart} aria-label="Carrello"><Bag size={19}/><span>{cartCount}</span></button>
-        </div>
-      </header>
-      <AnimatePresence>
-        {mobile && <motion.aside className="mobile-menu" initial={{x:'-100%'}} animate={{x:0}} exit={{x:'-100%'}} transition={{type:'spring', damping:28, stiffness:260}}>
-          <div className="mobile-menu-top"><Brand/><button className="icon-btn" onClick={() => setMobile(false)}><X/></button></div>
-          <Link to="/shop" onClick={()=>setMobile(false)}>Shop <ArrowRight/></Link>
-          <Link to="/shop?new=1" onClick={()=>setMobile(false)}>New in <ArrowRight/></Link>
-          <Link to="/shop?edit=1" onClick={()=>setMobile(false)}>Thelu edit <ArrowRight/></Link>
-          <Link to="/admin" onClick={()=>setMobile(false)}>Area riservata <LockKeyhole/></Link>
-        </motion.aside>}
-      </AnimatePresence>
-    </>
-  )
+function Brand({compact=false}:{compact?:boolean}){return <Link to="/" className={`ds-brand ${compact?'ds-brand--compact':''}`} aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>}
+
+function LanguagePicker(){const{locale,setLocale,localeNames,t}=useLocale();return <label className="ds-language" aria-label={t('language')}><Globe2 size={16}/><select value={locale} onChange={e=>setLocale(e.target.value as Locale)}>{Object.entries(localeNames).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>}
+
+function Header({count,onCart}:{count:number;onCart:()=>void}){
+ const{t}=useLocale();const[mobile,setMobile]=useState(false)
+ return <><div className="ds-announcement"><span>{t('announcement')}</span><i>✦</i><span>{t('madeItaly')}</span><i>✦</i><span>{t('returns')}</span></div>
+ <header className="ds-header"><button className="ds-icon ds-mobile" onClick={()=>setMobile(true)}><Menu/></button><nav><Link to="/shop">{t('shop')}</Link><Link to="/shop?new=1">{t('newIn')}</Link><Link to="/shop?edit=1">{t('edit')}</Link></nav><Brand/><div className="ds-actions"><LanguagePicker/><Link className="ds-icon ds-desktop" to="/shop"><Search/></Link><button className="ds-icon ds-cart" onClick={onCart}><ShoppingBag/><b>{count}</b></button></div></header>
+ <AnimatePresence>{mobile&&<motion.aside className="ds-mobile-menu" initial={{x:'-100%'}} animate={{x:0}} exit={{x:'-100%'}} transition={{type:'spring',stiffness:260,damping:28}}><div><Brand compact/><button className="ds-icon" onClick={()=>setMobile(false)}><X/></button></div><Link onClick={()=>setMobile(false)} to="/shop">{t('shop')}<ArrowRight/></Link><Link onClick={()=>setMobile(false)} to="/shop?new=1">{t('newIn')}<ArrowRight/></Link><Link onClick={()=>setMobile(false)} to="/shop?edit=1">{t('edit')}<ArrowRight/></Link><Link onClick={()=>setMobile(false)} to="/admin">{t('admin')}<LockKeyhole/></Link><LanguagePicker/></motion.aside>}</AnimatePresence></>
 }
 
-function Hero() {
-  const { scrollY } = useScroll()
-  const heroY = useTransform(scrollY, [0, 800], [0, 120])
-  const heroScale = useTransform(scrollY, [0, 800], [1, 1.08])
-  return (
-    <section className="hero">
-      <motion.div className="hero-media" style={{ y: heroY, scale: heroScale }}>
-        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=2000&q=90" alt="Thelu fashion collection"/>
-      </motion.div>
-      <div className="hero-shade"/>
-      <motion.div className="hero-copy" initial={{opacity:0,y:28}} animate={{opacity:1,y:0}} transition={{duration:.9,ease:[.16,1,.3,1]}}>
-        <span className="eyebrow light">THE NEW FEMININE</span>
-        <h1>Wear the<br/><em>moment.</em></h1>
-        <p>Una selezione femminile pensata per farsi notare senza chiedere permesso.</p>
-        <Link to="/shop" className="btn btn-light">SCOPRI LA COLLEZIONE <ArrowRight size={16}/></Link>
-      </motion.div>
-      <div className="hero-side-note">THELU / COLLECTION 01 / 2026</div>
-      <motion.div className="scroll-cue" animate={{y:[0,8,0]}} transition={{duration:1.8,repeat:Infinity}}>SCROLL <ChevronDown size={15}/></motion.div>
-    </section>
-  )
-}
+function Hero(){const{t}=useLocale();const{scrollY}=useScroll();const y=useTransform(scrollY,[0,800],[0,130]);const scale=useTransform(scrollY,[0,800],[1,1.08]);return <section className="ds-hero"><motion.img style={{y,scale}} src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=2100&q=90" alt="DeLù fashion"/><div className="ds-hero-shade"/><motion.div className="ds-hero-copy" initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{duration:.9,ease:[.16,1,.3,1]}}><span>{t('eyebrow')}</span><h1>{t('heroTitle')}</h1><p>{t('heroText')}</p><Link to="/shop" className="ds-button ds-button--light">{t('discover')}<ArrowRight/></Link></motion.div><motion.div className="ds-scroll" animate={{y:[0,8,0]}} transition={{repeat:Infinity,duration:1.8}}>SCROLL<ChevronDown/></motion.div></section>}
+function Marquee(){return <div className="ds-marquee"><motion.div animate={{x:['0%','-50%']}} transition={{repeat:Infinity,duration:24,ease:'linear'}}>{Array.from({length:8}).map((_,i)=><span key={i}>DELÙ ✦ MADE IN ITALY ✦ FEMININE ENERGY ✦ WORLDWIDE SHIPPING ✦ </span>)}</motion.div></div>}
 
-function Marquee() {
-  return <div className="marquee"><motion.div animate={{x:['0%','-50%']}} transition={{duration:24,repeat:Infinity,ease:'linear'}}>
-    {Array.from({length:8}).map((_,i)=><span key={i}>THELU <i>✦</i> FEMININE ENERGY <i>✦</i> NEW DROP <i>✦</i> </span>)}
-  </motion.div></div>
-}
+function ProductCard({p,onAdd}:{p:Product;onAdd:(p:Product)=>void}){const{t,locale}=useLocale();return <motion.article className="ds-product" layout whileHover={{y:-7}}><Link to={`/product/${p.id}`} className="ds-product-image"><img src={p.image} alt={p.name}/><div>{p.new&&<span>NEW</span>}{p.stock<10&&<span>{t('last')}</span>}</div><b>{t('view')}</b></Link><div className="ds-product-info"><div><Link to={`/product/${p.id}`}>{p.name}</Link><small>{p.category}</small></div><strong>{money(p.price,locale)}{p.compareAt&&<del>{money(p.compareAt,locale)}</del>}</strong></div><button onClick={()=>onAdd(p)}>{t('add')}<Plus/></button></motion.article>}
 
-function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)=>void }) {
-  return (
-    <motion.article className="product-card" layout whileHover={{y:-6}} transition={{duration:.25}}>
-      <Link to={`/product/${product.id}`} className="product-image-wrap">
-        <img src={product.image} alt={product.name} className="product-image"/>
-        <div className="product-badges">{product.new && <span>NEW</span>}{product.stock < 10 && <span>LAST PIECES</span>}</div>
-        <motion.div className="quick-view" initial={false}>VIEW</motion.div>
-      </Link>
-      <div className="product-info">
-        <div><Link to={`/product/${product.id}`}>{product.name}</Link><span>{product.category}</span></div>
-        <div className="price">{money(product.price)} {product.compareAt && <del>{money(product.compareAt)}</del>}</div>
-      </div>
-      <button className="quick-add" onClick={()=>onAdd(product)}>AGGIUNGI <Plus size={15}/></button>
-    </motion.article>
-  )
-}
+function Home({onAdd}:{onAdd:(p:Product)=>void}){const{t}=useLocale();return <main><Hero/><Marquee/><section className="ds-section ds-editorial"><div className="ds-section-head"><div><span>{t('selection')}</span><h2>{t('attitude')}</h2></div><p>{t('attitudeText')}</p></div><div className="ds-editorial-grid"><Link className="ds-editorial-card ds-editorial-card--big" to="/shop"><img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1500&q=90" alt="DeLù edit"/><div><span>01 / DELÙ NIGHT</span><h3>After dark.</h3><b>{t('shopNow')}<ArrowRight/></b></div></Link><div className="ds-editorial-stack"><Link className="ds-editorial-card" to="/shop"><img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1500&q=90" alt="DeLù daily"/><div><span>02 / DAILY</span><h3>Everyday, elevated.</h3><b>{t('explore')}<ArrowRight/></b></div></Link><div className="ds-statement"><Sparkles/><h3>Dress like you’re already there.</h3><span>DELÙ MANIFESTO</span></div></div></div></section><section className="ds-section"><div className="ds-title-row"><div><span>{t('justLanded')}</span><h2>{t('obsession')}</h2></div><Link to="/shop">{t('seeAll')}<ArrowRight/></Link></div><div className="ds-products">{products.slice(0,4).map(p=><ProductCard key={p.id} p={p} onAdd={onAdd}/>)}</div></section><section className="ds-story"><img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1700&q=90" alt="DeLù style"/><div><span>{t('world')}</span><h2>{t('worldTitle')}</h2><p>{t('worldText')}</p><Link to="/shop">{t('enterShop')}<ArrowRight/></Link></div></section><section className="ds-benefits"><div><Truck/><b>{t('tracked')}</b><span>{t('worldwide')}</span></div><div><ShoppingBag/><b>{t('weekly')}</b><span>New drops</span></div><div><Heart/><b>{t('selected')}</b><span>Follonica / Italy</span></div></section></main>}
 
-function Home({ onAdd }: { onAdd: (p: Product)=>void }) {
-  return <main>
-    <Hero/>
-    <Marquee/>
-    <section className="editorial section-pad">
-      <motion.div className="section-head" initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.3}}>
-        <div><span className="eyebrow">THELU SELECTION</span><h2>Not just clothes.<br/><em>An attitude.</em></h2></div>
-        <p>Linee contemporanee, dettagli femminili e pezzi che cambiano energia a un look. Scegli il tuo mood.</p>
-      </motion.div>
-      <div className="editorial-grid">
-        <motion.a href="/shop" className="editorial-card editorial-card--tall" whileHover="hover">
-          <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=90" alt="Party edit"/>
-          <div className="editorial-overlay"><span>01 / THE PARTY EDIT</span><h3>After<br/>dark.</h3><b>SHOP NOW <ArrowRight/></b></div>
-        </motion.a>
-        <div className="editorial-stack">
-          <motion.a href="/shop" className="editorial-card" whileHover="hover">
-            <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1400&q=90" alt="Daily essentials"/>
-            <div className="editorial-overlay"><span>02 / DAILY</span><h3>Everyday,<br/>elevated.</h3><b>EXPLORE <ArrowRight/></b></div>
-          </motion.a>
-          <div className="statement-card"><Sparkles/><p>Dress like you're<br/>already <em>there.</em></p><span>THELU MANIFESTO</span></div>
-        </div>
-      </div>
-    </section>
-    <section className="featured section-pad">
-      <div className="section-title-row"><div><span className="eyebrow">JUST LANDED</span><h2>New obsession.</h2></div><Link to="/shop">VEDI TUTTO <ArrowRight size={17}/></Link></div>
-      <div className="product-grid">{seedProducts.slice(0,4).map(p=><ProductCard key={p.id} product={p} onAdd={onAdd}/>)}</div>
-    </section>
-    <section className="split-story">
-      <motion.div className="split-image" initial={{clipPath:'inset(12% 12% 12% 12%)'}} whileInView={{clipPath:'inset(0% 0% 0% 0%)'}} transition={{duration:1,ease:[.16,1,.3,1]}} viewport={{once:true}}><img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=90" alt="Thelu street style"/></motion.div>
-      <div className="split-copy"><span className="eyebrow">THELU WORLD</span><h2>You don't follow<br/>the look.<br/><em>You set it.</em></h2><p>Uno spazio dove il guardaroba diventa espressione. Nuovi arrivi, capsule e selezioni curate per donne che scelgono il proprio stile.</p><Link to="/shop" className="text-link">ENTER THE SHOP <ArrowRight/></Link></div>
-    </section>
-    <section className="benefits section-pad"><div><Truck/><b>Spedizione rapida</b><span>Consegna tracciata</span></div><div><ShoppingBag/><b>Drop selezionati</b><span>Novità ogni settimana</span></div><div><Heart/><b>Scelto da Thelu</b><span>Qualità e stile prima di tutto</span></div></section>
-  </main>
-}
+function Shop({onAdd}:{onAdd:(p:Product)=>void}){const{t}=useLocale();const[category,setCategory]=useState('all'),[color,setColor]=useState('all'),[size,setSize]=useState('all'),[sort,setSort]=useState('featured'),[open,setOpen]=useState(false);const categories=['all',...new Set(products.map(p=>p.category))],colors=['all',...new Set(products.flatMap(p=>p.colors))],sizes=['all',...new Set(products.flatMap(p=>p.sizes))];const visible=useMemo(()=>{let a=products.filter(p=>(category==='all'||p.category===category)&&(color==='all'||p.colors.includes(color))&&(size==='all'||p.sizes.includes(size)));if(sort==='new')a=[...a].sort((a,b)=>Number(b.new)-Number(a.new));if(sort==='low')a=[...a].sort((a,b)=>a.price-b.price);if(sort==='high')a=[...a].sort((a,b)=>b.price-a.price);return a},[category,color,size,sort]);return <main><section className="ds-shop-hero"><span>{t('collection')}</span><h1>{t('shopMood')}</h1><p>{products.length} {t('pieces')}</p></section><div className="ds-toolbar"><button onClick={()=>setOpen(!open)}><SlidersHorizontal/>{t('filters')} <b>{visible.length}</b></button><div>{categories.map(c=><button className={category===c?'active':''} onClick={()=>setCategory(c)} key={c}>{c==='all'?t('shop'):c}</button>)}</div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="featured">{t('featured')}</option><option value="new">{t('newest')}</option><option value="low">{t('priceLow')}</option><option value="high">{t('priceHigh')}</option></select></div><AnimatePresence>{open&&<motion.div className="ds-filter-panel" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}><div><b>{t('color')}</b>{colors.map(c=><button className={color===c?'active':''} onClick={()=>setColor(c)} key={c}>{c==='all'?'ALL':c}</button>)}</div><div><b>{t('size')}</b>{sizes.map(s=><button className={size===s?'active':''} onClick={()=>setSize(s)} key={s}>{s==='all'?'ALL':s}</button>)}</div><button onClick={()=>{setCategory('all');setColor('all');setSize('all')}}>{t('clear')}</button></motion.div>}</AnimatePresence><section className="ds-section"><div className="ds-products">{visible.map(p=><ProductCard key={p.id} p={p} onAdd={onAdd}/>)}</div></section></main>}
 
-function Shop({ onAdd }: { onAdd:(p:Product)=>void }) {
-  const [category,setCategory]=useState('Tutti')
-  const [color,setColor]=useState('Tutti')
-  const [size,setSize]=useState('Tutte')
-  const [sort,setSort]=useState('featured')
-  const [filters,setFilters]=useState(false)
-  const categories=['Tutti',...Array.from(new Set(seedProducts.map(p=>p.category)))]
-  const colors=['Tutti',...Array.from(new Set(seedProducts.flatMap(p=>p.colors)))]
-  const sizes=['Tutte',...Array.from(new Set(seedProducts.flatMap(p=>p.sizes)))]
-  const visible=useMemo(()=>{
-    let list=seedProducts.filter(p=>(category==='Tutti'||p.category===category)&&(color==='Tutti'||p.colors.includes(color))&&(size==='Tutte'||p.sizes.includes(size)))
-    if(sort==='price-low') list=[...list].sort((a,b)=>a.price-b.price)
-    if(sort==='price-high') list=[...list].sort((a,b)=>b.price-a.price)
-    if(sort==='new') list=[...list].sort((a,b)=>Number(b.new)-Number(a.new))
-    return list
-  },[category,color,size,sort])
-  return <main className="shop-page">
-    <section className="shop-hero"><span className="eyebrow">THE COLLECTION</span><h1>Shop <em>the mood.</em></h1><p>{seedProducts.length} pezzi selezionati. Trova quello che parla di te.</p></section>
-    <div className="shop-toolbar section-pad-x">
-      <button className="filter-trigger" onClick={()=>setFilters(!filters)}><SlidersHorizontal size={17}/> FILTRI <span>{visible.length}</span></button>
-      <div className="category-pills">{categories.map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(c)}>{c}</button>)}</div>
-      <select value={sort} onChange={e=>setSort(e.target.value)} aria-label="Ordina prodotti"><option value="featured">In evidenza</option><option value="new">Più recenti</option><option value="price-low">Prezzo crescente</option><option value="price-high">Prezzo decrescente</option></select>
-    </div>
-    <AnimatePresence>{filters&&<motion.div className="filter-panel section-pad-x" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}>
-      <div><label>COLORE</label><div className="filter-chips">{colors.map(c=><button className={color===c?'active':''} onClick={()=>setColor(c)} key={c}>{c}</button>)}</div></div>
-      <div><label>TAGLIA</label><div className="filter-chips">{sizes.map(s=><button className={size===s?'active':''} onClick={()=>setSize(s)} key={s}>{s}</button>)}</div></div>
-      <button className="clear-filter" onClick={()=>{setCategory('Tutti');setColor('Tutti');setSize('Tutte')}}>Azzera filtri</button>
-    </motion.div>}</AnimatePresence>
-    <section className="product-grid product-grid--shop section-pad">{visible.map(p=><ProductCard key={p.id} product={p} onAdd={onAdd}/>)}</section>
-  </main>
-}
+function ProductPage({onAdd}:{onAdd:(p:Product,s?:string,c?:string)=>void}){const{id}=useParams();const{t,locale}=useLocale();const p=products.find(x=>x.id===id);const[size,setSize]=useState(''),[color,setColor]=useState(p?.colors[0]||'');if(!p)return <Navigate to="/shop" replace/>;return <main className="ds-product-page"><motion.div initial={{opacity:0,scale:.98}} animate={{opacity:1,scale:1}} className="ds-product-main-image"><img src={p.image} alt={p.name}/></motion.div><motion.div initial={{opacity:0,x:25}} animate={{opacity:1,x:0}} className="ds-product-detail"><span>{p.category}</span><h1>{p.name}</h1><strong>{money(p.price,locale)} {p.compareAt&&<del>{money(p.compareAt,locale)}</del>}</strong><p>{t('attitudeText')}</p><div className="ds-option"><b>{t('color')}</b><div>{p.colors.map(c=><button className={color===c?'active':''} onClick={()=>setColor(c)} key={c}>{c}</button>)}</div></div><div className="ds-option"><b>{t('size')}</b><div>{p.sizes.map(s=><button className={size===s?'active':''} onClick={()=>setSize(s)} key={s}>{s}</button>)}</div></div><button className="ds-pay" onClick={()=>onAdd(p,size||p.sizes[0],color)}>{t('addCart')}<ShoppingBag/></button><small><Truck/> {t('tracked')} · {p.stock} {t('available')}</small></motion.div></main>}
 
-function ProductPage({ onAdd }: { onAdd:(p:Product,size?:string,color?:string)=>void }) {
-  const {id}=useParams(); const product=seedProducts.find(p=>p.id===id)
-  const [size,setSize]=useState(''); const [color,setColor]=useState(product?.colors[0]??'')
-  if(!product) return <Navigate to="/shop" replace/>
-  return <main className="product-page section-pad">
-    <motion.div className="product-detail-image" initial={{opacity:0,scale:.98}} animate={{opacity:1,scale:1}}><img src={product.image} alt={product.name}/><span>{product.new?'NEW DROP':'THELU SELECTION'}</span></motion.div>
-    <motion.div className="product-detail-info" initial={{opacity:0,x:24}} animate={{opacity:1,x:0}} transition={{delay:.15}}>
-      <span className="eyebrow">{product.category}</span><h1>{product.name}</h1><div className="product-detail-price">{money(product.price)} {product.compareAt&&<del>{money(product.compareAt)}</del>}</div>
-      <p className="product-desc">Un pezzo Thelu selezionato per vestibilità, carattere e versatilità. Pensato per diventare il punto forte del tuo look.</p>
-      <div className="option-block"><div><b>COLORE</b><span>{color}</span></div><div className="swatches">{product.colors.map(c=><button key={c} onClick={()=>setColor(c)} className={color===c?'active':''} title={c}>{c[0]}</button>)}</div></div>
-      <div className="option-block"><div><b>TAGLIA</b><button>Guida taglie</button></div><div className="sizes">{product.sizes.map(s=><button key={s} className={size===s?'active':''} onClick={()=>setSize(s)}>{s}</button>)}</div></div>
-      <button className="add-main" onClick={()=>onAdd(product,size||product.sizes[0],color)}>AGGIUNGI AL CARRELLO <Bag size={18}/></button>
-      <div className="detail-notes"><span><Truck size={17}/> Spedizione tracciata</span><span><Package size={17}/> {product.stock} pezzi disponibili</span></div>
-    </motion.div>
-  </main>
-}
+function CartDrawer({open,onClose,cart}:{open:boolean;onClose:()=>void;cart:ReturnType<typeof useCart>}){const{t,locale}=useLocale();return <AnimatePresence>{open&&<><motion.div className="ds-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/><motion.aside className="ds-drawer" initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}} transition={{type:'spring',stiffness:250,damping:28}}><div className="ds-drawer-head"><div><small>DELÙ</small><b>{t('cart')} ({cart.count})</b></div><button className="ds-icon" onClick={onClose}><X/></button></div><div className="ds-cart-items">{!cart.items.length?<div className="ds-empty"><ShoppingBag/><h3>{t('emptyCart')}</h3><p>{t('emptyCartText')}</p><Link onClick={onClose} to="/shop">{t('goShop')}<ArrowRight/></Link></div>:cart.items.map((x,i)=><div className="ds-cart-row" key={`${x.product.id}-${i}`}><img src={x.product.image} alt={x.product.name}/><div><b>{x.product.name}</b><span>{x.size||''} {x.color||''}</span><span>× {x.qty}</span><strong>{money(x.product.price*x.qty,locale)}</strong></div><button onClick={()=>cart.remove(i)}><X/></button></div>)}</div>{!!cart.items.length&&<div className="ds-cart-footer"><div><span>{t('subtotal')}</span><b>{money(cart.subtotal,locale)}</b></div><small>{t('shippingCalc')}</small><Link onClick={onClose} to="/checkout" className="ds-pay">{t('checkout')}<ArrowRight/></Link></div>}</motion.aside></>}</AnimatePresence>}
 
-function CartDrawer({ open,onClose,items,setItems }:{open:boolean;onClose:()=>void;items:CartItem[];setItems:(v:CartItem[])=>void}) {
-  const total=items.reduce((s,i)=>s+i.product.price*i.qty,0)
-  return <AnimatePresence>{open&&<>
-    <motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/>
-    <motion.aside className="cart-drawer" initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}} transition={{type:'spring',damping:30,stiffness:280}}>
-      <div className="drawer-head"><div><span>YOUR BAG</span><b>{items.length} {items.length===1?'articolo':'articoli'}</b></div><button className="icon-btn" onClick={onClose}><X/></button></div>
-      <div className="cart-items">{items.length===0?<div className="empty-cart"><Bag size={42}/><h3>La tua bag è vuota.</h3><p>Non per molto.</p><Link to="/shop" onClick={onClose}>SCOPRI LO SHOP <ArrowRight/></Link></div>:items.map((item,i)=><div className="cart-row" key={`${item.product.id}-${i}`}><img src={item.product.image}/><div><b>{item.product.name}</b><span>{item.color} / {item.size}</span><span>Q.tà {item.qty}</span><strong>{money(item.product.price*item.qty)}</strong></div><button onClick={()=>setItems(items.filter((_,idx)=>idx!==i))}><X size={16}/></button></div>)}</div>
-      {items.length>0&&<div className="cart-footer"><div><span>SUBTOTALE</span><b>{money(total)}</b></div><small>Spedizione calcolata al checkout.</small><button>VAI AL CHECKOUT <ArrowRight/></button></div>}
-    </motion.aside>
-  </>}</AnimatePresence>
-}
+function Checkout({cart}:{cart:ReturnType<typeof useCart>}){const{t,locale}=useLocale();const[country,setCountry]=useState('IT'),[loading,setLoading]=useState(false),[error,setError]=useState('');const ship=shippingCost(country,cart.subtotal),total=cart.subtotal+ship;if(!cart.items.length)return <Navigate to="/shop" replace/>;async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setLoading(true);setError('');const fd=new FormData(e.currentTarget);const payload={locale,items:cart.items.map(x=>({id:x.product.id,qty:x.qty,size:x.size,color:x.color})),customer:{name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone')},shipping:{address:fd.get('address'),city:fd.get('city'),postcode:fd.get('postcode'),province:fd.get('province'),country},notes:fd.get('notes')};try{const r=await fetch('/api/checkout/nexi',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw new Error(data.error||'Checkout error');window.location.assign(data.hostedPage)}catch(e:any){setError(e.message||'Checkout error');setLoading(false)}}return <main className="ds-checkout"><section><span>DELÙ / NEXI XPAY</span><h1>{t('checkoutTitle')}</h1><p>{t('checkoutIntro')}</p><form onSubmit={submit}><h3>{t('contact')}</h3><div className="ds-form-grid"><label>{t('name')}<input name="name" required/></label><label>{t('email')}<input name="email" type="email" required/></label><label>{t('phone')}<input name="phone" type="tel"/></label></div><h3>{t('shippingAddress')}</h3><div className="ds-form-grid"><label className="wide">{t('address')}<input name="address" required/></label><label>{t('city')}<input name="city" required/></label><label>{t('postcode')}<input name="postcode" required/></label><label>{t('province')}<input name="province"/></label><label>{t('country')}<select value={country} onChange={e=>setCountry(e.target.value)}>{COUNTRIES.map(([code,name])=><option value={code} key={code}>{name}</option>)}</select></label><label className="wide">{t('notes')}<textarea name="notes" rows={3}/></label></div>{error&&<div className="ds-error">{error}</div>}<button className="ds-pay" disabled={loading}><ShieldCheck/>{loading?'…':t('payNexi')}</button><small className="ds-secure"><LockKeyhole/>{t('securePayment')} · {t('termsAccept')}</small></form></section><aside className="ds-summary"><h3>{t('orderSummary')}</h3>{cart.items.map((x,i)=><div className="ds-summary-item" key={i}><img src={x.product.image} alt=""/><div><b>{x.product.name}</b><span>{x.size} {x.color} × {x.qty}</span></div><strong>{money(x.product.price*x.qty,locale)}</strong></div>)}<div className="ds-totals"><div><span>{t('subtotal')}</span><b>{money(cart.subtotal,locale)}</b></div><div><span>{t('shipping')}</span><b>{ship===0?'FREE':money(ship,locale)}</b></div><div><span>{t('total')}</span><strong>{money(total,locale)}</strong></div></div><div className="ds-worldwide"><Globe2/><div><b>{t('worldwide')}</b><span>Italy · EU · Europe · Worldwide</span></div></div></aside></main>}
 
-function AdminLogin({ onLogin }:{onLogin:()=>void}) {
-  const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [error,setError]=useState('');
-  const submit=(e:React.FormEvent)=>{e.preventDefault(); if(!email||!password){setError('Inserisci email e password.');return} sessionStorage.setItem('thelu-admin','1');onLogin()}
-  return <main className="admin-login"><div className="admin-login-brand"><Brand light/><p>PRIVATE MANAGEMENT SYSTEM</p></div><motion.form onSubmit={submit} className="login-card" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}><LockKeyhole/><span className="eyebrow">AREA RISERVATA</span><h1>Welcome back.</h1><p>Gestisci prodotti, disponibilità e ordini Thelu.</p><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@thelu.it"/></label><label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••••"/></label>{error&&<div className="form-error">{error}</div>}<button type="submit">ACCEDI <ArrowRight/></button><small>Accesso riservato allo staff autorizzato.</small></motion.form></main>
-}
+function PaymentResult(){const{t}=useLocale();const[params]=useSearchParams();const orderId=params.get('orderId')||'';const[state,setState]=useState<'checking'|'success'|'pending'|'failed'>('checking');useEffect(()=>{if(!orderId){setState('failed');return}let cancelled=false;async function check(){try{const r=await fetch(`/api/payments/nexi/status?orderId=${encodeURIComponent(orderId)}`);const d=await r.json();if(cancelled)return;if(d.paid)setState('success');else if(d.status==='PENDING'||d.status==='THREEDS_VALIDATED')setState('pending');else setState('failed')}catch{if(!cancelled)setState('pending')}}check();return()=>{cancelled=true}},[orderId]);return <main className="ds-result"><div><Brand/><ShieldCheck/><h1>{state==='checking'?t('paymentChecking'):state==='success'?t('paymentSuccess'):state==='pending'?t('paymentPending'):t('paymentFailed')}</h1><p>{state==='success'?t('paymentSuccessText'):state==='pending'?t('paymentPendingText'):state==='checking'?'':t('paymentFailed')}</p>{orderId&&<small>ORDER {orderId}</small>}<Link to="/shop" className="ds-button">{t('backShop')}<ArrowRight/></Link></div></main>}
 
-function Admin({ onLogout }:{onLogout:()=>void}) {
-  const [tab,setTab]=useState<'dashboard'|'products'|'orders'>('dashboard'); const [showForm,setShowForm]=useState(false)
-  const [catalog,setCatalog]=useState<Product[]>(()=>{try{return JSON.parse(localStorage.getItem('thelu-catalog')||'null')||seedProducts}catch{return seedProducts}})
-  const save=(list:Product[])=>{setCatalog(list);localStorage.setItem('thelu-catalog',JSON.stringify(list))}
-  return <main className="admin-shell">
-    <aside className="admin-sidebar"><Brand light/><nav><button className={tab==='dashboard'?'active':''} onClick={()=>setTab('dashboard')}><LayoutDashboard/>Dashboard</button><button className={tab==='products'?'active':''} onClick={()=>setTab('products')}><Package/>Prodotti</button><button className={tab==='orders'?'active':''} onClick={()=>setTab('orders')}><ShoppingBag/>Ordini <span>{seedOrders.filter(o=>o.status==='Nuovo').length}</span></button></nav><div className="admin-side-bottom"><Link to="/" target="_blank"><Eye/>Vedi shop</Link><button onClick={onLogout}><LogOut/>Esci</button></div></aside>
-    <section className="admin-content"><div className="admin-top"><div><span className="eyebrow">THELU BACK OFFICE</span><h1>{tab==='dashboard'?'Good morning.':tab==='products'?'Catalogo prodotti':'Gestione ordini'}</h1></div><div className="admin-avatar"><CircleUserRound/><span>Admin<br/><small>Thelu Staff</small></span></div></div>
-    {tab==='dashboard'&&<><div className="metric-grid"><Metric icon={<TrendingUp/>} label="Vendite oggi" value="€ 684" note="+18% vs ieri"/><Metric icon={<ShoppingBag/>} label="Ordini" value="12" note="4 da preparare"/><Metric icon={<Box/>} label="Articoli attivi" value={String(catalog.length)} note={`${catalog.reduce((s,p)=>s+p.stock,0)} pezzi a stock`}/><Metric icon={<AlertTriangle/>} label="Stock basso" value={String(catalog.filter(p=>p.stock<10).length)} note="da controllare"/></div><div className="admin-panels"><div className="admin-panel"><div className="panel-head"><div><span>ULTIMI ORDINI</span><h3>Da gestire</h3></div><button onClick={()=>setTab('orders')}>Vedi tutti <ArrowRight/></button></div><OrderTable compact/></div><div className="admin-panel low-stock"><div className="panel-head"><div><span>MAGAZZINO</span><h3>Stock basso</h3></div></div>{catalog.filter(p=>p.stock<12).map(p=><div className="stock-row" key={p.id}><img src={p.image}/><div><b>{p.name}</b><span>{p.category}</span></div><strong>{p.stock} pz</strong></div>)}</div></div></>}
-    {tab==='products'&&<><div className="admin-actions"><div className="admin-search"><Search/><input placeholder="Cerca prodotto..."/></div><button className="admin-primary" onClick={()=>setShowForm(true)}><Plus/>NUOVO PRODOTTO</button></div><div className="catalog-table"><div className="table-row table-head"><span>PRODOTTO</span><span>CATEGORIA</span><span>PREZZO</span><span>STOCK</span><span>TAG</span><span></span></div>{catalog.map(p=><div className="table-row" key={p.id}><div className="table-product"><img src={p.image}/><div><b>{p.name}</b><span>{p.colors.join(' · ')}</span></div></div><span>{p.category}</span><b>{money(p.price)}</b><span className={p.stock<10?'stock-danger':''}>{p.stock} pz</span><span className="tag-cell">{p.tags.slice(0,2).map(t=><i key={t}>{t}</i>)}</span><button className="icon-btn"><Pencil size={16}/></button></div>)}</div></>}
-    {tab==='orders'&&<div className="admin-panel full"><OrderTable/></div>}
-    </section>
-    <AnimatePresence>{showForm&&<ProductForm onClose={()=>setShowForm(false)} onSave={p=>{save([p,...catalog]);setShowForm(false)}}/>}</AnimatePresence>
-  </main>
-}
+function Footer(){const{t}=useLocale();return <footer className="ds-footer"><div><Brand compact/><p>{t('footerLine')}</p></div><div><span>{t('store')}</span><a href="https://maps.google.com/?q=Via+Roma+27+Follonica" target="_blank" rel="noreferrer">Via Roma, 27<br/>58022 Follonica (GR)</a><a href="tel:+393317862178">+39 331 786 2178</a></div><div><span>{t('follow')}</span><a href="https://instagram.com/delu.clotheshop" target="_blank" rel="noreferrer">Instagram · @delu.clotheshop</a></div><div><span>{t('international')}</span><p>{t('worldwide')}<br/>Nexi XPay · EUR</p></div><small>© {new Date().getFullYear()} DeLù Clothes Shop · Made in Italy</small></footer>}
 
-function Metric({icon,label,value,note}:{icon:React.ReactNode;label:string;value:string;note:string}){return <div className="metric-card"><div className="metric-icon">{icon}</div><span>{label}</span><strong>{value}</strong><small>{note}</small></div>}
-
-function OrderTable({compact=false}:{compact?:boolean}){const rows=compact?seedOrders.slice(0,3):seedOrders;return <div className="orders-table">{rows.map(o=><div className="order-row" key={o.id}><b>{o.id}</b><div><strong>{o.customer}</strong><span>{o.email}</span></div><span>{o.items} articoli</span><b>{money(o.total)}</b><i className={`order-status status-${o.status.toLowerCase().replaceAll(' ','-')}`}>{o.status}</i><span>{o.createdAt}</span><button className="icon-btn"><ArrowRight size={16}/></button></div>)}</div>}
-
-function ProductForm({onClose,onSave}:{onClose:()=>void;onSave:(p:Product)=>void}){
-  const [form,setForm]=useState({name:'',price:'',category:'',stock:'',colors:'',sizes:'',tags:'',image:''})
-  const field=(k:keyof typeof form)=>(e:React.ChangeEvent<HTMLInputElement>)=>setForm({...form,[k]:e.target.value})
-  const submit=(e:React.FormEvent)=>{e.preventDefault();onSave({id:`thelu-${Date.now()}`,name:form.name,price:Number(form.price),category:form.category,stock:Number(form.stock),colors:form.colors.split(',').map(x=>x.trim()).filter(Boolean),sizes:form.sizes.split(',').map(x=>x.trim()).filter(Boolean),tags:form.tags.split(',').map(x=>x.trim()).filter(Boolean),image:form.image||'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1200&q=85',new:true})}
-  return <><motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/><motion.form className="product-form" initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}} onSubmit={submit}><div className="drawer-head"><div><span>CATALOGO</span><b>Nuovo prodotto</b></div><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><div className="form-scroll"><label>Nome prodotto<input required value={form.name} onChange={field('name')} placeholder="Es. Blazer Rose Atelier"/></label><div className="form-grid"><label>Prezzo €<input required type="number" step="0.01" value={form.price} onChange={field('price')}/></label><label>Stock<input required type="number" value={form.stock} onChange={field('stock')}/></label></div><label>Categoria<input required value={form.category} onChange={field('category')} placeholder="Abiti, Top, Jeans..."/></label><label>Colori <small>separati da virgola</small><input value={form.colors} onChange={field('colors')} placeholder="Rosa, Nero, Bianco"/></label><label>Taglie <small>separate da virgola</small><input value={form.sizes} onChange={field('sizes')} placeholder="XS, S, M, L"/></label><label>Tag / filtri <small>separati da virgola</small><input value={form.tags} onChange={field('tags')} placeholder="new, elegante, sera"/></label><label>URL immagine<input value={form.image} onChange={field('image')} placeholder="https://..."/></label><div className="form-tip"><Sparkles/><span>I tag inseriti diventano automaticamente utilizzabili come filtri nello shop.</span></div></div><button className="save-product" type="submit">SALVA PRODOTTO <ArrowRight/></button></motion.form></>}
-
-function AdminGate(){const nav=useNavigate(); const [logged,setLogged]=useState(()=>sessionStorage.getItem('thelu-admin')==='1'); if(!logged)return <AdminLogin onLogin={()=>setLogged(true)}/>;return <Admin onLogout={()=>{sessionStorage.removeItem('thelu-admin');setLogged(false);nav('/admin')}}/>}
-
-function Footer(){const location=useLocation();if(location.pathname.startsWith('/admin'))return null;return <footer><div className="footer-brand"><Brand light/><p>Fashion, attitude, you.</p></div><div><span>SHOP</span><Link to="/shop">Tutti i prodotti</Link><Link to="/shop">New in</Link><Link to="/shop">Best seller</Link></div><div><span>INFO</span><a href="#">Spedizioni & resi</a><a href="#">Guida taglie</a><a href="#">Contatti</a></div><div><span>FOLLOW THELU</span><a href="#">Instagram</a><a href="#">TikTok</a></div><div className="footer-bottom">© 2026 THELU CLOTHES SHOP <span>MADE WITH ATTITUDE.</span></div></footer>}
-
-export default function App(){
-  const [cart,setCart]=useState<CartItem[]>([]);const [cartOpen,setCartOpen]=useState(false)
-  const progress=useSpring(useScroll().scrollYProgress,{stiffness:100,damping:30,restDelta:.001})
-  const add=(p:Product,size?:string,color?:string)=>{setCart([...cart,{product:p,qty:1,size:size||p.sizes[0],color:color||p.colors[0]}]);setCartOpen(true)}
-  return <><motion.div className="scroll-progress" style={{scaleX:progress}}/><Header cartCount={cart.length} onCart={()=>setCartOpen(true)}/><Routes><Route path="/" element={<Home onAdd={p=>add(p)}/>}/><Route path="/shop" element={<Shop onAdd={p=>add(p)}/>}/><Route path="/product/:id" element={<ProductPage onAdd={add}/>}/><Route path="/admin" element={<AdminGate/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes><Footer/><CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} items={cart} setItems={setCart}/></>
-}
+function Storefront(){const cart=useCart();const[drawer,setDrawer]=useState(false);return <><Header count={cart.count} onCart={()=>setDrawer(true)}/><Routes><Route path="/" element={<Home onAdd={p=>{cart.add(p,p.sizes[0],p.colors[0]);setDrawer(true)}}/>}/><Route path="/shop" element={<Shop onAdd={p=>{cart.add(p,p.sizes[0],p.colors[0]);setDrawer(true)}}/>}/><Route path="/product/:id" element={<ProductPage onAdd={(p,s,c)=>{cart.add(p,s,c);setDrawer(true)}}/>}/><Route path="/checkout" element={<Checkout cart={cart}/>}/><Route path="/payment/result" element={<PaymentResult/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes><CartDrawer open={drawer} onClose={()=>setDrawer(false)} cart={cart}/><Footer/></>}
+export default function App(){return <LocaleProvider><Storefront/></LocaleProvider>}
