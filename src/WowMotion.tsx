@@ -52,14 +52,14 @@ export default function WowMotion(){
     <motion.div className="wow-progress" style={{scaleX:progress}}/>
     <motion.div className="wow-orb" style={{x,y}}/>
 
-    {cartTarget&&createPortal(<button type="button" className="wow-cart-continue" onClick={closeCart}>{cartLabel}</button>,cartTarget)}
+    {cartTarget&&createPortal(<button type="button" data-testid="continue-shopping" className="wow-cart-continue" onClick={closeCart}>{cartLabel}</button>,cartTarget)}
 
-    {isHome&&<motion.div className="wow-home-kinetic" style={{x:homeGhostX,opacity:homeGhostOpacity}} aria-hidden="true">
+    {isHome&&<motion.div data-testid="home-kinetic" className="wow-home-kinetic" style={{x:homeGhostX,opacity:homeGhostOpacity}} aria-hidden="true">
       <span>DELÙ</span><i>FOLLONICA / 2026</i>
     </motion.div>}
 
     <AnimatePresence mode="popLayout">
-      {routeSignal>0&&<motion.div key={routeSignal} className="wow-route-v3" initial={{opacity:1}} animate={{opacity:0}} exit={{opacity:0}} transition={{duration:.82,ease:[.16,1,.3,1]}}>
+      {routeSignal>0&&<motion.div data-testid="route-transition" key={routeSignal} className="wow-route-v3" initial={{opacity:1}} animate={{opacity:0}} exit={{opacity:0}} transition={{duration:.82,ease:[.16,1,.3,1]}}>
         <motion.div className="wow-route-v3__ribbon" initial={{x:'-118%',rotate:-7}} animate={{x:'118%',rotate:-7}} transition={{duration:.66,ease:[.76,0,.24,1]}}>
           <span>DELÙ · {routeLabel} · DELÙ · {routeLabel} · DELÙ</span>
         </motion.div>
@@ -69,7 +69,7 @@ export default function WowMotion(){
     </AnimatePresence>
 
     <AnimatePresence>
-      {intro&&<motion.div className="wow-intro" exit={{y:'-100%'}} transition={{duration:.8,ease:[.76,0,.24,1]}}>
+      {intro&&<motion.div data-testid="intro" className="wow-intro" exit={{y:'-100%'}} transition={{duration:.8,ease:[.76,0,.24,1]}}>
         <motion.img src="/delu-logo.svg" alt="" initial={{opacity:0,scale:.92}} animate={{opacity:1,scale:1}} transition={{duration:.55,ease:[.16,1,.3,1]}}/>
         <motion.span initial={{opacity:0,y:8}} animate={{opacity:.62,y:0}} transition={{delay:.18,duration:.45}}>CLOTHES SHOP · FOLLONICA</motion.span>
         <motion.i initial={{scaleX:0}} animate={{scaleX:1}} transition={{delay:.15,duration:.55,ease:[.16,1,.3,1]}}/>
