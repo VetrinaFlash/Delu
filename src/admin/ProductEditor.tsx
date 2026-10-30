@@ -4,16 +4,16 @@ import { motion } from 'motion/react'
 import type { Product, ProductVariant } from '../data'
 import { api, split } from './shared'
 
-type FormState={name:string;price:string;compareAt:string;category:string;colors:string;sizes:string;tags:string;description:string;featured:boolean;isNew:boolean;active:boolean}
+type FormState={name:string;price:string;compareAt:string;category:string;fabrics:string;colors:string;sizes:string;tags:string;description:string;featured:boolean;isNew:boolean;active:boolean}
 
 export default function ProductEditor({product,onClose,onSaved}:{product?:Product;onClose:()=>void;onSaved:(p:Product)=>void}){
-  const[f,setF]=useState<FormState>(()=>({name:product?.name||'',price:product?String(product.price):'',compareAt:product?.compareAt?String(product.compareAt):'',category:product?.category||'',colors:(product?.colors||[]).join(', '),sizes:(product?.sizes||[]).join(', '),tags:(product?.tags||[]).join(', '),description:product?.description||'',featured:!!product?.featured,isNew:!!product?.new,active:product?.active!==false}))
+  const[f,setF]=useState<FormState>(()=>({name:product?.name||'',price:product?String(product.price):'',compareAt:product?.compareAt?String(product.compareAt):'',category:product?.category||'',fabrics:(product?.fabrics||[]).join(', '),colors:(product?.colors||[]).join(', '),sizes:(product?.sizes||[]).join(', '),tags:(product?.tags||[]).join(', '),description:product?.description||'',featured:!!product?.featured,isNew:!!product?.new,active:product?.active!==false}))
   const[images,setImages]=useState<string[]>(product?.images?.length?product.images:(product?.image?[product.image]:[]))
   const[variantStocks,setVariantStocks]=useState<Record<string,string>>(()=>Object.fromEntries((product?.variants||[]).map(v=>[`${v.color}|${v.size}`,String(v.stock)])))
   const[loading,setLoading]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[manualImage,setManualImage]=useState('')
   const colors=split(f.colors),sizes=split(f.sizes)
   const combos=useMemo(()=>colors.flatMap(color=>sizes.map(size=>({color,size,key:`${color}|${size}`}))),[f.colors,f.sizes])
-  const textField=(k:'name'|'price'|'compareAt'|'category'|'colors'|'sizes'|'tags'|'description')=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>setF(v=>({...v,[k]:e.target.value}))
+  const textField=(k:'name'|'price'|'compareAt'|'category'|'fabrics'|'colors'|'sizes'|'tags'|'description')=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>setF(v=>({...v,[k]:e.target.value}))
 
   async function upload(files:FileList|null){
     if(!files?.length)return
@@ -33,7 +33,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
     e.preventDefault();setLoading(true);setError('')
     try{
       const variants:ProductVariant[]=combos.map(c=>({color:c.color,size:c.size,stock:Math.max(0,Number(variantStocks[c.key]||0)||0),sku:''}))
-      const payload={name:f.name,price:Number(f.price),compareAt:f.compareAt?Number(f.compareAt):null,category:f.category,colors,sizes,tags:split(f.tags),description:f.description,featured:f.featured,new:f.isNew,active:f.active,images,variants,stock:variants.reduce((s,v)=>s+v.stock,0)}
+      const payload={name:f.name,price:Number(f.price),compareAt:f.compareAt?Number(f.compareAt):null,category:f.category,fabrics:split(f.fabrics),colors,sizes,tags:split(f.tags),description:f.description,featured:f.featured,new:f.isNew,active:f.active,images,variants,stock:variants.reduce((s,v)=>s+v.stock,0)}
       const p=await api<Product>(product?`/api/admin/products/${product.id}`:'/api/admin/products',{method:product?'PATCH':'POST',body:JSON.stringify(payload)})
       onSaved(p)
     }catch(e:any){setError(e.message)}finally{setLoading(false)}
@@ -48,6 +48,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
           <label>Nome prodotto<input required value={f.name} onChange={textField('name')}/></label>
           <div className="form-grid"><label>Prezzo €<input required type="number" min="0" step="0.01" value={f.price} onChange={textField('price')}/></label><label>Prezzo precedente €<input type="number" min="0" step="0.01" value={f.compareAt} onChange={textField('compareAt')}/></label></div>
           <label>Categoria<input required value={f.category} onChange={textField('category')}/></label>
+          <label>Tessuti <small>separati da virgola, usati anche come filtri dello shop</small><input value={f.fabrics} onChange={textField('fabrics')} placeholder="Cotone, Lino, Viscosa" maxLength={800}/></label>
           <label>Descrizione<textarea value={f.description} onChange={textField('description')} rows={5}/></label>
           <label>Tag / filtri <small>separati da virgola</small><input value={f.tags} onChange={textField('tags')} placeholder="new, elegante, sera, edit"/></label>
           <div className="admin-checks"><label><input type="checkbox" checked={f.featured} onChange={e=>setF(v=>({...v,featured:e.target.checked}))}/> In evidenza</label><label><input type="checkbox" checked={f.isNew} onChange={e=>setF(v=>({...v,isNew:e.target.checked}))}/> Novità</label><label><input type="checkbox" checked={f.active} onChange={e=>setF(v=>({...v,active:e.target.checked}))}/> Visibile nello shop</label></div>

@@ -314,3 +314,28 @@ test('mobile runway scrolls horizontally and depth frames approach the viewer',a
  await page.waitForTimeout(700)
  expect(await portal.evaluate(e=>getComputedStyle(e).transform)).not.toBe(start)
 })
+
+test('fabric filter combines with category and resets',async({page})=>{
+ await page.route('**/api/products',route=>route.fulfill({json:[
+ {id:'fabric-a',name:'Abito lino',price:50,category:'Abiti',colors:['Bianco'],sizes:['M'],tags:[],stock:3,image:'/delu-logo.svg',active:true,fabrics:['Lino','Cotone']},
+ {id:'fabric-b',name:'Top seta',price:40,category:'Top',colors:['Nero'],sizes:['S'],tags:[],stock:3,image:'/delu-logo.svg',active:true,fabrics:['Seta']}
+ ]}))
+ await page.goto('/shop')
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await page.locator('.ds-toolbar>button').click()
+ await page.locator('.ds-fabric-filter').getByRole('button',{name:'Lino',exact:true}).click()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await expect(page.locator('.ds-products')).toContainText('Abito lino')
+ await page.locator('.ds-filter-panel>button').click()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await page.locator('.ds-product-image').first().click()
+ await expect(page.locator('.ds-product-fabrics')).toContainText('Lino · Cotone')
+ await expectNoHorizontalOverflow(page)
+})
+test('home shop entry is legible and has a touch target',async({page})=>{
+ await page.goto('/')
+ const link=page.locator('.ph-head-link')
+ expect(await link.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(12)
+ expect(await link.evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44)
+ await expectNoHorizontalOverflow(page)
+})

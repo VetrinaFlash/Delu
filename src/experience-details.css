@@ -94,3 +94,10 @@
  .ph-depth-portal{inset:20% 7%}
 }
 @media(prefers-reduced-motion:reduce){.ph-depth-portal{display:none}}
+
+.ph-head-link{font-size:13px!important;letter-spacing:.14em;min-width:48px;min-height:44px;display:inline-flex;align-items:center}
+.ds-filter-panel{flex-wrap:wrap}
+.ds-fabric-filter{min-width:0;max-width:100%}
+.ds-fabric-filter button{overflow-wrap:anywhere;min-height:44px}
+.ds-product-fabrics{overflow-wrap:anywhere}
+@media(max-width:620px){.ph-head-link{font-size:12px!important}}

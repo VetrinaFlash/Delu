@@ -12,6 +12,7 @@ export type Product = {
   description?: string
   price: number
   compareAt?: number
+  fabrics?: string[]
   category: string
   colors: string[]
   sizes: string[]
