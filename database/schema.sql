@@ -105,3 +105,10 @@ CREATE TABLE IF NOT EXISTS shop_settings (
   value_json TEXT NOT NULL,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS product_fabrics (
+ product_id TEXT NOT NULL,
+ fabric TEXT NOT NULL,
+ PRIMARY KEY(product_id,fabric),
+ FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+);
