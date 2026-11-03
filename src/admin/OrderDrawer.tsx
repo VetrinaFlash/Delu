@@ -20,7 +20,7 @@ export default function OrderDrawer({order,onClose,onSaved}:{order:ApiOrder;onCl
   return <>
     <motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/>
     <motion.aside className="product-form order-drawer" initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}}>
-      <div className="drawer-head"><div><span>ORDINE</span><b>#{order.id}</b></div><button className="icon-btn" onClick={onClose}><X/></button></div>
+      <div className="drawer-head"><div><span>ORDINE</span><b>#{order.id}</b></div><button className="icon-btn" aria-label="Chiudi ordine" onClick={onClose}><X/></button></div>
       <div className="form-scroll"><OrderReview id={order.id} onState={setReviewState}/>
         <div className="order-detail-block"><span>CLIENTE</span><h3>{order.customer}</h3><a href={`mailto:${order.email}`}>{order.email}</a>{order.phone&&<a href={`tel:${order.phone}`}>{order.phone}</a>}</div>
         <div className="order-detail-block"><span>SPEDIZIONE</span><p>{order.shipping?.address}<br/>{order.shipping?.postcode} {order.shipping?.city} {order.shipping?.province}<br/><b>{order.shipping?.country}</b></p><small>Costo: {money(Number(order.shipping?.cost||0))}</small></div>

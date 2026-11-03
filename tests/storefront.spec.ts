@@ -471,3 +471,23 @@ test('new arrivals can return to the full catalogue from the heading or all cate
  await expect(page).toHaveURL(/\/shop$/)
  await expectNoHorizontalOverflow(page)
 })
+
+test('admin order summaries open the order drawer from the dashboard and the orders list',async({page})=>{
+ const order={id:'DL-UI-DEMO',customer:'Anna Rossi',email:'anna@example.test',phone:'+393331234567',total:74,status:'Da confermare',items:[{name:'Dress Nuit',qty:2,unitPrice:37}],shipping:{},notes:'',createdAt:'2026-11-03T12:00:00Z'}
+ await page.route('**/api/auth/me',r=>r.fulfill({json:{ok:true}}))
+ await page.route('**/api/admin/products',r=>r.fulfill({json:[]}))
+ await page.route('**/api/admin/orders',r=>r.fulfill({json:[order]}))
+ await page.route('**/api/admin/settings',r=>r.fulfill({json:{}}))
+ await page.route('**/api/admin/order-requests/DL-UI-DEMO',r=>r.fulfill({status:404,json:{error:'Ordine dimostrativo'}}))
+ await page.goto('/admin')
+ const row=page.getByRole('button',{name:'Apri ordine DL-UI-DEMO di Anna Rossi'})
+ await expect(row).toContainText('2 articoli')
+ await expect(row).toContainText('Da confermare')
+ await expectNoHorizontalOverflow(page)
+ await row.click()
+ await expect(page.locator('.order-drawer')).toContainText('anna@example.test')
+ await page.getByRole('button',{name:'Chiudi ordine'}).click()
+ await page.locator('.admin-sidebar').getByRole('button',{name:/^Ordini/}).click()
+ await row.click()
+ await expect(page.locator('.order-drawer')).toContainText('Dress Nuit')
+})

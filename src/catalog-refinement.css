@@ -174,3 +174,29 @@
 }
 .catalog-exit:hover { background: #f8e7ef; }
 .catalog-exit:focus-visible { outline: 2px solid #874763; outline-offset: 2px; }
+
+.ds-checkout .checkout-form { display:grid; gap:14px; margin-top:22px; }
+.ds-checkout .checkout-card {
+  min-width:0; padding:clamp(16px, 2.6vw, 26px);
+  background:#fff; border:1px solid #eadce3; border-radius:16px;
+}
+.ds-checkout .checkout-card h3 {
+  display:flex; align-items:center; gap:10px; margin:0 0 18px;
+}
+.checkout-card h3 span {
+  display:grid; place-items:center; width:30px; height:30px; flex:none;
+  border-radius:50%; background:#f8e8f0; color:#75465d; font:650 11px system-ui,sans-serif;
+}
+.ds-checkout .ds-form-grid label { font-size:12px; letter-spacing:0; }
+.ds-checkout .ds-form-grid input, .ds-checkout .ds-form-grid select, .ds-checkout .ds-form-grid textarea { border-radius:8px; }
+.checkout-card .checkout-discount { margin-bottom:0; }
+.ds-checkout .ds-summary { align-self:start; border:1px solid #eadce3; border-radius:16px; padding:clamp(16px, 3vw, 32px); }
+.ds-checkout .ds-summary-item { grid-template-columns:48px minmax(0,1fr) auto; }
+.ds-checkout .ds-summary-item img { width:48px; height:62px; border-radius:6px; }
+.checkout-total { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:15px; }
+.checkout-total strong { font-size:22px; }
+.checkout-submit .ds-pay { margin-top:10px; border-radius:9px; }
+.checkout-submit .customer-check { margin:16px 0 6px; }
+@media(max-width:600px) {
+  .ds-checkout .ds-form-grid input, .ds-checkout .ds-form-grid select, .ds-checkout .ds-form-grid textarea { font-size:16px; }
+}
