@@ -67,7 +67,7 @@ async function send(env:any,subscription:Subscription,payload:{title:string;body
  const controller=new AbortController()
  const timeout=setTimeout(()=>controller.abort(),10000)
  try{return await fetch(subscription.endpoint,{
-  method:'POST',redirect:'error',signal:controller.signal,
+  method:'POST',redirect:'manual',signal:controller.signal,
   headers:{Authorization:`vapid t=${jwt}.${base64(signature)}, k=${credentials.publicKey}`,'Content-Encoding':'aes128gcm','Content-Type':'application/octet-stream',TTL:'900',Urgency:'high'},
   body:record
  })}finally{clearTimeout(timeout)}
@@ -137,6 +137,7 @@ export async function adminPushRoute(request:Request,env:any,path:string,admin:b
   try{
    const sent=await send(env,sub,{title:'DeLù · notifica di prova',body:'Le notifiche push del pannello admin sono attive su questo dispositivo.',tag:'delu-test'})
    if(sent.ok)return reply({ok:true})
+   if(sent.status>=300&&sent.status<400)return reply({error:`Il servizio push ha restituito un redirect (HTTP ${sent.status}). Disattiva e riattiva le push sul dispositivo.`},502)
    if(sent.status===404||sent.status===410){
     await removeDevice(env,sub.endpoint)
     return reply({error:'Iscrizione scaduta. Disattiva e riattiva le push su questo dispositivo.'},410)

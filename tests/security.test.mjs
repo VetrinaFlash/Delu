@@ -262,6 +262,7 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   assert.equal(order.status,201)
   assert.equal(pushes.length,1)
   assert.equal(pushes[0].headers['Content-Encoding'],'aes128gcm')
+  assert.equal(pushes[0].redirect,'manual')
   const jwt=pushes[0].headers.Authorization.match(/^vapid t=([^,]+), k=/)[1]
   const [header,claims,signature]=jwt.split('.')
   assert.equal(JSON.parse(Buffer.from(claims,'base64url')).aud,'https://fcm.googleapis.com')
