@@ -11,6 +11,14 @@ import OrderDrawer from './admin/OrderDrawer'
 import CommerceSettings from './admin/CommerceSettings'
 import { api, money, type ApiOrder, type Tab, upsertProduct } from './admin/shared'
 
+const adminSections=[
+ {id:'dashboard',label:'Dashboard',title:'Panoramica',Icon:LayoutDashboard},
+ {id:'products',label:'Prodotti',title:'Catalogo e magazzino',Icon:Package},
+ {id:'orders',label:'Ordini',title:'Ordini e spedizioni',Icon:ShoppingBag},
+ {id:'customers',label:'Clienti e resi',title:'Clienti e resi',Icon:CircleUserRound},
+ {id:'settings',label:'Impostazioni',title:'Impostazioni shop',Icon:Settings},
+] satisfies {id:Tab;label:string;title:string;Icon:typeof LayoutDashboard}[]
+
 function AdminBrand(){return <Link to="/" className="admin-delu-brand"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>}
 
 function Login({onDone}:{onDone:()=>void}){
@@ -43,8 +51,20 @@ export default function AdminSecure(){
   if(!auth)return <><p role="status">{live}</p><Login onDone={()=>{setAuth(true);load()}}/></>
   const active=products.filter(p=>p.active!==false)
   return <main className="admin-shell">
-    <aside className="admin-sidebar"><AdminBrand/><nav><button className={tab==='dashboard'?'active':''} onClick={()=>setTab('dashboard')}><LayoutDashboard/>Dashboard</button><button className={tab==='products'?'active':''} onClick={()=>setTab('products')}><Package/>Prodotti</button><button className={tab==='orders'?'active':''} onClick={()=>setTab('orders')}><ShoppingBag/>Ordini <span>{orders.filter(o=>['Da confermare','Pagato - da preparare','Nuovo'].includes(o.status)).length}</span></button><button onClick={()=>setTab('customers')}><CircleUserRound/>Clienti e resi</button><button className={tab==='settings'?'active':''} onClick={()=>setTab('settings')}><Settings/>Impostazioni</button></nav><div className="admin-side-bottom"><Link to="/" target="_blank"><Eye/>Vedi shop</Link><button onClick={logout}><LogOut/>Esci</button></div></aside>
-    <section className="admin-content"><div className="admin-top"><div><span className="eyebrow">DELÙ BACK OFFICE</span><h1>{tab==='dashboard'?'Panoramica':tab==='products'?'Catalogo & magazzino':tab==='orders'?'Ordini & spedizioni':'Impostazioni shop'}</h1></div><div className="admin-avatar"><CircleUserRound/><span>Admin<br/><small>DeLù Staff</small></span></div></div>{error&&<div className="admin-error">{error}<button onClick={()=>setError('')}><X/></button></div>}
+    <aside className="admin-sidebar">
+      <AdminBrand/>
+      <nav aria-label="Sezioni amministrazione">
+        {adminSections.map(({id,label,Icon})=><button type="button" key={id} className={tab===id?'active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}>
+          <Icon aria-hidden="true"/>{label}
+          {id==='orders'&&<span>{orders.filter(o=>['Da confermare','Pagato - da preparare','Nuovo'].includes(o.status)).length}</span>}
+        </button>)}
+      </nav>
+      <div className="admin-side-bottom">
+        <Link to="/" target="_blank" rel="noreferrer"><Eye aria-hidden="true"/>Vedi shop</Link>
+        <button type="button" onClick={logout}><LogOut aria-hidden="true"/>Esci</button>
+      </div>
+    </aside>
+    <section className="admin-content"><div className="admin-top"><div><span className="eyebrow">DELÙ BACK OFFICE</span><h1>{adminSections.find(section=>section.id===tab)?.title}</h1></div><div className="admin-avatar"><CircleUserRound/><span>Admin<br/><small>DeLù Staff</small></span></div></div>{error&&<div className="admin-error">{error}<button type="button" aria-label="Chiudi errore" onClick={()=>setError('')}><X aria-hidden="true"/></button></div>}
       <div className="admin-live" role="status" aria-live="polite"><span>{live||'Aggiornamento automatico ogni 8 secondi'} {lastSync&&'· Ultimo aggiornamento '+lastSync}</span></div>
       <div hidden={tab!=='dashboard'}><PushControls eventCount={notificationEvents}/></div>
       {tab==='customers'&&<CustomerManagement/>}

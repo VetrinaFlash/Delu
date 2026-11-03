@@ -1,5 +1,68 @@
 # DeLù — accesso e attivazione servizi
 
+## Checklist Cloudflare Production
+
+Apri **Workers & Pages → delu → Settings** e seleziona **Production**. Inserisci i collegamenti a database e immagini in **Bindings**. Aggiungi le altre voci in **Variables and Secrets**. Dopo il salvataggio avvia un nuovo deploy e verifica che sia quello di produzione.
+
+| Funzione | Nome | Tipo e valore |
+|---|---|---|
+| Database | `DB` | Binding D1 verso il database già usato dal negozio |
+| Immagini prodotto | `PRODUCT_IMAGES` | Binding R2 verso il bucket immagini, necessario per gli upload |
+| Dominio | `SITE_URL` | Text. `https://delu-49u.pages.dev` oppure il dominio definitivo in HTTPS, senza slash finale |
+| Accesso admin | `ADMIN_EMAIL`, `ADMIN_USERNAME` | Text. Email reale del responsabile e, se usato, nome utente |
+| Accesso admin | `ADMIN_PASSWORD_SHA256`, `AUTH_SECRET` | Secret. Hash SHA-256 della password e chiave di sessione. Mantieni i valori già in uso |
+| Checkout | `PRIVACY_NOTICE` | Text. Contenuto di [PRIVACY_NOTICE.txt](PRIVACY_NOTICE.txt) |
+| Conferma ordini | `TERMS_NOTICE`, `RETURNS_ADDRESS` | Text. Condizioni di vendita approvate e indirizzo effettivo per i resi |
+| Email transazionali | `RESEND_API_KEY`, `EMAIL_FROM` | Secret per la chiave Resend. Text per il mittente su dominio verificato, ad esempio `DeLù <info@deluclothesshop.it>` se autorizzato in Resend |
+| Nexi XPay | `NEXI_XPAY_API_KEY`, `NEXI_XPAY_BASE_URL` | Secret per la chiave. Text per la base URL corrispondente alla chiave |
+| Push admin | `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, `WEB_PUSH_SUBJECT` | Text, Secret, Text. Procedura PowerShell qui sotto |
+| Fidelity | `FIDELITY_TERMS` | Text. Regolamento effettivo della carta |
+| Etichette Sendcloud | `SENDCLOUD_PUBLIC_KEY`, `SENDCLOUD_SECRET_KEY`, `SENDCLOUD_SENDER_ID` | Secret per le due chiavi. Text per l’ID del mittente |
+| Google, Facebook, GitHub | Coppia `*_CLIENT_ID` e `*_CLIENT_SECRET` per ogni provider | Text e Secret. Callback e prerequisiti in [COMMUNITY_SETUP.md](COMMUNITY_SETUP.md) |
+| Cliente dimostrativo | `DEMO_CUSTOMER_PASSWORD_HASH` | Secret, facoltativo. Mantieni il valore già impostato se stai ancora provando il demo |
+| Apple Wallet e Samsung Wallet | Credenziali, identificativi e certificati del provider | Vedi le sezioni Wallet qui sotto |
+
+Per Nexi usa `https://xpaysandbox.nexigroup.com/api/phoenix-0.0/psp` con chiave sandbox oppure `https://xpay.nexigroup.com/api/phoenix-0.0/psp` con chiave produzione. Il server aggiunge `/api/v1`. La callback è `/api/payments/nexi/notification` sul dominio configurato. Prima verifica in sandbox l’intero percorso, dalla richiesta al pagamento confermato nel pannello.
+
+WhatsApp usa i collegamenti preparati dal pannello. Apri il messaggio sul dispositivo dello staff e conferma l’invio da WhatsApp.
+
+Riferimenti: [Bindings Cloudflare Pages](https://developers.cloudflare.com/pages/functions/bindings/), [specifiche Nexi XPay](https://developer.nexi.it/en/api/specifiche-di-utilizzo-del-servizio).
+
+## Generare le chiavi push su Windows
+
+Apri PowerShell o il terminale di VS Code nella cartella del repository. Se hai già clonato il progetto, apri quella cartella e aggiorna `main` con `git pull --ff-only`. Se ti manca il repository, esegui:
+
+```powershell
+git clone https://github.com/VetrinaFlash/Delu.git
+Set-Location .\Delu
+```
+
+Verifica Node e avvia lo script dalla radice del progetto:
+
+```powershell
+node --version
+Test-Path .\scripts\admin-push-keys.mjs
+node .\scripts\admin-push-keys.mjs
+```
+
+Se PowerShell non trova `node`, installa Node.js LTS e riapri il terminale. `Test-Path` deve restituire `True`. Lo script usa Node direttamente e non richiede `npm install`. Copia ogni valore dopo il primo segno `=` nella voce Cloudflare con lo stesso nome:
+
+1. `WEB_PUSH_PUBLIC_KEY` come **Text**.
+2. `WEB_PUSH_PRIVATE_KEY` come **Secret**. Copiala direttamente in Cloudflare.
+3. `WEB_PUSH_SUBJECT` come **Text**, valore `mailto:info@deluclothesshop.it`.
+
+Genera una sola coppia per ambiente e conserva i valori in modo sicuro. Se hai già una coppia attiva, riusala. La rotazione richiede una nuova iscrizione push sui dispositivi.
+
+Dopo il deploy apri `/admin` su Android o Windows con un browser compatibile. Su iPhone con iOS 16.4 o successivo aggiungi prima la web app alla schermata Home e aprila dall’icona. Accedi, premi **Attiva push** e poi **Invia push di prova**. Per l’avviso locale a dashboard aperta premi **Attiva suono dashboard**. Il suono delle push in background segue le impostazioni del dispositivo.
+
+## Verifiche prima della consegna
+
+1. Accedi all’admin da desktop e mobile, apri un ordine e verifica l’uscita.
+2. Prova account, indirizzo salvato, carrello e richiesta di acquisto sul dominio pubblico.
+3. Verifica una mail reale ricevuta. Esegui un pagamento sandbox fino all’esito visibile nel pannello.
+4. Invia una push di prova dai dispositivi effettivamente usati in negozio.
+5. Verifica apertura WhatsApp, attivazione Fidelity e, se configurati, i servizi Wallet e Sendcloud.
+
 ## Accesso del cliente
 
 URL attuale: https://delu-49u.pages.dev/admin
@@ -49,7 +112,7 @@ Guide ufficiali:
 - https://developer.samsung.com/wallet/overview/onboardingguide.html
 - https://developer.samsung.com/wallet/securityauthentication/keycertificatelifecycle.html
 
-I certificati dei due fornitori non sono intercambiabili. Il progetto emette carte di appartenenza con QR; punti, cashback, pagamenti NFC e aggiornamenti push delle carte richiederebbero funzioni ulteriori. Il collaudo crittografico automatico non sostituisce la prova con certificati di produzione su iPhone e Samsung compatibili.
+I certificati dei due fornitori non sono intercambiabili. Il portale consente di accreditare punti e riconoscere gli ordini pagati. Le carte Wallet emesse identificano la tessera tramite QR. Il saldo del portale non si sincronizza automaticamente con le carte Wallet già installate. Il collaudo crittografico automatico non sostituisce la prova con certificati di produzione su iPhone e Samsung compatibili.
 
 ## Altre impostazioni necessarie
 

@@ -486,6 +486,8 @@ test('admin order summaries open the order drawer from the dashboard and the ord
  await page.route('**/api/admin/settings',r=>r.fulfill({json:{}}))
  await page.route('**/api/admin/order-requests/DL-UI-DEMO',r=>r.fulfill({status:404,json:{error:'Ordine dimostrativo'}}))
  await page.goto('/admin')
+ await expect(page.getByRole('button',{name:'Esci',exact:true})).toBeVisible()
+ await expect(page.getByRole('navigation',{name:'Sezioni amministrazione'}).getByRole('button',{name:'Dashboard'})).toHaveAttribute('aria-current','page')
  const row=page.getByRole('button',{name:'Apri ordine DL-UI-DEMO di Anna Rossi'})
  await expect(row).toContainText('2 articoli')
  await expect(row).toContainText('Da confermare')

@@ -1,0 +1,80 @@
+:root {
+  --delu-surface: #fffafd;
+  --delu-soft: #f6e8ef;
+  --delu-line: #e8dbe3;
+  --delu-focus: #92506d;
+}
+:where(.ph-root, .catalog-shop, .ds-header, .ds-product-page, .ds-checkout, .delu-account, .admin-shell, .admin-login)
+  :where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--delu-focus);
+  outline-offset: 3px;
+}
+.ph-root :where(h1,h2), .catalog-shop h1, .ds-product-detail h1, .admin-top h1 {
+  text-wrap: balance;
+}
+.quick-navigation > a[aria-current="page"] {
+  color: #35222e;
+  background: var(--delu-soft);
+  font-weight: 700;
+}
+.catalog-shop .catalog-categories,
+.account-panel,
+.ds-checkout .checkout-card { min-width: 0; }
+.catalog-shop .catalog-categories {
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.ds-product-detail h1,
+.ds-summary-item b,
+.account-identity,
+.order-record-customer { overflow-wrap: anywhere; }
+.ds-product-detail .ds-pay { border-radius: 9px !important; }
+.ds-checkout .ds-summary { border-color: var(--delu-line) !important; background: var(--delu-surface) !important; }
+.checkout-submit .checkout-total { padding-bottom: 12px; border-bottom: 1px solid var(--delu-line); }
+.account-panel form + form { border-top: 1px solid var(--delu-line); padding-top: 20px; }
+.admin-top { gap: 12px; margin-bottom: clamp(16px, 3vw, 30px); }
+.admin-top > div:first-child { min-width: 0; }
+.admin-top .admin-avatar { flex-shrink: 0; }
+.admin-sidebar .admin-delu-brand { margin-bottom: 20px; }
+.admin-sidebar nav button, .admin-side-bottom button, .admin-side-bottom a { min-height: 44px; }
+.admin-sidebar nav button.active { box-shadow: inset 3px 0 #edafcb; }
+.admin-live { border: 1px solid var(--delu-line); border-radius: 10px; }
+.admin-shell :is(.metric-card,.admin-panel) { min-width: 0; }
+@media (min-width: 901px) {
+  .ds-checkout .ds-summary { position: sticky; top: 24px; }
+}
+@media (max-width: 760px) {
+  .admin-shell .admin-sidebar {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 8px 12px;
+    padding: 12px 14px 8px;
+    overflow: visible;
+  }
+  .admin-shell .admin-sidebar .admin-delu-brand { width: 96px; margin: 0; }
+  .admin-shell .admin-side-bottom {
+    grid-area: 1 / 2;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .admin-shell .admin-side-bottom :is(a,button) { padding: 0 8px; gap: 5px; }
+  .admin-shell .admin-sidebar nav {
+    grid-column: 1/-1;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 3px 3px 6px;
+    scrollbar-width: thin;
+  }
+  .admin-shell .admin-sidebar nav button { flex: 0 0 auto; padding-inline: 10px; }
+  .admin-top .admin-avatar span { display: none; }
+}
+@media (max-width: 480px) {
+  .quick-navigation > :is(a,button) { font-size: 10px; line-height: 1.3; }
+  .ds-checkout .ds-summary { padding: 16px !important; }
+  .ds-product-detail h1 { font-size: clamp(36px,10vw,48px) !important; }
+  .order-drawer .drawer-head { padding-inline: 14px; }
+  .order-drawer .form-scroll { padding-inline: 12px; }
+}
