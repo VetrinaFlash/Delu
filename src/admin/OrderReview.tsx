@@ -1,23 +1,119 @@
-import { useEffect, useState } from 'react'
-import { api } from './shared'
+import {useEffect,useState} from 'react'
+import {Check,MessageCircle,Plus,Trash2} from 'lucide-react'
+import {api,money} from './shared'
+
+type Line={id:string;name:string;qty:number;unitPrice:number;color:string;size:string}
+type CatalogProduct={id:string;name:string;price:number;colors:string[];sizes:string[]}
+type Share={message:string;whatsappUrl:string;paymentUrl?:string}
+type ReviewData={review:{state:string;reason?:string;version:number};items:Line[];shipping:{address:string;cost:number;discount:number};total:number;phone?:string;label?:{state:string;parcel_id?:string};share?:Share}
+const stateLabels:Record<string,string>={REVIEW:'Da verificare',APPROVED:'Confermato · da pagare',PAYMENT:'Pagamento in corso',PAID:'Pagato',REJECTED:'Rifiutato'}
+const toLine=(product:CatalogProduct):Line=>({id:product.id,name:product.name,qty:1,unitPrice:product.price,color:product.colors[0]||'',size:product.sizes[0]||''})
+
 export default function OrderReview({id,onState}:{id:string;onState?:(state:string)=>void}){
- const [data,setData]=useState<any>(null),[items,setItems]=useState<any[]>([]),[catalog,setCatalog]=useState<any[]>([]),[cost,setCost]=useState('0'),[discount,setDiscount]=useState('0'),[message,setMessage]=useState(''),[links,setLinks]=useState<any>(null),[busy,setBusy]=useState(false),[methods,setMethods]=useState<any[]>([])
- async function load(){try{const d=await api('/api/admin/order-requests/'+id);setData(d);onState?.(d.review.state);if(d.share)setLinks(d.share);setItems(d.items);setCost(String(d.shipping.cost||0));setDiscount(String(d.shipping.discount||0))}catch{/* legacy order */}}
- useEffect(()=>{load();api('/api/admin/products').then(setCatalog).catch(()=>{})},[id])
- useEffect(()=>{if(!data||data.review.state==='REVIEW')return;const t=setInterval(load,8000);return()=>clearInterval(t)},[data?.review.state])
- useEffect(()=>{if(data?.review.state==='PAID')api('/api/admin/order-requests/'+id+'/methods').then(setMethods).catch(e=>setMessage(e.message))},[data?.review.state])
+ const [data,setData]=useState<ReviewData|null>(null),[items,setItems]=useState<Line[]>([]),[catalog,setCatalog]=useState<CatalogProduct[]>([])
+ const [cost,setCost]=useState('0'),[discount,setDiscount]=useState('0'),[message,setMessage]=useState('')
+ const [links,setLinks]=useState<Share|null>(null),[busy,setBusy]=useState(false),[methods,setMethods]=useState<{id:number;name:string}[]>([])
+ const [rejecting,setRejecting]=useState(false),[reason,setReason]=useState('')
+ async function load(){
+  try{
+   const next=await api<ReviewData>('/api/admin/order-requests/'+id)
+   setData(next);onState?.(next.review.state)
+   if(next.share)setLinks(next.share)
+   setItems(next.items);setCost(String(next.shipping.cost||0));setDiscount(String(next.shipping.discount||0))
+  }catch{/* Legacy orders use the standard order drawer. */}
+ }
+ useEffect(()=>{void load();api<CatalogProduct[]>('/api/admin/products').then(setCatalog).catch(()=>{})},[id])
+ const state=data?.review.state
+ useEffect(()=>{if(!state||state==='REVIEW')return;const timer=setInterval(load,8000);return()=>clearInterval(timer)},[state,id])
+ useEffect(()=>{if(state==='PAID')api<typeof methods>('/api/admin/order-requests/'+id+'/methods').then(setMethods).catch(e=>setMessage(e.message))},[state,id])
  if(!data)return null
  const dirty=JSON.stringify(items)!==JSON.stringify(data.items)||Number(cost)!==Number(data.shipping.cost||0)||Number(discount)!==Number(data.shipping.discount||0)
- async function act(action:string,extra:any={}){const tab=(action==='approve'||action==='reject')?window.open('about:blank','_blank'):null
- if(tab)tab.opener=null
- setBusy(true);setMessage('');try{const result=await api('/api/admin/order-requests/'+id+'/'+action,{method:'POST',body:JSON.stringify({version:data.review.version,...extra})});if(result.whatsappUrl){setLinks(result);if(tab)tab.location.href=result.whatsappUrl}else tab?.close();setMessage(result.message||'Operazione completata.');await load()}catch(e:any){tab?.close();setMessage(e.message)}finally{setBusy(false)}}
- return <div className="order-detail-block order-review"><h3>Verifica magazzini · {data.review.state}</h3><div role="status">{message}</div>{data.review.state==='REVIEW'?<>
- <p>Verifica i magazzini locali prima di confermare. Correggi le righe e salva il totale prima di creare il link. La conferma blocca ulteriori modifiche all’importo.</p>{items.map((i,n)=>{const p=catalog.find(p=>p.id===i.id);return <fieldset key={n}><legend>Articolo {n+1}</legend><select aria-label={'Prodotto '+(n+1)} value={i.id} onChange={e=>{const p=catalog.find(p=>p.id===e.target.value);setItems(v=>v.map((x,k)=>k===n?{id:p.id,name:p.name,qty:1,unitPrice:p.price,color:p.colors[0],size:p.sizes[0]}:x))}}>{catalog.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><label>Colore<select value={i.color} onChange={e=>setItems(v=>v.map((x,k)=>k===n?{...x,color:e.target.value}:x))}>{p?.colors.map((c:string)=><option key={c}>{c}</option>)}</select></label><label>Taglia<select value={i.size} onChange={e=>setItems(v=>v.map((x,k)=>k===n?{...x,size:e.target.value}:x))}>{p?.sizes.map((s:string)=><option key={s}>{s}</option>)}</select></label><label>Quantità<input type="number" min="1" max="20" value={i.qty} onChange={e=>setItems(v=>v.map((x,k)=>k===n?{...x,qty:Number(e.target.value)}:x))}/></label><label>Prezzo unitario €<input type="number" min="0" step=".01" value={i.unitPrice} onChange={e=>setItems(v=>v.map((x,k)=>k===n?{...x,unitPrice:Number(e.target.value)}:x))}/></label><button type="button" onClick={()=>setItems(v=>v.filter((_,k)=>k!==n))}>Rimuovi riga</button></fieldset>})}
- <button type="button" onClick={()=>{const p=catalog[0];if(p)setItems(v=>[...v,{id:p.id,name:p.name,qty:1,unitPrice:p.price,color:p.colors[0],size:p.sizes[0]}])}}>Aggiungi articolo</button><label>Spedizione €<input type="number" min="0" step=".01" value={cost} onChange={e=>setCost(e.target.value)}/></label><label>Sconto €<input type="number" min="0" step=".01" value={discount} onChange={e=>setDiscount(e.target.value)}/></label>
- <strong>Totale da salvare € {(items.reduce((s,i)=>s+i.unitPrice*i.qty,0)+Number(cost)-Number(discount)).toFixed(2)}</strong><button disabled={busy} onClick={()=>act('edit',{items,shippingCost:Number(cost),discount:Number(discount)})}>Salva variazioni e ricalcola</button><p>Importo attualmente salvato: € {data.total.toFixed(2)}</p>{dirty&&<p>Salva le variazioni prima di confermare.</p>}<button disabled={busy||dirty} onClick={()=>{if(confirm('Confermare i capi verificati e bloccare l’importo salvato?'))act('approve')}}>Conferma e genera link di pagamento</button><button disabled={busy} onClick={()=>{const reason=prompt('Motivo del rifiuto');if(reason?.trim())act('reject',{reason});else if(reason!==null)setMessage('Inserisci il motivo del rifiuto.')}}>Rifiuta richiesta</button>
- </>:data.review.state==='REJECTED'?<p>Richiesta rifiutata. {data.review.reason}</p>:<p>Importo confermato: € {data.total.toFixed(2)}. Le variazioni dopo l’emissione di un link richiedono verifica con il cliente e riconciliazione Nexi.</p>}
- {links&&(!links.paymentUrl||data.review.state!=='PAID')&&<div><a href={links.whatsappUrl} target="_blank" rel="noreferrer">{links.paymentUrl?'Apri WhatsApp con riepilogo e link':'Apri WhatsApp con il motivo del rifiuto'}</a><textarea readOnly value={links.message}/><button onClick={()=>navigator.clipboard.writeText(links.message).then(()=>setMessage('Messaggio copiato.')).catch(()=>setMessage('Seleziona e copia il testo.'))}>Copia messaggio</button><p>WhatsApp viene aperto con testo precompilato: lo staff conferma l’invio.</p></div>}
- {data.review.state==='PAID'&&data.phone&&<p><a href={'https://wa.me/'+data.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(`Ciao, abbiamo ricevuto il pagamento dell’ordine #${id} (${data.total.toFixed(2)} €). Ti avviseremo quando sarà spedito. Grazie, DeLù!`)} target="_blank" rel="noreferrer">Conferma pagamento su WhatsApp</a></p>}
- {data.review.state==='PAID'&&<form onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);if(confirm('Generare un’etichetta Sendcloud a pagamento per questo ordine?'))act('label',{street:f.get('street'),houseNumber:f.get('house'),weight:Number(f.get('weight')),shippingMethod:Number(f.get('method'))})}}><h3>Etichetta corriere · {data.label?.state}</h3><label>Via senza civico<input name="street" required defaultValue={data.shipping.address}/></label><label>Civico<input name="house" required/></label><label>Peso effettivo kg<input name="weight" type="number" min=".001" step=".001" required/></label><label>Servizio corriere<select name="method" required defaultValue=""><option value="">Seleziona un servizio</option>{methods.map(m=><option value={m.id} key={m.id}>{m.name}</option>)}</select></label><button disabled={busy||data.label?.state!=='READY'}>Crea etichetta corriere</button>{data.label?.parcel_id&&<a href={'/api/admin/order-requests/'+id+'/label'} target="_blank" rel="noreferrer">Apri etichetta Sendcloud</a>}<p>Se l’esito è incerto, verifica Sendcloud prima di ripetere: il sistema impedisce acquisti duplicati.</p></form>}
- </div>
+ const subtotal=items.reduce((sum,item)=>sum+Math.round(item.unitPrice*100)*item.qty,0)
+ const total=(subtotal+Math.round(Number(cost)*100)-Math.round(Number(discount)*100))/100
+ const lineValid=items.length>0&&items.every(item=>Number.isInteger(item.qty)&&item.qty>=1&&item.qty<=20&&Number.isFinite(item.unitPrice)&&item.unitPrice>=0)
+ const validAmounts=Number.isFinite(total)&&total>=0&&Number(cost)>=0&&Number(discount)>=0&&Math.round(Number(discount)*100)<=subtotal
+ function updateLine(index:number,patch:Partial<Line>){setItems(previous=>previous.map((item,n)=>n===index?{...item,...patch}:item))}
+ async function act(action:string,extra:Record<string,unknown>={}){
+  if(!data||busy)return
+  const tab=action==='approve'||action==='reject'?window.open('about:blank','_blank'):null
+  if(tab)tab.opener=null
+  setBusy(true);setMessage('')
+  try{
+   const result=await api<Partial<Share>&{message?:string}>('/api/admin/order-requests/'+id+'/'+action,{
+    method:'POST',body:JSON.stringify({version:data.review.version,...extra})
+   })
+   if(result.whatsappUrl&&result.message){
+    setLinks({whatsappUrl:result.whatsappUrl,message:result.message,paymentUrl:result.paymentUrl})
+    if(tab)tab.location.href=result.whatsappUrl
+    setMessage(tab?'WhatsApp aperto con il messaggio pronto.':'Usa il collegamento WhatsApp qui sotto.')
+   }else{tab?.close();setMessage(result.message||'Operazione completata.')}
+   if(action==='reject')setRejecting(false)
+   await load()
+  }catch(error){tab?.close();setMessage(error instanceof Error?error.message:String(error))}
+  finally{setBusy(false)}
+ }
+ const paidMessage=data.phone?'https://wa.me/'+data.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(`Ciao, abbiamo ricevuto il pagamento dell’ordine #${id} (${money(data.total)}). Ti avviseremo quando sarà spedito. Grazie, DeLù!`):null
+ return <section className="order-detail-block order-review">
+  <header className="review-heading"><div><span>GESTIONE ORDINE</span><h3>Verifica magazzini</h3></div><b>{stateLabels[data.review.state]||data.review.state}</b></header>
+  <p role="status" className="review-feedback">{message}</p>
+  {state==='REVIEW'?<>
+   <p className="review-hint">Verifica la disponibilità e salva eventuali variazioni prima della conferma. Il link di pagamento fissa l’importo salvato.</p>
+   <div className="review-lines">
+    {items.map((item,index)=>{
+     const product=catalog.find(candidate=>candidate.id===item.id)
+     return <fieldset key={index} className="review-line">
+      <legend>Articolo {index+1}</legend>
+      <label className="review-wide">Prodotto<select value={item.id} onChange={e=>{const selected=catalog.find(candidate=>candidate.id===e.target.value);if(selected)updateLine(index,toLine(selected))}}>
+       {!product&&<option value={item.id}>{item.name}</option>}
+       {catalog.map(candidate=><option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+      </select></label>
+      <label>Colore<select value={item.color} onChange={e=>updateLine(index,{color:e.target.value})}>{(product?.colors.length?product.colors:[item.color]).map(color=><option key={color}>{color}</option>)}</select></label>
+      <label>Taglia<select value={item.size} onChange={e=>updateLine(index,{size:e.target.value})}>{(product?.sizes.length?product.sizes:[item.size]).map(size=><option key={size}>{size}</option>)}</select></label>
+      <label>Quantità<input type="number" min="1" max="20" step="1" value={item.qty} onChange={e=>updateLine(index,{qty:Number(e.target.value)})}/></label>
+      <label>Prezzo unitario €<input type="number" min="0" step=".01" value={item.unitPrice} onChange={e=>updateLine(index,{unitPrice:Number(e.target.value)})}/></label>
+      <div className="review-line-footer review-wide"><strong>{money(item.qty*item.unitPrice)}</strong><button type="button" className="review-link-danger" onClick={()=>setItems(previous=>previous.filter((_,n)=>n!==index))}><Trash2 size={15} aria-hidden="true"/> Rimuovi</button></div>
+     </fieldset>
+    })}
+   </div>
+   <button type="button" className="review-secondary" disabled={!catalog.length||items.length>=40} onClick={()=>setItems(previous=>[...previous,toLine(catalog[0])])}><Plus size={16} aria-hidden="true"/> Aggiungi articolo</button>
+   <div className="review-total">
+    <div className="review-amount-fields">
+     <label>Spedizione €<input type="number" min="0" step=".01" value={cost} onChange={e=>setCost(e.target.value)}/></label>
+     <label>Sconto €<input type="number" min="0" step=".01" value={discount} onChange={e=>setDiscount(e.target.value)}/></label>
+    </div>
+    <div className="review-total-row"><div><small>Totale calcolato</small><strong>{money(total)}</strong></div><div><small>Totale salvato</small><strong>{money(data.total)}</strong></div></div>
+    {dirty&&<p className="review-hint">Salva le variazioni prima di confermare.</p>}
+    <button type="button" className="review-secondary" disabled={busy||!dirty||!lineValid||!validAmounts} onClick={()=>act('edit',{items,shippingCost:Number(cost),discount:Number(discount)})}>Salva variazioni</button>
+   </div>
+   <div className="review-actions">
+    <button type="button" className="review-primary" disabled={busy||dirty||!lineValid||!validAmounts||total<=0} onClick={()=>{if(confirm('Confermare l’ordine e bloccare l’importo salvato?'))void act('approve')}}><Check size={17} aria-hidden="true"/> Conferma e apri WhatsApp</button>
+    <button type="button" className="review-danger" disabled={busy} aria-expanded={rejecting} onClick={()=>setRejecting(value=>!value)}>Rifiuta richiesta</button>
+   </div>
+   {rejecting&&<form className="review-rejection" onSubmit={e=>{e.preventDefault();if(reason.trim())void act('reject',{reason})}}>
+    <label>Motivo del rifiuto<textarea rows={3} maxLength={1000} required value={reason} onChange={e=>setReason(e.target.value)} placeholder="Es. La taglia richiesta è esaurita."/></label>
+    <button className="review-danger" disabled={busy||!reason.trim()}>Rifiuta e apri WhatsApp</button>
+   </form>}
+  </>:<div className="review-total-row"><div><small>{state==='REJECTED'?'Motivo del rifiuto':'Importo confermato'}</small><strong>{state==='REJECTED'?data.review.reason:money(data.total)}</strong></div></div>}
+  {links&&(!links.paymentUrl||state!=='PAID')&&<div className="review-share">
+   <a className="review-secondary" href={links.whatsappUrl} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/>{links.paymentUrl?'Apri riepilogo e pagamento':'Apri motivo del rifiuto'}</a>
+   <textarea readOnly aria-label="Messaggio WhatsApp" rows={4} value={links.message}/>
+   <button type="button" className="review-secondary" onClick={()=>navigator.clipboard.writeText(links.message).then(()=>setMessage('Messaggio copiato.')).catch(()=>setMessage('Seleziona e copia il testo.'))}>Copia messaggio</button>
+  </div>}
+  {state==='PAID'&&paidMessage&&<a className="review-secondary" href={paidMessage} target="_blank" rel="noreferrer"><MessageCircle size={16} aria-hidden="true"/> Conferma pagamento su WhatsApp</a>}
+  {state==='PAID'&&<form className="review-label-form" onSubmit={e=>{
+   e.preventDefault();const form=new FormData(e.currentTarget)
+   if(confirm('Generare un’etichetta Sendcloud a pagamento per questo ordine?'))void act('label',{street:form.get('street'),houseNumber:form.get('house'),weight:Number(form.get('weight')),shippingMethod:Number(form.get('method'))})
+  }}>
+   <h3>Etichetta corriere</h3>
+   <div className="review-amount-fields">
+    <label>Via senza civico<input name="street" required defaultValue={data.shipping.address}/></label>
+    <label>Civico<input name="house" required/></label>
+    <label>Peso effettivo kg<input name="weight" type="number" min=".001" step=".001" required/></label>
+    <label>Servizio corriere<select name="method" required defaultValue=""><option value="">Seleziona un servizio</option>{methods.map(method=><option value={method.id} key={method.id}>{method.name}</option>)}</select></label>
+   </div>
+   <button className="review-secondary" disabled={busy||data.label?.state!=='READY'}>Crea etichetta corriere</button>
+   {data.label?.parcel_id&&<a className="review-secondary" href={'/api/admin/order-requests/'+id+'/label'} target="_blank" rel="noreferrer">Apri etichetta Sendcloud</a>}
+   {data.label?.state==='CHECK_REQUIRED'&&<p className="review-hint">Verifica l’esito su Sendcloud prima di ripetere.</p>}
+  </form>}
+ </section>
 }

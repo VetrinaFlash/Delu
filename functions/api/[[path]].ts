@@ -1,3 +1,4 @@
+import { adminPushRoute, flushAdminPush } from '../_lib/adminPush'
 import {validateAttributes} from '../../shared/catalog'
 import { ensureDatabase } from '../_lib/database'
 import { requestedOrder, orderRequestRoute, reviewPaid, paymentFailed } from '../_lib/orderRequests'
@@ -89,10 +90,10 @@ export async function onRequest(ctx:Ctx){const {request,env}=ctx;let response:Re
  }
  if(!new URL(request.url).pathname.startsWith('/api/media/'))await ensureDatabase(env);response=await dispatch(request,env)
  }catch(error:any){console.error(error);response=json({error:'Servizio temporaneamente non disponibile'},503)}
- const work=flushMail(env).catch(console.error);if(ctx.waitUntil)ctx.waitUntil(work);else await work
+ const work=(async()=>{await flushAdminPush(env).catch(()=>console.error("Invio Web Push non disponibile"));await flushMail(env).catch(console.error)})();if(ctx.waitUntil)ctx.waitUntil(work);else await work
  response.headers.set('X-Content-Type-Options','nosniff');response.headers.set('Cache-Control','no-store');return response
 }
-async function dispatch(request:Request,env:Env){try{const url=new URL(request.url),path=url.pathname.replace(/^\/api\/?/,'').replace(/\/$/,''),method=request.method.toUpperCase();const isStaff=path.startsWith('admin/')?!!await getSession(request,env):false;const workflow=await orderRequestRoute(request,env,path,isStaff);if(workflow)return workflow;const wallet=await walletRoute(request,env,path,isStaff);if(wallet)return wallet;
+async function dispatch(request:Request,env:Env){try{const url=new URL(request.url),path=url.pathname.replace(/^\/api\/?/,'').replace(/\/$/,''),method=request.method.toUpperCase();const isStaff=path.startsWith('admin/')?!!await getSession(request,env):false;const push=await adminPushRoute(request,env,path,isStaff);if(push)return push;const workflow=await orderRequestRoute(request,env,path,isStaff);if(workflow)return workflow;const wallet=await walletRoute(request,env,path,isStaff);if(wallet)return wallet;
  if(path.startsWith('customer/')||path.startsWith('admin/community')){
  const community=await communityRoute(request,env,path,path.startsWith('admin/')?!!await getSession(request,env):false);if(community)return community
  }

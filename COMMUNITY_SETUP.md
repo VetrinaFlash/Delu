@@ -102,3 +102,17 @@ La registrazione email raccoglie contatti e indirizzo di spedizione. Gli account
 La Fidelity mostra gli ordini con pagamento registrato, abbinati all'email del cliente. Lo staff accredita punti in Clienti e resi → Fidelity Card indicando una causale o il riferimento dello scontrino. L'accredito usa una chiave idempotente. Non è prevista una conversione automatica da euro a punti o la spesa di un saldo in denaro.
 
 Per usare il testo aggiornato, copia PRIVACY_NOTICE.txt nella variabile PRIVACY_NOTICE dell'ambiente Production.
+
+## Notifiche Web Push per il pannello admin
+
+Esegui `node scripts/admin-push-keys.mjs` una volta. Copia i tre valori in Cloudflare Pages → DeLù → Settings → Variables and Secrets → Production e fai un nuovo deploy.
+
+- `WEB_PUSH_PUBLIC_KEY` come Text.
+- `WEB_PUSH_PRIVATE_KEY` come Secret.
+- `WEB_PUSH_SUBJECT` come Text, nel formato `mailto:info@deluclothesshop.it`.
+
+Mantieni la stessa coppia di chiavi fra i deploy. Con un nuovo dominio o una nuova coppia di chiavi ogni dispositivo deve riattivare le push. Non condividere la chiave privata e non salvarla nel repository.
+
+Su iPhone con iOS 16.4 o successivo, apri il pannello in Safari, usa Condividi → Aggiungi alla schermata Home e apri DeLù Admin dall’icona. Su Android e Windows usa un browser compatibile con Web Push, anche tramite installazione della web app. Accedi, scegli Attiva push e consenti le notifiche. Invia push di prova sul dispositivo per controllare permesso, consegna e impostazioni audio.
+
+Gli avvisi di ordine, pagamento ricevuto e pagamento non riuscito vengono emessi dal server. Il suono delle push in background dipende dalle impostazioni del sistema e del browser. Il pulsante Attiva suono dashboard riproduce e abilita un avviso locale per la pagina aperta. Uscendo dal pannello si disiscrive il dispositivo.

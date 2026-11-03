@@ -497,3 +497,23 @@ test('admin order summaries open the order drawer from the dashboard and the ord
  await row.click()
  await expect(page.locator('.order-drawer')).toContainText('Dress Nuit')
 })
+
+test('admin sign-in fields accept touch and keyboard input',async({page},testInfo)=>{
+ await page.route('**/api/auth/me',r=>r.fulfill({status:401,json:{error:'Accedi'}}))
+ let body:any
+ await page.route('**/api/auth/login',async r=>{body=r.request().postDataJSON();await r.fulfill({status:401,json:{error:'Credenziali di prova'}})})
+ await page.goto('/admin')
+ const email=page.getByLabel('Email o nome utente',{exact:true})
+ const password=page.getByLabel('Password',{exact:true})
+ if(testInfo.project.name.includes('mobile'))await email.tap();else await email.click()
+ await expect(email).toBeFocused()
+ await email.fill('admin@example.test')
+ if(testInfo.project.name.includes('mobile'))await password.tap();else await password.click()
+ await expect(password).toBeFocused()
+ await password.fill('sample-password-only')
+ await page.getByRole('button',{name:'Mostra password',exact:true}).click()
+ await expect(password).toHaveAttribute('type','text')
+ await page.getByRole('button',{name:'ACCEDI',exact:true}).click()
+ await expect(page.getByText('Credenziali di prova')).toBeVisible()
+ expect(body).toEqual({email:'admin@example.test',password:'sample-password-only'})
+})

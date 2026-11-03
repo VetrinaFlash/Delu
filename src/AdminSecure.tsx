@@ -1,3 +1,4 @@
+import PushControls, { disableAdminPush } from './admin/PushControls'
 import CustomerManagement from './admin/CustomerManagement'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -13,9 +14,9 @@ import { api, money, type ApiOrder, type Tab, upsertProduct } from './admin/shar
 function AdminBrand(){return <Link to="/" className="admin-delu-brand"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/></Link>}
 
 function Login({onDone}:{onDone:()=>void}){
-  const[email,setEmail]=useState(''),[password,setPassword]=useState(''),[loading,setLoading]=useState(false),[error,setError]=useState('')
+  const[email,setEmail]=useState(''),[password,setPassword]=useState(''),[loading,setLoading]=useState(false),[error,setError]=useState(''),[showPassword,setShowPassword]=useState(false)
   async function submit(e:React.FormEvent){e.preventDefault();setLoading(true);setError('');try{await api('/api/auth/login',{method:'POST',body:JSON.stringify({email,password})});onDone()}catch(err:any){setError(err.message)}finally{setLoading(false)}}
-  return <main className="admin-login"><div className="admin-login-brand"><AdminBrand/><p>PRIVATE MANAGEMENT SYSTEM</p></div><motion.form onSubmit={submit} className="login-card" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}><LockKeyhole/><span className="eyebrow">AREA RISERVATA</span><h1>DeLù Back Office.</h1><p>Catalogo, varianti, magazzino, ordini e spedizioni in un unico posto.</p><label>Email o nome utente<input autoComplete="username" type="text" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Password<input autoComplete="current-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{error&&<div className="form-error">{error}</div>}<button disabled={loading} type="submit">{loading?'ACCESSO...':'ACCEDI'} <ArrowRight/></button><small>Sessione firmata lato server. Le credenziali non vengono memorizzate nel browser.</small></motion.form></main>
+  return <main className="admin-login"><div className="admin-login-brand"><AdminBrand/><p>PRIVATE MANAGEMENT SYSTEM</p></div><motion.form onSubmit={submit} className="login-card" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}><LockKeyhole/><span className="eyebrow">AREA RISERVATA</span><h1>DeLù Back Office.</h1><p>Catalogo, varianti, magazzino, ordini e spedizioni in un unico posto.</p><label>Email o nome utente<input name="username" autoComplete="username" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} type="text" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Password<input name="password" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} required/></label><button className="login-password-toggle" type="button" aria-pressed={showPassword} onClick={()=>setShowPassword(value=>!value)}>{showPassword?"Nascondi password":"Mostra password"}</button>{error&&<div className="form-error">{error}</div>}<button disabled={loading} type="submit">{loading?'ACCESSO...':'ACCEDI'} <ArrowRight/></button><small>Sessione firmata lato server. Le credenziali non vengono memorizzate nel browser.</small></motion.form></main>
 }
 
 export default function AdminSecure(){
@@ -24,18 +25,18 @@ export default function AdminSecure(){
   const[error,setError]=useState(''),[editor,setEditor]=useState<Product|null|undefined>(undefined),[orderDetail,setOrderDetail]=useState<ApiOrder|null>(null)
   async function load(){setError('');try{const[p,o,s]=await Promise.all([api<Product[]>('/api/admin/products'),api<ApiOrder[]>('/api/admin/orders'),api<ShopConfig>('/api/admin/settings')]);setProducts(p);setOrders(o);setSettings(s)}catch(e:any){setError(e.message)}}
   useEffect(()=>{api('/api/auth/me').then(()=>{setAuth(true);return load()}).catch(()=>setAuth(false)).finally(()=>setChecking(false))},[])
-  const seen=useRef<Map<string,string>|null>(null),[live,setLive]=useState(''),[lastSync,setLastSync]=useState('')
+  const seen=useRef<Map<string,string>|null>(null),[live,setLive]=useState(''),[lastSync,setLastSync]=useState(''),[notificationEvents,setNotificationEvents]=useState(0)
   useEffect(()=>{if(!auth)return;let stopped=false,running=false;
     async function tick(){if(running||document.hidden)return;running=true;try{
-      const state=await fetch('/api/auth/me',{credentials:'include'});if(state.status===401){setLive('Sessione scaduta. Accedi di nuovo.');if('Notification' in window&&Notification.permission==='granted')new Notification('DeLù · accedi di nuovo',{body:'La sessione admin è scaduta. Apri la web app per accedere.'});setAuth(false);return}if(!state.ok)throw new Error('Connessione non disponibile')
+      const state=await fetch('/api/auth/me',{credentials:'include'});if(state.status===401){setLive('Sessione scaduta. Accedi di nuovo.');setAuth(false);return}if(!state.ok)throw new Error('Connessione non disponibile')
       const incoming=await api<ApiOrder[]>('/api/admin/orders');if(stopped)return;
       if(seen.current){const changed=incoming.filter(o=>['Da confermare','Pagato - da preparare','Pagamento fallito','Nuovo'].includes(o.status)&&(!seen.current!.has(o.id)||(['Pagato - da preparare','Pagamento fallito'].includes(o.status)&&seen.current!.get(o.id)!==o.status)));
-      if(changed.length){setLive(changed.length+' nuove richieste o pagamenti');if('Notification' in window&&Notification.permission==='granted')new Notification('DeLù · nuovi ordini',{body:changed.length+' richieste o pagamenti da controllare. Apri la dashboard.'})}}
+      if(changed.length){setLive(changed.length+' nuove richieste o pagamenti');setNotificationEvents(count=>count+1)}}
       seen.current=new Map(incoming.map(o=>[o.id,o.status]));setOrders(incoming);setLastSync(new Date().toLocaleTimeString('it-IT'))
     }catch{if(!stopped)setLive('Connessione interrotta. Riprovo automaticamente.')}finally{running=false}}
     tick();const timer=window.setInterval(tick,8000);document.addEventListener('visibilitychange',tick);window.addEventListener('online',tick);return()=>{stopped=true;clearInterval(timer);document.removeEventListener('visibilitychange',tick);window.removeEventListener('online',tick)}
   },[auth])
-  async function logout(){await api('/api/auth/logout',{method:'POST'}).catch(()=>{});setAuth(false)}
+  async function logout(){await disableAdminPush().catch(()=>{});await api('/api/auth/logout',{method:'POST'}).catch(()=>{});setAuth(false)}
   async function deactivate(id:string){if(!confirm('Nascondere questo prodotto dallo shop?'))return;try{const updated=await api<Product>(`/api/admin/products/${id}`,{method:'PATCH',body:JSON.stringify({active:false})});setProducts(v=>v.map(p=>p.id===id?updated:p))}catch(e:any){setError(e.message)}}
   async function quickStock(p:Product,delta:number){if(p.variants?.length){setEditor(p);return}try{const updated=await api<Product>(`/api/admin/products/${p.id}`,{method:'PATCH',body:JSON.stringify({stock:Math.max(0,p.stock+delta)})});setProducts(v=>v.map(x=>x.id===p.id?updated:x))}catch(e:any){setError(e.message)}}
   if(checking)return <div className="admin-loading">DELÙ</div>
@@ -44,7 +45,8 @@ export default function AdminSecure(){
   return <main className="admin-shell">
     <aside className="admin-sidebar"><AdminBrand/><nav><button className={tab==='dashboard'?'active':''} onClick={()=>setTab('dashboard')}><LayoutDashboard/>Dashboard</button><button className={tab==='products'?'active':''} onClick={()=>setTab('products')}><Package/>Prodotti</button><button className={tab==='orders'?'active':''} onClick={()=>setTab('orders')}><ShoppingBag/>Ordini <span>{orders.filter(o=>['Da confermare','Pagato - da preparare','Nuovo'].includes(o.status)).length}</span></button><button onClick={()=>setTab('customers')}><CircleUserRound/>Clienti e resi</button><button className={tab==='settings'?'active':''} onClick={()=>setTab('settings')}><Settings/>Impostazioni</button></nav><div className="admin-side-bottom"><Link to="/" target="_blank"><Eye/>Vedi shop</Link><button onClick={logout}><LogOut/>Esci</button></div></aside>
     <section className="admin-content"><div className="admin-top"><div><span className="eyebrow">DELÙ BACK OFFICE</span><h1>{tab==='dashboard'?'Panoramica':tab==='products'?'Catalogo & magazzino':tab==='orders'?'Ordini & spedizioni':'Impostazioni shop'}</h1></div><div className="admin-avatar"><CircleUserRound/><span>Admin<br/><small>DeLù Staff</small></span></div></div>{error&&<div className="admin-error">{error}<button onClick={()=>setError('')}><X/></button></div>}
-      <div className="admin-live" role="status" aria-live="polite"><span>{live||'Aggiornamento automatico ogni 8 secondi'} · {lastSync&&'Ultimo aggiornamento '+lastSync}</span><button onClick={async()=>{if('Notification' in window){const permission=await Notification.requestPermission();setLive(permission==='granted'?'Avvisi browser attivati per la dashboard aperta. Per la web app chiusa vengono usate le email.':'Avvisi non autorizzati: resta disponibile la dashboard e la notifica email.')}}}>Attiva avvisi browser</button></div>
+      <div className="admin-live" role="status" aria-live="polite"><span>{live||'Aggiornamento automatico ogni 8 secondi'} {lastSync&&'· Ultimo aggiornamento '+lastSync}</span></div>
+      <div hidden={tab!=='dashboard'}><PushControls eventCount={notificationEvents}/></div>
       {tab==='customers'&&<CustomerManagement/>}
       {tab==='dashboard'&&<Dashboard products={active} orders={orders} goOrders={()=>setTab('orders')} onOpen={setOrderDetail}/>} 
       {tab==='products'&&<Products products={products} onNew={()=>setEditor(null)} onEdit={setEditor} quickStock={quickStock} deactivate={deactivate}/>} 

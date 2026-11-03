@@ -1,3 +1,4 @@
+import { enqueueAdminPush } from './adminPush'
 import { clean, digest, email, limit, reply, token, validEmail } from './security'
 import { discountFor, enqueue, firstDeliveryForOrder, paidEmails } from './community'
 export async function requestTables(env:any){await env.DB.batch([
@@ -36,6 +37,7 @@ export async function requestedOrder(request:Request,env:any,shippingFor:(env:an
  ])
  await enqueue(env,'request-customer-'+id,email(b.customer.email),'DeLù · richiesta ricevuta '+id,'Richiesta '+id+' ricevuta. Non è ancora confermata e non è stato richiesto alcun pagamento. Verificheremo la disponibilità nei magazzini. Lo staff ti comunicherà conferma, eventuali variazioni e importo finale su WhatsApp. Nessuna sostituzione è vincolante senza la tua accettazione.')
  if(env.ADMIN_EMAIL)await enqueue(env,'request-admin-'+id,env.ADMIN_EMAIL,'DeLù · richiesta da verificare '+id,'Verifica disponibilità e importo nella dashboard: '+base(env)+'/admin')
+ await enqueueAdminPush(env,'request-'+id,'DeLù · nuovo ordine','Apri il pannello per verificare la disponibilità.')
  return reply({orderId:id,status:'Da confermare',message:'Richiesta inviata. Attendi la verifica dello staff su WhatsApp: non devi pagare ora.'},201)
 }
 export async function reviewPaid(env:any,id:string,operation:any){
@@ -131,6 +133,7 @@ async function createLabel(env:any,o:any,b:any){
 export async function paymentFailed(env:any,id:string,operation:any){
  const current=await env.DB.prepare('SELECT status FROM payments WHERE order_id=?').bind(id).first();if(!current||['PAID','PAID_STOCK_REVIEW'].includes(current.status))return
  await env.DB.prepare("UPDATE orders SET status='Pagamento fallito',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(id).run()
+ await enqueueAdminPush(env,'failed-'+id+'-'+clean(operation?.operationId,100),'DeLù · pagamento non riuscito','Controlla l’esito dell’ordine nel pannello.')
  if(env.ADMIN_EMAIL)await enqueue(env,'failed-admin-'+id+'-'+clean(operation?.operationId,100),env.ADMIN_EMAIL,'DeLù · pagamento non riuscito '+id,'Il pagamento per ordine '+id+' non è riuscito: '+clean(operation?.operationResult,80)+'. Verifica Nexi prima di creare un nuovo tentativo. Dashboard: '+base(env)+'/admin')
 }
 

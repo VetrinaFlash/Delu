@@ -1,1 +1,19 @@
 .admin-loading{min-height:100vh;display:grid;place-items:center;background:#111012;color:white;font-family:var(--serif);font-size:56px;letter-spacing:.14em}.admin-error{display:flex;align-items:center;justify-content:space-between;background:#fff0f2;color:#9b284d;border:1px solid #ffd5e2;padding:12px 14px;margin-bottom:16px;font-size:10px}.admin-error button{border:0;background:transparent;color:inherit;display:grid;place-items:center}.admin-error svg{width:15px}.stock-editor{display:flex;align-items:center;gap:7px}.stock-editor button{width:25px;height:25px;border:1px solid #ddd;background:white;border-radius:50%;line-height:1}.stock-editor strong{min-width:24px;text-align:center}.row-disabled{opacity:.48;background:#fafafa}.status-select{max-width:145px;border:1px solid #e2dde0;background:white;border-radius:20px;padding:6px 9px;font-size:8px;outline:none}.product-form textarea{width:100%;border:1px solid #ddd;padding:12px 14px;outline:0;resize:vertical;font:inherit}.product-form textarea:focus{border-color:var(--pink-hot);box-shadow:0 0 0 3px var(--pink-soft)}.login-card button:disabled,.save-product:disabled{opacity:.55;cursor:wait}@media(max-width:760px){.stock-editor{gap:4px}.stock-editor button{width:24px;height:24px}.status-select{max-width:120px}}
+
+
+.admin-login::before { pointer-events:none; }
+.admin-login .login-card { position:relative; z-index:2; min-width:0; }
+.admin-login .login-card input { width:100%; min-width:0; font-size:16px; touch-action:manipulation; }
+.admin-login .login-card .login-password-toggle {
+  align-self:flex-start; height:auto; min-height:44px; padding:0 8px; margin:-12px 0 10px;
+  color:#75465d; background:transparent; letter-spacing:0; font-size:12px; text-decoration:underline;
+}
+@media(max-width:760px) {
+  .admin-login { min-height:100svh; align-content:start; overflow:clip; }
+  .admin-login .admin-login-brand { min-height:0; padding:24px; }
+  .admin-login .admin-login-brand .admin-delu-brand { width:144px; }
+  .admin-login .login-card { padding:30px 22px 42px; }
+  .admin-login .login-card > svg { margin-bottom:16px; }
+  .admin-login .login-card h1 { font-size:clamp(32px,9vw,46px); }
+  .admin-login .login-card > p { margin-bottom:20px; }
+}

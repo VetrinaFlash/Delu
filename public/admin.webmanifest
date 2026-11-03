@@ -1,1 +1,24 @@
-{"name":"DeLù · Gestione negozio","short_name":"DeLù Admin","start_url":"/admin","scope":"/admin","display":"standalone","background_color":"#fff4f8","theme_color":"#efbdd0","icons":[{"src":"/delu-logo.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "DeLù · Gestione negozio",
+  "short_name": "DeLù Admin",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#fff4f8",
+  "theme_color": "#efbdd0",
+  "icons": [
+    {
+      "src": "/admin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/admin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "/admin"
+}

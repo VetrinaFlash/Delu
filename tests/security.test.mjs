@@ -233,3 +233,58 @@ test('Facebook requires email proof in the initiating browser and GitHub require
   assert.equal((await request(env,ghVerified.callback,undefined,ghVerified.cookie)).status,302)
  }finally{globalThis.fetch=originalFetch}
 })
+
+test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers encrypted order alerts once',async()=>{
+ const env=await setup()
+ const signing=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify'])
+ const subscriber=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits'])
+ const userKey=Buffer.from(await crypto.subtle.exportKey('raw',subscriber.publicKey))
+ const auth=crypto.getRandomValues(new Uint8Array(16))
+ env.WEB_PUSH_PUBLIC_KEY=Buffer.from(await crypto.subtle.exportKey('raw',signing.publicKey)).toString('base64url')
+ env.WEB_PUSH_PRIVATE_KEY=(await crypto.subtle.exportKey('jwk',signing.privateKey)).d
+ env.WEB_PUSH_SUBJECT='mailto:owner@example.test'
+ const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/demo',keys:{p256dh:userKey.toString('base64url'),auth:Buffer.from(auth).toString('base64url')}}
+ const pushes=[],original=globalThis.fetch
+ globalThis.fetch=async(url,init)=>{
+  if(String(url)===subscription.endpoint){pushes.push(init);return new Response(null,{status:201})}
+  if(String(url).includes('resend'))return new Response('{}',{status:200})
+  throw new Error('Unexpected provider '+url)
+ }
+ try{
+  assert.equal((await request(env,'admin/push/subscribe',{subscription})).status,401)
+  const login=await request(env,'auth/login',{email:env.ADMIN_EMAIL,password:'OwnerPassword!12345'})
+  const cookie=login.headers.get('set-cookie')
+  const bad={...subscription,endpoint:'https://fcm.googleapis.com.example.test/private'}
+  assert.equal((await request(env,'admin/push/subscribe',{subscription:bad},cookie)).status,400)
+  assert.equal((await request(env,'admin/push/subscribe',{subscription},cookie)).status,200)
+  const product=env.DB.db.prepare("SELECT id,colors_json,sizes_json FROM products WHERE active=1 LIMIT 1").get()
+  const order=await request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:product.id,qty:1,size:JSON.parse(product.sizes_json)[0],color:JSON.parse(product.colors_json)[0]}]})
+  assert.equal(order.status,201)
+  assert.equal(pushes.length,1)
+  assert.equal(pushes[0].headers['Content-Encoding'],'aes128gcm')
+  const jwt=pushes[0].headers.Authorization.match(/^vapid t=([^,]+), k=/)[1]
+  const [header,claims,signature]=jwt.split('.')
+  assert.equal(JSON.parse(Buffer.from(claims,'base64url')).aud,'https://fcm.googleapis.com')
+  assert.equal(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},signing.publicKey,Buffer.from(signature,'base64url'),Buffer.from(header+'.'+claims)),true)
+  const payload=Buffer.from(pushes[0].body)
+  assert.equal(payload.readUInt32BE(16),4096)
+  const keyLength=payload[20],serverKey=payload.subarray(21,21+keyLength)
+  const remote=await crypto.subtle.importKey('raw',serverKey,{name:'ECDH',namedCurve:'P-256'},false,[])
+  const secret=await crypto.subtle.deriveBits({name:'ECDH',public:remote},subscriber.privateKey,256)
+  async function expand(material,salt,info,length){
+   const key=await crypto.subtle.importKey('raw',material,'HKDF',false,['deriveBits'])
+   return crypto.subtle.deriveBits({name:'HKDF',hash:'SHA-256',salt,info},key,length*8)
+  }
+  const salt=payload.subarray(0,16),ikm=await expand(secret,auth,Buffer.concat([Buffer.from('WebPush: info\0'),userKey,serverKey]),32)
+  const cek=await expand(ikm,salt,Buffer.from('Content-Encoding: aes128gcm\0'),16)
+  const nonce=await expand(ikm,salt,Buffer.from('Content-Encoding: nonce\0'),12)
+  const aes=await crypto.subtle.importKey('raw',cek,'AES-GCM',false,['decrypt'])
+  const plaintext=Buffer.from(await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce},aes,payload.subarray(21+keyLength)))
+  assert.equal(plaintext.at(-1),2)
+  assert.equal(JSON.parse(plaintext.subarray(0,-1)).title,'DeLù · nuovo ordine')
+  await request(env,'config')
+  assert.equal(pushes.length,1)
+  assert.equal((await request(env,'admin/push/unsubscribe',{endpoint:subscription.endpoint},cookie)).status,200)
+  assert.equal(env.DB.db.prepare('SELECT count(*) AS n FROM admin_push_devices').get().n,0)
+ }finally{globalThis.fetch=original}
+})

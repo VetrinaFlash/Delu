@@ -47,7 +47,10 @@ window.addEventListener('vite:preloadError',event=>{
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
-if(isAdminRoute){document.querySelector('link[rel=manifest]')?.setAttribute('href','/admin.webmanifest')}
+if(isAdminRoute){
+ document.querySelector('link[rel=manifest]')?.setAttribute('href','/admin.webmanifest')
+ const icon=document.createElement('link');icon.rel='apple-touch-icon';icon.href='/admin-icon-192.png';document.head.append(icon)
+}
 
 function RouteFallback(){
   return <div className="route-fallback" role="status" aria-label="Caricamento DeLù"><img src="/delu-logo.svg" alt=""/></div>
