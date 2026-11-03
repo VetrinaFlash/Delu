@@ -378,7 +378,7 @@ test('customer registration submits verification request without logging in befo
  await page.getByLabel('Email',{exact:true}).fill('anna@example.test')
  await page.getByLabel('Password (almeno 12 caratteri)').fill('Long-password-123')
  await page.getByRole('checkbox',{name:/Ho letto/}).check()
- await page.getByRole('button',{name:'Invia',exact:true}).click()
+ await page.locator('.account-panel form').getByRole('button',{name:'Registrati',exact:true}).click()
  await expect(page.getByRole('status')).toContainText('Controlla la tua email.')
  expect(payload.marketing).toBe(false)
  expect(payload.privacy).toBe(true)

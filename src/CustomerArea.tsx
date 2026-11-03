@@ -1,3 +1,4 @@
+import { ArrowRight, Package, RotateCcw, WalletCards } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from './admin/shared'
@@ -19,11 +20,31 @@ export default function CustomerArea(){
  try{const operation=link.kind||mode;const r=await api('/api/customer/'+operation,{method:'POST',body:JSON.stringify({email:f.get('email'),phone:f.get('phone'),password:f.get('password'),name:f.get('name'),privacy:f.get('privacy')==='on',marketing:f.get('marketing')==='on',token:link.token})});setMessage(r.message||'Operazione completata.');setLink({kind:'',token:''});await refresh()}catch(e:any){setMessage(e.message)}finally{setBusy(false)}}
  const phoneField=(value?:string)=><label>{t('phone')} <input name="phone" type="tel" autoComplete="tel" placeholder="+39…" maxLength={30} defaultValue={value||''}/></label>
  const socialLinks=<>{config.facebook&&<a className="customer-google" href="/api/customer/facebook">{w.google.replace('Google','Facebook')}</a>}{config.github&&<a className="customer-google" href="/api/customer/github">{w.google.replace('Google','GitHub')}</a>}</>
- return <main className="customer-page"><span>DELÙ · ACCOUNT</span><h1>{w.account}</h1><p>{w.guest}</p><div role="status" aria-live="polite">{message}</div>
- {!ready?<p>{w.loading}</p>:link.kind?<form onSubmit={submit}><h2>{link.kind==='socialVerify'?w.verify:w[link.kind as 'verify']}</h2>{link.kind==='reset'&&<label>{w.password}<input name="password" type="password" minLength={12} maxLength={200} autoComplete="new-password" required/></label>}<button disabled={busy}>{w.send}</button></form>:user?<><h2>{user.name}</h2><p>{user.email}</p><form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await api('/api/customer/preferences',{method:'POST',body:JSON.stringify({marketing:new FormData(e.currentTarget).get('marketing')==='on',phone:new FormData(e.currentTarget).get('phone')})});setMessage('Preferenze salvate.');await refresh()}catch(e:any){setMessage(e.message)}finally{setBusy(false)}}}>{phoneField(user.phone)}<label className="customer-check"><input type="checkbox" name="marketing" defaultChecked={!!user.marketing}/>{w.marketing}</label><button disabled={busy}>{w.save}</button></form>{socialLinks}{config.google&&<a href="/api/customer/google">{w.google}</a>}<p><Link to="/fidelity">La tua Fidelity Card · Apple e Samsung Wallet</Link></p><h2>{w.orders}</h2>{orders.map(o=><article className="customer-order" key={o.id}><b>{o.id}</b><p>{o.status} · {new Intl.NumberFormat(locale,{style:'currency',currency:'EUR'}).format(o.total)}</p><Link to={'/returns?order='+encodeURIComponent(o.id)}>{w.returns}</Link></article>)}<button onClick={async()=>{await api('/api/customer/logout',{method:'POST'});setUser(null);setOrders([])}}>{w.logout}</button></>:<>
- <div className="customer-tabs">{['login','register','forgot','resend'].map(k=><button aria-pressed={mode===k} key={k} onClick={()=>setMode(k)}>{w[k as 'login']}</button>)}</div>
- <form onSubmit={submit} key={mode}><h2>{w[mode as 'login']}</h2>{mode==='register'&&<label>{w.name}<input name="name" autoComplete="name" maxLength={120} required/></label>}<label>{w.email}<input name="email" type="email" autoComplete="email" required/></label>{['login','register'].includes(mode)&&<label>{w.password}<input name="password" type="password" autoComplete={mode==='register'?'new-password':'current-password'} minLength={mode==='register'?12:undefined} maxLength={200} required/></label>}{mode==='register'&&<>{phoneField()}<label className="customer-check"><input name="privacy" type="checkbox" required/>{w.privacy} · <Link to="/privacy">Privacy</Link></label><label className="customer-check"><input name="marketing" type="checkbox"/>{w.marketing}</label></>}<button disabled={busy}>{w.send}</button></form>
+ const signedIn=ready&&!!user&&!link.kind
+ const features=[
+  {icon:Package,label:w.orders,to:null},
+  {icon:WalletCards,label:'Fidelity Card',to:'/fidelity'},
+  {icon:RotateCcw,label:w.returns,to:'/returns'}
+ ]
+ return <main className="customer-page delu-account">
+  <section className="account-intro" aria-labelledby="account-title">
+   <span className="account-kicker">DELÙ / CLOTHES SHOP</span>
+   <h1 id="account-title">{w.account}</h1>
+   {signedIn?<div className="account-identity"><strong>{user.name}</strong><span>{user.email}</span></div>:<p>{w.guest}</p>}
+   <ul className="account-feature-list">
+    {features.map(({icon:Icon,label,to})=><li key={label}>
+     {to?<Link to={to}><Icon aria-hidden="true"/>{label}<ArrowRight className="account-feature-arrow" aria-hidden="true"/></Link>:<span><Icon aria-hidden="true"/>{label}</span>}
+    </li>)}
+   </ul>
+  </section>
+  <section className="account-panel" aria-label={w.account}>
+   <div role="status" aria-live="polite">{message}</div>
+ {!ready?<p>{w.loading}</p>:link.kind?<form onSubmit={submit}><h2>{link.kind==='socialVerify'?w.verify:w[link.kind as 'verify']}</h2>{link.kind==='reset'&&<label>{w.password}<input name="password" type="password" minLength={12} maxLength={200} autoComplete="new-password" required/></label>}<button disabled={busy}>{w.send}</button></form>:user?<><form onSubmit={async e=>{e.preventDefault();setBusy(true);try{await api('/api/customer/preferences',{method:'POST',body:JSON.stringify({marketing:new FormData(e.currentTarget).get('marketing')==='on',phone:new FormData(e.currentTarget).get('phone')})});setMessage('Preferenze salvate.');await refresh()}catch(e:any){setMessage(e.message)}finally{setBusy(false)}}}><h2>{w.save}</h2>{phoneField(user.phone)}<label className="customer-check"><input type="checkbox" name="marketing" defaultChecked={!!user.marketing}/>{w.marketing}</label><button disabled={busy}>{w.save}</button></form>{socialLinks}{config.google&&<a href="/api/customer/google">{w.google}</a>}<h2>{w.orders}</h2>{!orders.length&&<div className="account-empty"><Package aria-hidden="true"/><Link to="/shop"><ArrowRight aria-hidden="true"/><span>{t('shop')}</span></Link></div>}{orders.map(o=><article className="customer-order" key={o.id}><b>{o.id}</b><p>{o.status} · {new Intl.NumberFormat(locale,{style:'currency',currency:'EUR'}).format(o.total)}</p><Link to={'/returns?order='+encodeURIComponent(o.id)}>{w.returns}</Link></article>)}<button onClick={async()=>{await api('/api/customer/logout',{method:'POST'});setUser(null);setOrders([])}}>{w.logout}</button></>:<>
+ <div className="customer-tabs" aria-label={w.account}>{(['login','register'] as const).map(k=><button type="button" aria-pressed={mode===k} key={k} onClick={()=>{setMode(k);setMessage('')}}>{w[k]}</button>)}</div>
+ <form onSubmit={submit} key={mode}><h2>{w[mode as 'login']}</h2>{mode==='register'&&<label>{w.name}<input name="name" autoComplete="name" maxLength={120} required/></label>}<label>{w.email}<input name="email" type="email" autoComplete="email" required/></label>{['login','register'].includes(mode)&&<label>{w.password}<input name="password" type="password" autoComplete={mode==='register'?'new-password':'current-password'} minLength={mode==='register'?12:undefined} maxLength={200} required/></label>}{mode==='register'&&<>{phoneField()}<label className="customer-check"><input name="privacy" type="checkbox" required/>{w.privacy} · <Link to="/privacy">Privacy</Link></label><label className="customer-check"><input name="marketing" type="checkbox"/>{w.marketing}</label></>}<button disabled={busy||(mode!=='login'&&config.email===false)}>{mode==='login'?w.login:mode==='register'?w.register:w.send}<ArrowRight size={16} aria-hidden="true"/></button></form>
+ {config.email&&<div className="account-recovery">{(['forgot','resend'] as const).map(k=><button type="button" key={k} onClick={()=>{setMode(k);setMessage('')}}>{w[k]}</button>)}</div>}
  {(config.google||config.facebook||config.github)&&<p>{w.privacy} · <Link to="/privacy">Privacy</Link></p>}{socialLinks}{config.google&&<a className="customer-google" href="/api/customer/google">{w.google}</a>}{!config.email&&<p>Registrazione e recupero via email in attivazione. Puoi continuare ad acquistare come ospite.</p>}</>}
+  </section>
  </main>
 }
 
