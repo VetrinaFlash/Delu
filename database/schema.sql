@@ -145,3 +145,5 @@ CREATE TABLE IF NOT EXISTS shipping_labels (order_id TEXT PRIMARY KEY,state TEXT
 CREATE TABLE IF NOT EXISTS fidelity_members (id TEXT PRIMARY KEY,customer_id TEXT NOT NULL UNIQUE,status TEXT NOT NULL DEFAULT 'ACTIVE',terms TEXT NOT NULL,joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 
 INSERT OR IGNORE INTO shop_settings(key,value_json) VALUES('commerce','{"currency":"EUR","shipping":{"italy":{"price":6.9,"freeFrom":79},"eu":{"price":14.9,"freeFrom":150},"europe":{"price":19.9,"freeFrom":null},"world":{"price":29.9,"freeFrom":null}}}');
+
+CREATE TABLE IF NOT EXISTS product_attributes (product_id TEXT PRIMARY KEY,attributes_json TEXT NOT NULL DEFAULT '{}',FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE);

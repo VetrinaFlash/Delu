@@ -23,6 +23,7 @@ import './immersive-v4.css'
 import './experience-details.css'
 import './brand-fit.css'
 import './community.css'
+import './catalog-refinement.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))

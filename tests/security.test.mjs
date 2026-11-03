@@ -9,7 +9,7 @@ before(async()=>{
  root=await mkdtemp(join(process.cwd(),'.delu-security-'));await mkdir(join(root,'_lib'));await mkdir(join(root,'api'))
  for(const filename of await readdir('functions/_lib')){if(!filename.endsWith('.ts'))continue;const source=(await readFile('functions/_lib/'+filename,'utf8')).replace(/from '(\.\/[a-zA-Z]+)'/g,"from '$1.ts'");await writeFile(join(root,'_lib',filename),source)}
  const source=(await readFile('functions/api/[[path]].ts','utf8')).replace(/from '(\.\.\/_lib\/[a-zA-Z]+)'/g,"from '$1.ts'")
- await writeFile(join(root,'api/handler.ts'),source);handler=await import('file://'+join(root,'api/handler.ts'));security=await import('file://'+join(root,'_lib/security.ts'))
+ await writeFile(join(root,'api/handler.ts'),source.replace("from '../../shared/catalog'", "from '../../shared/catalog.ts'"));handler=await import('file://'+join(root,'api/handler.ts'));security=await import('file://'+join(root,'_lib/security.ts'))
 })
 after(async()=>{await rm(root,{recursive:true,force:true})})
 class DB{
@@ -138,4 +138,17 @@ test('Fidelity enrollment is separate from marketing; native Apple and Samsung p
  const data=samsung.url.split('cdata=')[1],parts=data.split('.'),decode=v=>Buffer.from(v,'base64url').toString('binary')
  assert.equal(JSON.parse(decode(parts[0])).cty,'CARD');assert.ok(keys.publicKey.verify(forge.md.sha256.create().update(parts[0]+'.'+parts[1]).digest().bytes(),decode(parts[2])))
  const inner=decode(parts[1]).split('.'),cek=keys.privateKey.decrypt(decode(inner[1]),'RSAES-PKCS1-V1_5'),cipher=forge.cipher.createDecipher('AES-GCM',cek);cipher.start({iv:decode(inner[2]),additionalData:inner[0],tag:forge.util.createBuffer(decode(inner[4])),tagLength:128});cipher.update(forge.util.createBuffer(decode(inner[3])));assert.ok(cipher.finish());assert.equal(JSON.parse(forge.util.decodeUtf8(cipher.output.bytes())).card.type,'loyalty')
+})
+
+test('category attributes round-trip, custom translations and composition validation are enforced before writes',async()=>{
+ const env=await setup();env.ADMIN_USERNAME='admin'
+ const signed=await request(env,'auth/login',{email:'admin',password:'OwnerPassword!12345'});assert.equal(signed.status,200);const cookie=signed.headers.get('set-cookie').split(';')[0]
+ const attributes={values:{length:['Midi'],model:['A tubino'],occasion:['Da sera','Da cerimonia'],craft:['Ricamato a mano']},compositions:{Composizione:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}],Fodera:[{material:'Seta',percent:100}]},translations:{en:{'Tessuto esclusivo':'Exclusive fabric'},uk:{'Tessuto esclusivo':'Ексклюзивна тканина'}}}
+ const created=await request(env,'admin/products',{name:'Abito test',price:89,category:'Abiti',colors:['Nero'],sizes:['S','M'],fabrics:['Viscosa','Tessuto esclusivo'],attributes},cookie);assert.equal(created.status,201);const p=await created.json();assert.deepEqual(p.attributes.values,attributes.values);assert.deepEqual(p.attributes.compositions,attributes.compositions)
+ const publicProducts=await(await request(env,'products')).json();assert.deepEqual(publicProducts.find(x=>x.id===p.id).attributes,p.attributes)
+ async function patch(body){return handler.onRequest({env,request:new Request('https://shop.test/api/admin/products/'+p.id,{method:'PATCH',headers:{origin:'https://shop.test',cookie,'content-type':'application/json'},body:JSON.stringify(body)}),waitUntil:()=>{}})}
+ const bad=await patch({name:'Must not be saved',attributes:{...attributes,compositions:{Composizione:[{material:'Lana',percent:80}]}}});assert.equal(bad.status,400);assert.equal(env.DB.db.prepare('SELECT name FROM products WHERE id=?').get(p.id).name,'Abito test')
+ const ok=await patch({fabrics:['Cotone'],attributes:{...attributes,values:{length:['Maxi'],occasion:['Da sera']}}});assert.equal(ok.status,200);const updated=await ok.json();assert.deepEqual(updated.fabrics,['Cotone']);assert.deepEqual(updated.attributes.values.length,['Maxi']);assert.equal(updated.attributes.translations.en['Tessuto esclusivo'],'Exclusive fabric')
+ const preserved=await patch({description:'Only description changes'});assert.deepEqual((await preserved.json()).attributes.values.length,['Maxi'])
+ const invalid=await patch({attributes:{values:{unknown:['Invented']}}});assert.equal(invalid.status,400)
 })

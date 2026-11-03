@@ -1,0 +1,12 @@
+import {useState} from 'react'
+import {useLocale} from './i18n'
+import type {Product} from './data'
+import {catalogLabel,fieldLabels,fieldsFor} from '../shared/catalog'
+export default function CatalogDetails({product:p}:{product:Product}){
+ const {locale}=useLocale(),[tab,setTab]=useState(0),a=p.attributes||{values:{},compositions:{}}
+ const label=(s:string)=>catalogLabel(s,locale,a.translations),filled=fieldsFor(p.category).filter(k=>a.values[k]?.length)
+ const groups=[{name:'Dettagli',fields:filled.filter(k=>!['care','lining','craft','decoration'].includes(k))},{name:'Materiali e cura',fields:filled.filter(k=>['care','lining'].includes(k))},{name:'Lavorazione e decorazioni',fields:filled.filter(k=>['craft','decoration'].includes(k))}].filter((g,i)=>g.fields.length||(i===1&&((p.fabrics||[]).length||Object.values(a.compositions).some(v=>v.length))))
+ if(!groups.length)return null
+ const selected=groups[Math.min(tab,groups.length-1)]
+ return <section className="catalog-details"><div role="tablist" aria-label={label('Dettagli')}>{groups.map((g,i)=><button type="button" id={`detail-tab-${i}`} role="tab" aria-selected={selected===g} aria-controls="catalog-detail-panel" tabIndex={selected===g?0:-1} onKeyDown={e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const n=(i+(e.key==='ArrowRight'?1:-1)+groups.length)%groups.length;setTab(n);document.getElementById(`detail-tab-${n}`)?.focus()}}} onClick={()=>setTab(i)} key={g.name}>{label(g.name)}</button>)}</div><div id="catalog-detail-panel" role="tabpanel" aria-labelledby={`detail-tab-${groups.indexOf(selected)}`} tabIndex={0}><dl>{selected.name==='Materiali e cura'&&<>{!!p.fabrics?.length&&<div><dt>{label('Materiale')}</dt><dd>{p.fabrics.map(label).join(' · ')}</dd></div>}{Object.entries(a.compositions).filter(([,parts])=>parts.length).map(([layer,parts])=><div key={layer}><dt>{label(layer)}</dt><dd>{parts.map(part=>`${label(part.material)} ${part.percent}%`).join(' · ')}</dd></div>)}</>}{selected.fields.map(key=><div key={key}><dt>{label(fieldLabels[key])}</dt><dd>{a.values[key].map(label).join(' · ')}</dd></div>)}</dl></div></section>
+}

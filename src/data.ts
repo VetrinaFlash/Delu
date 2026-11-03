@@ -1,3 +1,4 @@
+import type {ProductAttributes} from '../shared/catalog'
 export type ProductVariant = {
   sku?: string
   color: string
@@ -6,6 +7,7 @@ export type ProductVariant = {
 }
 
 export type Product = {
+  attributes?: ProductAttributes
   id: string
   name: string
   slug?: string
@@ -97,3 +99,4 @@ export const orders: Order[] = [
   { id: '#DL1046', customer: 'Martina C.', email: 'martina@example.com', total: 193, status: 'Spedito', createdAt: 'Ieri, 17:05', items: 3 },
   { id: '#DL1045', customer: 'Sara P.', email: 'sara@example.com', total: 74, status: 'Completato', createdAt: 'Ieri, 13:20', items: 1 },
 ]
+
