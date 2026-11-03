@@ -114,7 +114,6 @@ function HomeInner(){
         <img fetchPriority="high" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90" alt="DeLù editorial"/>
       </motion.div>
       <div className="ph-hero-shade"/>
-      <div className="atelier-photo-caption" aria-hidden="true"><span>DELÙ / THE EDIT</span><span>01 — 03</span></div>
       <motion.div className="ph-hero-copy" style={reducedMotion?undefined:{y:heroTextY}}>
         <motion.span initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.15,duration:.7}}>{c.season}</motion.span>
         <div className="ph-hero-title" role="heading" aria-level={1} aria-label={`${c.heroA} ${c.heroB}`}>
