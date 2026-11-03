@@ -4,7 +4,7 @@
 
 Le API eseguono le migrazioni idempotenti in functions/_lib/database.ts prima di accedere al database: la prima richiesta dopo il deploy inizializza database/schema.sql e registra la versione applicata. Il caricamento della home chiama il catalogo e avvia quindi l'inizializzazione. Non sono necessari comandi SQL manuali.
 
-Occorre comunque creare un database D1 in Cloudflare e collegarlo al progetto Pages con binding **DB**: il codice non può creare una risorsa nell'account Cloudflare senza credenziali di gestione. Le migrazioni non cancellano i dati e non sostituiscono i prezzi. Popolano tabelle e impostazioni iniziali; non inventano prodotti, clienti o ordini. Non inserire dati demo nel negozio reale.
+Occorre comunque creare un database D1 in Cloudflare e collegarlo al progetto Pages con binding **DB**: il codice non può creare una risorsa nell'account Cloudflare senza credenziali di gestione. Le migrazioni non cancellano i dati e non sostituiscono i prezzi. Popolano tabelle, impostazioni e, se il database è vuoto, il catalogo già presente nel repository. Non modificano prodotti esistenti e non creano clienti o ordini fittizi. Il catalogo iniziale già pubblicato dal repository viene importato una sola volta se products è vuota. Non sono generati clienti o ordini demo. Verificare e sostituire eventuali articoli dimostrativi prima della vendita; impostare CATALOG_SEED_DISABLED=true prima del primo avvio se si desidera partire senza questo catalogo.
 
 Per modificare lo schema in futuro, rigenerare anche database.ts dalla versione aggiornata di schema.sql e aggiornare schemaVersion. Non modificare solo il file SQL. Variazioni distruttive richiedono una migrazione esplicita e backup.
 

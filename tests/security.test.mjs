@@ -96,7 +96,7 @@ test('request -> review -> WhatsApp link -> verified payment, without relying on
  assert.equal((await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationAmount:'1'}})).status,400)
  await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}});assert.ok(env.DB.db.prepare("SELECT id FROM email_outbox WHERE id LIKE 'failed-admin-%'").get());assert.equal((await request(env,'payments/nexi/notification',callback)).status,200)
  assert.equal(env.DB.db.prepare('SELECT status FROM orders WHERE id=?').get(orderId).status,'Pagato - da preparare')
- assert.equal(env.DB.db.prepare('SELECT stock FROM products').get().stock,0)
+ assert.equal(env.DB.db.prepare("SELECT stock FROM products WHERE id='p'").get().stock,0)
  assert.equal(env.DB.db.prepare('SELECT state FROM shipping_labels').get().state,'READY');env.SENDCLOUD_PUBLIC_KEY='test';env.SENDCLOUD_SECRET_KEY='test';env.SENDCLOUD_SENDER_ID='1';const labelBody={street:'Via Test',houseNumber:'1',weight:1,shippingMethod:1};assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,200);assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,409);assert.equal(labels,1);const pdf=await request(env,'admin/order-requests/'+orderId+'/label',undefined,c);assert.equal(pdf.status,200);assert.equal(pdf.headers.get('content-type'),'application/pdf')
  await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}})
  assert.equal(env.DB.db.prepare('SELECT status FROM payments').get().status,'PAID')
@@ -109,7 +109,7 @@ test('first API request bootstraps schema and preserves existing records',async(
  assert.ok(env.DB.db.prepare('SELECT name FROM sqlite_master WHERE name=\'products\'').get())
  assert.equal(env.DB.db.prepare('SELECT count(*) n FROM customers').get().n,0)
  assert.equal((await request(env,'config')).status,200)
- assert.equal(env.DB.db.prepare('SELECT count(*) n FROM shop_settings').get().n,1)
+ assert.equal(env.DB.db.prepare('SELECT count(*) n FROM shop_settings').get().n,1);assert.ok(env.DB.db.prepare('SELECT count(*) n FROM products').get().n>0)
 })
 
 test('Fidelity enrollment is separate from marketing; native Apple and Samsung payloads are signed',async()=>{
