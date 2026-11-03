@@ -1,5 +1,5 @@
 import AttributeEditor from './AttributeEditor'
-import {categoryList,type ProductAttributes,validateAttributes} from '../../shared/catalog'
+import {categoryList,family,type ProductAttributes,validateAttributes} from '../../shared/catalog'
 import { useMemo, useState } from 'react'
 import { ImagePlus, Save, Sparkles, X } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -7,6 +7,14 @@ import type { Product, ProductVariant } from '../data'
 import { api, split } from './shared'
 
 type FormState={name:string;price:string;compareAt:string;category:string;fabrics:string;colors:string;sizes:string;tags:string;description:string;featured:boolean;isNew:boolean;active:boolean}
+
+const fabricSuggestions: Record<string, string[]> = {
+  dresses: ['Raso', 'Viscosa', 'Jersey', 'Pizzo', 'Tulle', 'Lino'],
+  trousers: ['Denim', 'Twill', 'Cotone', 'Lino', 'Viscosa'],
+  outer: ['Lana', 'Misto lana', 'Twill', 'Pelle', 'Ecopelle'],
+  jewelry: ['Acciaio inox', 'Argento 925', 'Ottone', 'Perle', 'Cristallo'],
+  clothing: ['Cotone', 'Jersey', 'Maglia', 'Viscosa', 'Lino'],
+}
 
 export default function ProductEditor({product,onClose,onSaved}:{product?:Product;onClose:()=>void;onSaved:(p:Product)=>void}){
   const[f,setF]=useState<FormState>(()=>({name:product?.name||'',price:product?String(product.price):'',compareAt:product?.compareAt?String(product.compareAt):'',category:product?.category||'',fabrics:(product?.fabrics||[]).join(', '),colors:(product?.colors||[]).join(', '),sizes:(product?.sizes||[]).join(', '),tags:(product?.tags||[]).join(', '),description:product?.description||'',featured:!!product?.featured,isNew:!!product?.new,active:product?.active!==false}))
@@ -16,6 +24,19 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
   const[loading,setLoading]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[manualImage,setManualImage]=useState('')
   const colors=split(f.colors),sizes=split(f.sizes)
   const combos=useMemo(()=>colors.flatMap(color=>sizes.map(size=>({color,size,key:`${color}|${size}`}))),[f.colors,f.sizes])
+  const suggestions = (field: 'fabrics' | 'colors', options: string[], label: string) => {
+    const selected = new Set(split(f[field]).map(value => value.toLowerCase()))
+    return <div className="attribute-options" role="group" aria-label={label}>
+      {options.map(option => <button type="button" key={option}
+        disabled={selected.has(option.toLowerCase())}
+        onClick={() => setF(current => {
+          const values = split(current[field])
+          if (values.some(value => value.toLowerCase() === option.toLowerCase())) return current
+          const next = [...values, option].join(', ')
+          return field === 'fabrics' && next.length > 800 ? current : {...current, [field]: next}
+        })}>{selected.has(option.toLowerCase()) ? '✓' : '+'} {option}</button>)}
+    </div>
+  }
   const textField=(k:'name'|'price'|'compareAt'|'category'|'fabrics'|'colors'|'sizes'|'tags'|'description')=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>setF(v=>({...v,[k]:e.target.value}))
 
   async function upload(files:FileList|null){
@@ -53,6 +74,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
           <div className="form-grid"><label>Prezzo €<input required type="number" min="0" step="0.01" value={f.price} onChange={textField('price')}/></label><label>Prezzo precedente €<input type="number" min="0" step="0.01" value={f.compareAt} onChange={textField('compareAt')}/></label></div>
           <label>Categoria<input required list="product-categories" value={f.category} onChange={textField('category')}/><datalist id="product-categories">{categoryList.map(c=><option key={c} value={c}/>)}</datalist></label>
           <label>Tessuti <small>separati da virgola, usati anche come filtri dello shop</small><input value={f.fabrics} onChange={textField('fabrics')} placeholder="Cotone, Lino, Viscosa" maxLength={800}/></label>
+          {f.category.trim() && suggestions('fabrics', fabricSuggestions[family(f.category)], 'Materiali suggeriti per la categoria')}
           <label>Descrizione<textarea value={f.description} onChange={textField('description')} rows={5}/></label>
           <label>Tag / filtri <small>separati da virgola</small><input value={f.tags} onChange={textField('tags')} placeholder="new, elegante, sera, edit"/></label>
           <div className="admin-checks"><label><input type="checkbox" checked={f.featured} onChange={e=>setF(v=>({...v,featured:e.target.checked}))}/> In evidenza</label><label><input type="checkbox" checked={f.isNew} onChange={e=>setF(v=>({...v,isNew:e.target.checked}))}/> Novità</label><label><input type="checkbox" checked={f.active} onChange={e=>setF(v=>({...v,active:e.target.checked}))}/> Visibile nello shop</label></div>
@@ -66,6 +88,9 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
         </div>
         <div className="editor-section"><h4>Varianti e magazzino</h4>
           <div className="form-grid"><label>Colori <small>separati da virgola</small><input value={f.colors} onChange={textField('colors')} placeholder="Rosa, Nero, Bianco"/></label><label>Taglie <small>separate da virgola</small><input value={f.sizes} onChange={textField('sizes')} placeholder="XS, S, M, L"/></label></div>
+          {f.category.trim() && suggestions('colors', family(f.category) === 'jewelry'
+            ? ['Oro', 'Argento', 'Oro rosa', 'Nero']
+            : ['Nero', 'Bianco', 'Beige', 'Blu', 'Rosa', 'Marrone'], 'Colori suggeriti')}
           {combos.length?<div className="variant-grid"><div className="variant-head"><span>COLORE</span><span>TAGLIA</span><span>Q.TÀ</span></div>{combos.map(c=><div className="variant-line" key={c.key}><b>{c.color}</b><span>{c.size}</span><input type="number" min="0" value={variantStocks[c.key]??'0'} onChange={e=>setVariantStocks(v=>({...v,[c.key]:e.target.value}))}/></div>)}<div className="variant-total"><span>Stock totale</span><b>{combos.reduce((s,c)=>s+(Number(variantStocks[c.key]||0)||0),0)} pezzi</b></div></div>:<div className="form-tip"><Sparkles/><span>Inserisci colori e taglie: il pannello creerà automaticamente le combinazioni e potrai impostare la disponibilità di ciascuna.</span></div>}
         </div>
         {error&&<div className="form-error">{error}</div>}
