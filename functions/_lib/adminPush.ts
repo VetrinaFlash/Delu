@@ -1,7 +1,7 @@
 import { clean, limit, reply } from './security'
 
 const utf8=new TextEncoder()
-const bytes=(s:string)=>Uint8Array.from(atob(s.replaceAll('-','+').replaceAll('_','/')),x=>x.charCodeAt(0))
+const bytes=(s:string)=>Uint8Array.from(atob(s.replaceAll('-','+').replaceAll('_','/').padEnd(Math.ceil(s.length/4)*4,'=')),x=>x.charCodeAt(0))
 const base64=(b:Uint8Array)=>btoa(String.fromCharCode(...b)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')
 function join(...chunks:Uint8Array[]){
  const result=new Uint8Array(chunks.reduce((total,part)=>total+part.length,0))
@@ -40,6 +40,8 @@ async function hkdf(secret:Uint8Array<ArrayBuffer>,salt:Uint8Array<ArrayBuffer>,
 async function send(env:any,subscription:Subscription,payload:{title:string;body:string;tag:string}){
  const credentials=config(env)
  if(!credentials)throw new Error('Chiavi Web Push mancanti')
+ let phase='crittografia'
+ try{
  const userKey=bytes(subscription.keys.p256dh)
  const peer=await crypto.subtle.importKey('raw',userKey,{name:'ECDH',namedCurve:'P-256'},false,[])
  const pair=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits'])
@@ -52,6 +54,7 @@ async function send(env:any,subscription:Subscription,payload:{title:string;body
  const aes=await crypto.subtle.importKey('raw',cek,'AES-GCM',false,['encrypt'])
  const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:nonce},aes,join(utf8.encode(JSON.stringify(payload)),new Uint8Array([2]))))
  const record=join(salt,new Uint8Array([0,0,16,0,65]),serverKey,cipher)
+ phase='firma VAPID'
  const point=bytes(credentials.publicKey)
  const signingKey=await crypto.subtle.importKey('jwk',{
   kty:'EC',crv:'P-256',x:base64(point.slice(1,33)),y:base64(point.slice(33)),d:credentials.privateKey
@@ -60,11 +63,18 @@ async function send(env:any,subscription:Subscription,payload:{title:string;body
   aud:new URL(subscription.endpoint).origin,exp:Math.floor(Date.now()/1000)+3600,sub:credentials.subject
  })))
  const signature=new Uint8Array(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},signingKey,utf8.encode(jwt)))
- return fetch(subscription.endpoint,{
-  method:'POST',redirect:'error',signal:AbortSignal.timeout(6000),
+ phase='rete'
+ const controller=new AbortController()
+ const timeout=setTimeout(()=>controller.abort(),10000)
+ try{return await fetch(subscription.endpoint,{
+  method:'POST',redirect:'error',signal:controller.signal,
   headers:{Authorization:`vapid t=${jwt}.${base64(signature)}, k=${credentials.publicKey}`,'Content-Encoding':'aes128gcm','Content-Type':'application/octet-stream',TTL:'900',Urgency:'high'},
   body:record
- })
+ })}finally{clearTimeout(timeout)}
+ }catch(error){
+  const kind=error instanceof Error?error.name:'UnknownError'
+  throw new Error(`Invio push interrotto nella fase ${phase} (${kind}).`)
+ }
 }
 export async function enqueueAdminPush(env:any,id:string,title:string,body:string){
  if(!config(env))return
@@ -134,8 +144,8 @@ export async function adminPushRoute(request:Request,env:any,path:string,admin:b
    if(sent.status===401||sent.status===403)return reply({error:`Autorizzazione push rifiutata (HTTP ${sent.status}). Verifica la coppia di chiavi Cloudflare e riattiva le push sul dispositivo.`},502)
    return reply({error:`Servizio push: HTTP ${sent.status}. Riprova e comunica questo codice se persiste.`},502)
   }catch(error){
-   if(error instanceof DOMException&&error.name==='DataError')return reply({error:'Chiavi push non valide. Verifica che chiave pubblica e privata siano della stessa coppia.'},502)
-   return reply({error:'Connessione al servizio push non riuscita. Riprova tra poco.'},502)
+   const message=error instanceof Error&&error.message.startsWith('Invio push interrotto')?error.message:'Errore durante la prova push.'
+   return reply({error:message},502)
   }
  }
  return reply({error:'Non trovato'},404)
