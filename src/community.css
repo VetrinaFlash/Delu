@@ -88,3 +88,9 @@
   .account-feature-list li > * { min-height: 44px; }
   .account-panel input:not([type=checkbox]) { font-size: 16px; }
 }
+
+.account-delivery-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.account-delivery-fields h3, .account-delivery-fields label:first-of-type { grid-column:1/-1; }
+.account-delivery-fields h3 { margin:8px 0 0; font:400 23px var(--serif); }
+.account-delivery-fields select { min-height:46px; border-radius:8px; }
+@media(max-width:420px) { .account-delivery-fields { grid-template-columns:minmax(0,1fr); } }

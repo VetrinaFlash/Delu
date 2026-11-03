@@ -1,11 +1,17 @@
 import { clean, digest, email, limit, reply, token, validEmail } from './security'
-import { discountFor, enqueue, paidEmails } from './community'
+import { discountFor, enqueue, firstDeliveryForOrder, paidEmails } from './community'
 export async function requestTables(env:any){await env.DB.batch([
  env.DB.prepare("CREATE TABLE IF NOT EXISTS order_reviews (order_id TEXT PRIMARY KEY,state TEXT NOT NULL DEFAULT 'REVIEW',version INTEGER NOT NULL DEFAULT 1,reason TEXT NOT NULL DEFAULT '',payment_hash TEXT UNIQUE,payment_expires INTEGER,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
  env.DB.prepare("CREATE TABLE IF NOT EXISTS order_audit (id INTEGER PRIMARY KEY AUTOINCREMENT,order_id TEXT NOT NULL,action TEXT NOT NULL,snapshot TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
  env.DB.prepare("CREATE TABLE IF NOT EXISTS shipping_labels (order_id TEXT PRIMARY KEY,state TEXT NOT NULL,parcel_id TEXT,label_url TEXT,tracking TEXT,error TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 ])}
 const base=(env:any)=>(env.SITE_URL||'').replace(/\/$/,'')
+function rejectedMessage(id:string,phone:string,reason:string){
+ const message=`DeLù · richiesta #${id} non confermata.
+Motivo: ${reason}
+Nessun pagamento richiesto.`
+ return {message,whatsappUrl:'https://wa.me/'+phone.replace(/\D/g,'')+'?text='+encodeURIComponent(message)}
+}
 export async function requestedOrder(request:Request,env:any,shippingFor:(env:any,country:string,subtotal:number)=>Promise<number>){
  await requestTables(env)
  if(!env.PRIVACY_NOTICE)return reply({error:'Il negozio deve completare l’informativa privacy prima di ricevere richieste.'},503)
@@ -21,7 +27,9 @@ export async function requestedOrder(request:Request,env:any,shippingFor:(env:an
  if(b.discountCode&&!promo)return reply({error:'Codice sconto non valido'},400)
  const shippingCost=await shippingFor(env,country,subtotal);const id='DL'+Date.now().toString(36).toUpperCase()+token().slice(0,12).toUpperCase(),discount=promo?Math.floor(subtotal*promo.percent/100):0
  const shipping={...b.shipping,address:clean(b.shipping.address,250),city:clean(b.shipping.city,120),postcode:clean(b.shipping.postcode,30),province:clean(b.shipping.province,80),country,cost:shippingCost/100,discount:discount/100,requestedDiscountPercent:promo?.percent||0,termsSnapshot:env.TERMS_NOTICE||'',returnsAddress:env.RETURNS_ADDRESS||''}
+ const deliveryWrites=await firstDeliveryForOrder(request,env,email(b.customer.email),phone,shipping)
  await env.DB.batch([
+ ...deliveryWrites,
  env.DB.prepare("INSERT INTO orders(id,customer_name,customer_email,customer_phone,total_cents,status,items_json,shipping_json,notes) VALUES(?,?,?,?,?,'Da confermare',?,?,?)").bind(id,clean(b.customer.name,160),email(b.customer.email),phone,subtotal-discount+shippingCost,JSON.stringify(items),JSON.stringify(shipping),clean(b.notes,1000)),
  env.DB.prepare('INSERT INTO order_reviews(order_id) VALUES(?)').bind(id),
  env.DB.prepare("INSERT INTO order_audit(order_id,action,snapshot) VALUES(?,'REQUEST',?)").bind(id,JSON.stringify({items,shipping}))
@@ -52,7 +60,7 @@ export async function orderRequestRoute(r:Request,env:any,path:string,admin:bool
  if(!o||!review)return reply({error:'Richiesta non trovata'},404)
  if(method==='GET'&&action==='methods'){if(!env.SENDCLOUD_PUBLIC_KEY||!env.SENDCLOUD_SECRET_KEY)return reply({error:'Collega Sendcloud per scegliere il servizio corriere.'},503);const res=await fetch('https://panel.sendcloud.sc/api/v2/shipping_methods',{headers:{authorization:'Basic '+btoa(env.SENDCLOUD_PUBLIC_KEY+':'+env.SENDCLOUD_SECRET_KEY)}}),d:any=await res.json();if(!res.ok)return reply({error:'Servizi corriere non disponibili. Verifica Sendcloud.'},502);return reply((d.shipping_methods||[]).map((m:any)=>({id:m.id,name:m.name,carrier:m.carrier,minWeight:m.min_weight,maxWeight:m.max_weight})))}
  if(method==='GET'&&action==='label')return downloadLabel(env,id)
- if(method==='GET')return reply({review,items:JSON.parse(o.items_json),shipping:JSON.parse(o.shipping_json),total:o.total_cents/100,label:await env.DB.prepare('SELECT * FROM shipping_labels WHERE order_id=?').bind(id).first(),share:JSON.parse((await env.DB.prepare("SELECT snapshot FROM order_audit WHERE order_id=? AND action='SHARE' ORDER BY id DESC LIMIT 1").bind(id).first())?.snapshot||'null')})
+ if(method==='GET')return reply({review,phone:o.customer_phone,items:JSON.parse(o.items_json),shipping:JSON.parse(o.shipping_json),total:o.total_cents/100,label:await env.DB.prepare('SELECT * FROM shipping_labels WHERE order_id=?').bind(id).first(),share:review.state==='REJECTED'?rejectedMessage(id,o.customer_phone,review.reason):JSON.parse((await env.DB.prepare("SELECT snapshot FROM order_audit WHERE order_id=? AND action='SHARE' ORDER BY id DESC LIMIT 1").bind(id).first())?.snapshot||'null')})
  if(action==='label'&&method==='POST')return createLabel(env,o,b)
  if(method!=='POST')return reply({error:'Metodo non consentito'},405)
  if(review.state!=='REVIEW'||review.version!==Number(b.version))return reply({error:'Ordine già confermato o modificato: aggiorna la schermata. Il totale di un link emesso non è modificabile.'},409)
@@ -67,7 +75,18 @@ export async function orderRequestRoute(r:Request,env:any,path:string,admin:bool
   await env.DB.prepare("INSERT INTO order_audit(order_id,action,snapshot) VALUES(?,'EDIT',?)").bind(id,JSON.stringify({items,shipping,reason:clean(b.reason,500)})).run()
   return reply({ok:true})
  }
- if(action==='reject'){const cas=await env.DB.prepare("UPDATE order_reviews SET state='REJECTED',reason=?,version=version+1 WHERE order_id=? AND state='REVIEW' AND version=? RETURNING order_id").bind(clean(b.reason,1000),id,b.version).first();if(!cas)return reply({error:'Stato modificato'},409);await env.DB.prepare("UPDATE orders SET status='Rifiutato',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(id).run();await enqueue(env,'rejected-'+id,o.customer_email,'DeLù · richiesta non confermata '+id,'La richiesta '+id+' non è stata confermata. Nessun pagamento richiesto. '+clean(b.reason,1000));return reply({ok:true})}
+ if(action==='reject'){
+  const reason=clean(b.reason,1000)
+  if(!reason)return reply({error:'Inserisci il motivo del rifiuto.'},400)
+  const writes=await env.DB.batch([
+   env.DB.prepare("UPDATE orders SET status='Rifiutato',updated_at=CURRENT_TIMESTAMP WHERE id=? AND EXISTS(SELECT 1 FROM order_reviews WHERE order_id=? AND state='REVIEW' AND version=?)").bind(id,id,b.version),
+   env.DB.prepare("UPDATE order_reviews SET state='REJECTED',reason=?,version=version+1 WHERE order_id=? AND state='REVIEW' AND version=?").bind(reason,id,b.version)
+  ])
+  if(!writes[0].meta?.changes||!writes[1].meta?.changes)return reply({error:'Stato modificato'},409)
+  const share=rejectedMessage(id,o.customer_phone,reason)
+  await enqueue(env,'rejected-'+id,o.customer_email,'DeLù · richiesta non confermata '+id,share.message)
+  return reply({ok:true,...share})
+ }
  if(action==='approve'){
  if(!env.NEXI_XPAY_API_KEY||!env.SITE_URL||!env.TERMS_NOTICE||!env.RETURNS_ADDRESS)return reply({error:'Completa Nexi, dominio, condizioni e indirizzo resi prima di confermare.'},503)
  if(o.total_cents<=0)return reply({error:'Importo finale non valido'},400)

@@ -34,13 +34,13 @@ test('admin sessions are opaque, revocable, bounded and reject CSRF',async()=>{
 test('registration verifies email once, uses salted password and isolates customer data',async()=>{
  const env=await setup();const original=globalThis.fetch;globalThis.fetch=async()=>new Response('{"id":"test"}',{status:200})
  try{
- assert.equal((await request(env,'customer/register',{name:'Anna',email:'anna@example.test',password:'A-long-password-123',privacy:true})).status,200)
+ assert.equal((await request(env,'customer/register',{name:'Anna',email:'anna@example.test',password:'A-long-password-123',privacy:true,phone:'+393331234567',delivery:{address:'Via Test 1',city:'Roma',postcode:'00100',province:'RM',country:'IT'}})).status,200)
  const user=env.DB.db.prepare('SELECT * FROM customers').get();assert.equal(user.verified,0);assert.equal(user.marketing,0);assert.ok(!user.password.includes('A-long-password-123'))
  assert.equal((await request(env,'customer/login',{email:user.email,password:'A-long-password-123'})).status,401)
  const mail=env.DB.db.prepare('SELECT * FROM email_outbox').get(),raw=mail.body.match(/verify=([a-f0-9]+)/)[1]
  const verify=await request(env,'customer/verify',{token:raw});assert.equal(verify.status,200);const c=verify.headers.get('set-cookie')
  assert.equal((await request(env,'customer/verify',{token:raw})).status,400)
- assert.equal((await request(env,'customer/me',undefined,c)).status,200)
+ const profile=await request(env,'customer/me',undefined,c);assert.equal(profile.status,200);assert.equal((await profile.json()).delivery.postcode,'00100')
  assert.equal((await request(env,'admin/community/status',undefined,c)).status,401)
  const promo=await request(env,'admin/community/promotion',{customerId:user.id,percent:20},c);assert.equal(promo.status,401)
  assert.equal((await request(env,'customer/orders',undefined,c)).status,200)
@@ -100,6 +100,22 @@ test('request -> review -> WhatsApp link -> verified payment, without relying on
  assert.equal(env.DB.db.prepare('SELECT state FROM shipping_labels').get().state,'READY');env.SENDCLOUD_PUBLIC_KEY='test';env.SENDCLOUD_SECRET_KEY='test';env.SENDCLOUD_SENDER_ID='1';const labelBody={street:'Via Test',houseNumber:'1',weight:1,shippingMethod:1};assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,200);assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,409);assert.equal(labels,1);const pdf=await request(env,'admin/order-requests/'+orderId+'/label',undefined,c);assert.equal(pdf.status,200);assert.equal(pdf.headers.get('content-type'),'application/pdf')
  await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}})
  assert.equal(env.DB.db.prepare('SELECT status FROM payments').get().status,'PAID')
+ env.DB.db.prepare("INSERT INTO customers(id,email,name,verified) VALUES('loyal','anna@example.test','Anna',1)").run()
+ env.DB.db.prepare("INSERT INTO fidelity_members(id,customer_id,terms) VALUES('DL-CARD','loyal','Termini')").run()
+ const credit={id:'DL-CARD',points:25,reason:'Scontrino 42',requestId:crypto.randomUUID()}
+ assert.equal((await request(env,'admin/fidelity/credit',credit)).status,401)
+ assert.equal((await request(env,'admin/fidelity/credit',credit,c)).status,200)
+ assert.equal((await request(env,'admin/fidelity/credit',credit,c)).status,200)
+ const [member]=await(await request(env,'admin/fidelity',undefined,c)).json()
+ assert.equal(member.points,25)
+ assert.equal(member.paidOrders,1)
+ const rejectedOrder=await request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'p',qty:1,size:'M',color:'Nero'}]})
+ const rejectedId=(await rejectedOrder.json()).orderId
+ assert.equal((await request(env,'admin/order-requests/'+rejectedId+'/reject',{version:1,reason:''},c)).status,400)
+ const rejection=await(await request(env,'admin/order-requests/'+rejectedId+'/reject',{version:1,reason:'Taglia esaurita'},c)).json()
+ assert.equal(new URL(rejection.whatsappUrl).pathname,'/393331234567')
+ assert.match(new URL(rejection.whatsappUrl).searchParams.get('text'),/Taglia esaurita/)
+
  assert.equal((await handler.onRequest({request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie:c},body:JSON.stringify({status:'Annullato'})}),env,params:{},waitUntil:()=>{}})).status,409)
  }finally{globalThis.fetch=original}
 })
@@ -146,7 +162,7 @@ test('category attributes round-trip, custom translations and composition valida
  const attributes={values:{length:['Midi'],model:['A tubino'],occasion:['Da sera','Da cerimonia'],craft:['Ricamato a mano']},compositions:{Composizione:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}],Fodera:[{material:'Seta',percent:100}]},translations:{en:{'Tessuto esclusivo':'Exclusive fabric'},uk:{'Tessuto esclusivo':'Ексклюзивна тканина'}}}
  const created=await request(env,'admin/products',{name:'Abito test',price:89,category:'Abiti',colors:['Nero'],sizes:['S','M'],fabrics:['Viscosa','Tessuto esclusivo'],attributes},cookie);assert.equal(created.status,201);const p=await created.json();assert.deepEqual(p.attributes.values,attributes.values);assert.deepEqual(p.attributes.compositions,attributes.compositions)
  const publicProducts=await(await request(env,'products')).json();assert.deepEqual(publicProducts.find(x=>x.id===p.id).attributes,p.attributes)
- async function patch(body){return handler.onRequest({env,request:new Request('https://shop.test/api/admin/products/'+p.id,{method:'PATCH',headers:{origin:'https://shop.test',cookie,'content-type':'application/json'},body:JSON.stringify(body)}),waitUntil:()=>{}})}
+ async function patch(body){const work=[];const response=await handler.onRequest({env,request:new Request('https://shop.test/api/admin/products/'+p.id,{method:'PATCH',headers:{origin:'https://shop.test',cookie,'content-type':'application/json'},body:JSON.stringify(body)}),waitUntil:p=>work.push(p)});await Promise.all(work);return response}
  const bad=await patch({name:'Must not be saved',attributes:{...attributes,compositions:{Composizione:[{material:'Lana',percent:80}]}}});assert.equal(bad.status,400);assert.equal(env.DB.db.prepare('SELECT name FROM products WHERE id=?').get(p.id).name,'Abito test')
  const ok=await patch({fabrics:['Cotone'],attributes:{...attributes,values:{length:['Maxi'],occasion:['Da sera']}}});assert.equal(ok.status,200);const updated=await ok.json();assert.deepEqual(updated.fabrics,['Cotone']);assert.deepEqual(updated.attributes.values.length,['Maxi']);assert.equal(updated.attributes.translations.en['Tessuto esclusivo'],'Exclusive fabric')
  const preserved=await patch({description:'Only description changes'});assert.deepEqual((await preserved.json()).attributes.values.length,['Maxi'])
@@ -161,6 +177,9 @@ test('the demo customer requires the configured secret and can manage its own in
  const login=await request(env,'customer/login',{email,password})
  assert.equal(login.status,200)
  const cookie=login.headers.get('set-cookie').split(';')[0]
+ const initial=await(await request(env,'customer/me',undefined,cookie)).json()
+ assert.equal(initial.phone,'+12025550143')
+ assert.deepEqual(initial.delivery,{address:'Via Esempio 12',city:'Roma',postcode:'00100',province:'RM',country:'IT'})
  assert.equal((await request(env,'customer/preferences',{phone:'331123'} ,cookie)).status,400)
  assert.equal((await request(env,'customer/preferences',{phone:'+39 331 123 4567',marketing:false},cookie)).status,200)
  const profile=await(await request(env,'customer/me',undefined,cookie)).json()

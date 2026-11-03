@@ -94,3 +94,11 @@ Inserire i client secret come Secret. Facebook richiede l'app Meta con Facebook 
 Per il cliente demo impostare `DEMO_CUSTOMER_PASSWORD_HASH` come Secret di produzione e ridistribuire. Al primo accesso corretto con `cliente.demo@delu.example` il portale crea il cliente dimostrativo con email già confermata. Rimuovendo il Secret si disabilitano accesso e sessione demo. La casella è fittizia e non riceve email.
 
 La migrazione aggiunge tessuti e caratteristiche dimostrative ai sei prodotti campione originali privi di dati. Prima della vendita sostituire le specifiche con quelle reali e rimuovere il tag `demo-specifications` dalla scheda del prodotto.
+
+## Profilo acquisto e Fidelity
+
+La registrazione email raccoglie contatti e indirizzo di spedizione. Gli account precedenti e social possono completare i dati nella pagina account. Il primo ordine effettuato con sessione cliente e la stessa email inizializza i recapiti ancora assenti. Le modifiche al checkout valgono per l'ordine corrente quando il profilo ha già un indirizzo.
+
+La Fidelity mostra gli ordini con pagamento registrato, abbinati all'email del cliente. Lo staff accredita punti in Clienti e resi → Fidelity Card indicando una causale o il riferimento dello scontrino. L'accredito usa una chiave idempotente. Non è prevista una conversione automatica da euro a punti o la spesa di un saldo in denaro.
+
+Per usare il testo aggiornato, copia PRIVACY_NOTICE.txt nella variabile PRIVACY_NOTICE dell'ambiente Production.

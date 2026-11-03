@@ -32,15 +32,27 @@ export function samsungCard(member:any,person:any,env:any){
 }
 export async function walletRoute(r:Request,env:any,path:string,admin:boolean):Promise<Response|null>{
  if(!path.startsWith('fidelity')&&!path.startsWith('admin/fidelity'))return null
- await walletTables(env);const method=r.method,b:any=method==='POST'?await r.json().catch(()=>({})):{}
+ await walletTables(env)
+ await env.DB.prepare("CREATE TABLE IF NOT EXISTS fidelity_credits (id TEXT PRIMARY KEY,member_id TEXT NOT NULL REFERENCES fidelity_members(id),points INTEGER NOT NULL CHECK(points>0),reason TEXT NOT NULL,created_at TEXT DEFAULT CURRENT_TIMESTAMP)").run()
+ const method=r.method,b:any=method==='POST'?await r.json().catch(()=>({})):{}
  const apple=!!(env.APPLE_PASS_CERT_PEM&&env.APPLE_PASS_KEY_PEM&&env.APPLE_WWDR_CERT_PEM&&env.APPLE_PASS_TYPE_ID&&env.APPLE_TEAM_ID),samsung=!!(env.SAMSUNG_PARTNER_KEY_PEM&&env.SAMSUNG_PUBLIC_KEY_PEM&&env.SAMSUNG_CERTIFICATE_ID&&env.SAMSUNG_PARTNER_ID&&env.SAMSUNG_CARD_ID)
  if(path==='fidelity/config')return reply({terms:env.FIDELITY_TERMS||'',apple,samsung})
- if(path==='admin/fidelity'&&admin){const {results}=await env.DB.prepare('SELECT f.*,c.name,c.email FROM fidelity_members f JOIN customers c ON c.id=f.customer_id ORDER BY joined_at DESC LIMIT 250').all();return reply(results)}
+ if(path==='admin/fidelity'&&admin){const {results}=await env.DB.prepare("SELECT f.*,c.name,c.email,(SELECT COALESCE(SUM(points),0) FROM fidelity_credits WHERE member_id=f.id) AS points,(SELECT COUNT(*) FROM orders o JOIN payments p ON p.order_id=o.id AND p.status IN ('PAID','PAID_STOCK_REVIEW') WHERE lower(o.customer_email)=c.email) AS paidOrders FROM fidelity_members f JOIN customers c ON c.id=f.customer_id ORDER BY joined_at DESC LIMIT 250").all();return reply(results)}
+ if(path==='admin/fidelity/credit'&&admin&&method==='POST'){
+  const points=Number(b.points),reason=clean(b.reason,160),id=clean(b.requestId,80)
+  if(!Number.isSafeInteger(points)||points<1||points>10000||!reason||!/^[-a-f0-9]{36}$/.test(id))return reply({error:'Inserisci punti interi e una causale.'},400)
+  const result=await env.DB.prepare("INSERT OR IGNORE INTO fidelity_credits(id,member_id,points,reason) SELECT ?,id,?,? FROM fidelity_members WHERE id=? AND status='ACTIVE'").bind(id,points,reason,clean(b.id,100)).run()
+  if(!result.meta?.changes){
+   const previous=await env.DB.prepare('SELECT member_id,points,reason FROM fidelity_credits WHERE id=?').bind(id).first()
+   if(previous?.member_id!==b.id||previous?.points!==points||previous?.reason!==reason)return reply({error:'Tessera non attiva o accredito già registrato.'},409)
+  }
+  return reply({ok:true})
+ }
  if(path==='admin/fidelity/status'&&admin&&method==='POST'){if(!['ACTIVE','REVOKED'].includes(b.status))return reply({error:'Stato non valido'},400);await env.DB.prepare('UPDATE fidelity_members SET status=? WHERE id=?').bind(b.status,clean(b.id,100)).run();return reply({ok:true})}
  if(path.startsWith('admin/'))return reply({error:'Non autorizzato'},401)
  const c=await customer(r,env);if(!c)return reply({error:'Registrati e conferma la email per aderire alla Fidelity.'},401)
  if(path==='fidelity/join'&&method==='POST'){if(!env.FIDELITY_TERMS||b.accepted!==true)return reply({error:'Leggi e accetta il regolamento Fidelity.'},400);await env.DB.prepare('INSERT OR IGNORE INTO fidelity_members(id,customer_id,terms) VALUES(?,?,?)').bind('DL-'+token().slice(0,24).toUpperCase(),c.id,env.FIDELITY_TERMS).run();return reply({ok:true})}
- const member=await env.DB.prepare('SELECT * FROM fidelity_members WHERE customer_id=?').bind(c.id).first()
+ const member=await env.DB.prepare("SELECT f.*,(SELECT COALESCE(SUM(points),0) FROM fidelity_credits WHERE member_id=f.id) AS points,(SELECT COUNT(*) FROM orders o JOIN payments p ON p.order_id=o.id AND p.status IN ('PAID','PAID_STOCK_REVIEW') WHERE lower(o.customer_email)=?) AS paidOrders FROM fidelity_members f WHERE customer_id=?").bind(c.email,c.id).first()
  if(path==='fidelity/me')return reply({member})
  if(!member||member.status!=='ACTIVE')return reply({error:'Tessera non attiva'},403)
  if(path==='fidelity/apple'&&method==='GET'){if(!await limit(env,'wallet:'+c.id,10,60))return reply({error:'Attendi prima di scaricare nuovamente la tessera'},429);if(!apple)return reply({error:'Apple Wallet in attivazione: mancano i certificati del negozio.'},503);try{return new Response(applePass(member,c,env),{headers:{'content-type':'application/vnd.apple.pkpass','content-disposition':'attachment; filename="delu-fidelity.pkpass"','cache-control':'no-store'}})}catch{return reply({error:'Certificati Apple non validi. Contatta il negozio.'},503)}}

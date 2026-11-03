@@ -2,6 +2,7 @@ import { clean, cookie, cookieValue, createSession, digest, email, limit, logout
 
 export async function communityTables(env:any){await env.DB.batch([
  env.DB.prepare("CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY,email TEXT NOT NULL UNIQUE,name TEXT NOT NULL,password TEXT NOT NULL DEFAULT '',verified INTEGER NOT NULL DEFAULT 0,google_sub TEXT UNIQUE,marketing INTEGER NOT NULL DEFAULT 0,consent_at TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"),
+ env.DB.prepare("CREATE TABLE IF NOT EXISTS customer_delivery (customer_id TEXT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,data TEXT NOT NULL)"),
  env.DB.prepare("CREATE TABLE IF NOT EXISTS customer_contacts (customer_id TEXT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,phone TEXT NOT NULL)"),
  env.DB.prepare("CREATE TABLE IF NOT EXISTS social_identities (provider TEXT NOT NULL,subject TEXT NOT NULL,customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,PRIMARY KEY(provider,subject),UNIQUE(provider,customer_id))"),
  env.DB.prepare("CREATE TABLE IF NOT EXISTS auth_tokens (hash TEXT PRIMARY KEY,kind TEXT NOT NULL,subject TEXT NOT NULL,expires INTEGER NOT NULL)"),
@@ -13,9 +14,22 @@ export async function communityTables(env:any){await env.DB.batch([
 ])}
 const demoEmail='cliente.demo@delu.example'
 const demoId='delu-customer-demo'
+async function initializeDemoDelivery(env:any){
+ await env.DB.batch([
+  env.DB.prepare("INSERT OR IGNORE INTO customer_contacts(customer_id,phone) SELECT id,'+12025550143' FROM customers WHERE id=? AND email=? AND NOT EXISTS(SELECT 1 FROM customer_delivery WHERE customer_id=customers.id)").bind(demoId,demoEmail),
+  env.DB.prepare('INSERT OR IGNORE INTO customer_delivery(customer_id,data) SELECT id,? FROM customers WHERE id=? AND email=?').bind(JSON.stringify({address:'Via Esempio 12',city:'Roma',postcode:'00100',province:'RM',country:'IT'}),demoId,demoEmail)
+ ])
+}
 function contactPhone(value:unknown){
  const phone=clean(value,50).replace(/[\s()-]/g,'')
  return !phone||/^\+[1-9]\d{7,14}$/.test(phone)?phone:null
+}
+function deliveryDetails(value:any){
+ const delivery={address:clean(value?.address,250),city:clean(value?.city,120),postcode:clean(value?.postcode,30),province:clean(value?.province,100),country:clean(value?.country,2).toUpperCase()}
+ return delivery.address&&delivery.city&&delivery.postcode&&/^[A-Z]{2}$/.test(delivery.country)?delivery:null
+}
+function saveDelivery(env:any,id:string,delivery:NonNullable<ReturnType<typeof deliveryDetails>>){
+ return env.DB.prepare('INSERT INTO customer_delivery(customer_id,data) VALUES(?,?) ON CONFLICT(customer_id) DO UPDATE SET data=excluded.data').bind(id,JSON.stringify(delivery))
 }
 function savePhone(env:any,id:string,phone:string){
  return phone
@@ -34,6 +48,14 @@ export async function flushMail(env:any){if(!env.RESEND_API_KEY||!env.EMAIL_FROM
 async function issue(env:any,kind:string,subject:string,ttl=3600000){const raw=token();await env.DB.prepare('INSERT INTO auth_tokens VALUES(?,?,?,?)').bind(await digest(raw),kind,subject,Date.now()+ttl).run();return raw}
 async function consume(env:any,kind:string,raw:string){return env.DB.prepare('DELETE FROM auth_tokens WHERE hash=? AND kind=? AND expires>? RETURNING subject').bind(await digest(raw),kind,Date.now()).first()}
 export async function customer(r:Request,env:any){await communityTables(env);const s=await session(r,env,'customer');if(!s||(s.subject===demoId&&!env.DEMO_CUSTOMER_PASSWORD_HASH))return null;return env.DB.prepare('SELECT id,email,name,marketing,verified,(SELECT phone FROM customer_contacts WHERE customer_id=customers.id) AS phone FROM customers WHERE id=? AND verified=1').bind(s.subject).first()}
+export async function firstDeliveryForOrder(r:Request,env:any,mail:string,phone:string,address:unknown){
+ const current=await customer(r,env),delivery=deliveryDetails(address)
+ if(!delivery||current?.email!==mail)return []
+ return [
+  env.DB.prepare('INSERT OR IGNORE INTO customer_contacts(customer_id,phone) VALUES(?,?)').bind(current.id,phone),
+  env.DB.prepare('INSERT OR IGNORE INTO customer_delivery(customer_id,data) VALUES(?,?)').bind(current.id,JSON.stringify(delivery))
+ ]
+}
 async function customerCookie(env:any,id:string){return {'set-cookie':await createSession(env,id,'customer')}}
 export async function discountFor(env:any,code:string,mail:string){if(!code)return null;await communityTables(env);return env.DB.prepare('SELECT * FROM customer_discounts WHERE code=? AND email=? AND expires>? AND active=1').bind(clean(code,80).toUpperCase(),email(mail),Date.now()).first()}
 export async function paidEmails(env:any,id:string,base:string){await communityTables(env);const o=await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(id).first();if(!o)return;await enqueue(env,'paid-customer-'+id,o.customer_email,'DeLù · pagamento ricevuto '+id,'Abbiamo ricevuto il pagamento del tuo ordine '+id+'. Totale EUR '+(o.total_cents/100).toFixed(2)+'.\nArticoli: '+JSON.parse(o.items_json||'[]').map((i:any)=>i.name+' × '+i.qty).join(', ')+'.\nPuoi consultare ordini e resi su '+base+'/account. Puoi richiedere assistenza senza creare un account su '+base+'/returns.\nRecesso: 14 giorni dalla consegna; costo diretto di restituzione a tuo carico per ripensamento. Difetti e non conformità sono gestiti a carico del venditore.\nIndirizzo resi: '+(JSON.parse(o.shipping_json||'{}').returnsAddress||env.RETURNS_ADDRESS||'contatta il negozio')+'\nCondizioni di vendita accettate:\n'+(JSON.parse(o.shipping_json||'{}').termsSnapshot||env.TERMS_NOTICE||'Contatta il negozio per la copia delle condizioni.'));if(env.ADMIN_EMAIL)await enqueue(env,'paid-admin-'+id,env.ADMIN_EMAIL,'DeLù · nuovo ordine pagato '+id,'Nuovo ordine pagato: '+id+'. Apri la dashboard: '+base+'/admin')}
@@ -155,11 +177,13 @@ export async function communityRoute(r:Request,env:any,path:string,admin:boolean
  }
  if(path==='customer/register'&&method==='POST'){
   if(!env.RESEND_API_KEY||!env.EMAIL_FROM||!env.PRIVACY_NOTICE)return reply({error:'Registrazione email non ancora attivata dal negozio.'},503)
-  const phone=contactPhone(b.phone);if(phone===null)return reply({error:'Inserisci il cellulare con prefisso internazionale, ad esempio +39.'},400)
+  const delivery=deliveryDetails(b.delivery)
+  const phone=contactPhone(b.phone);if(!delivery||!phone)return reply({error:'Completa cellulare e indirizzo di spedizione.'},400)
+  if(phone===null)return reply({error:'Inserisci il cellulare con prefisso internazionale, ad esempio +39.'},400)
   const mail=email(b.email);if(mail===demoEmail||!validEmail(mail)||String(b.password||'').length<12||String(b.password||'').length>200||!clean(b.name,120)||b.privacy!==true)return reply({error:'Inserisci nome, email, password di almeno 12 caratteri e presa visione della privacy.'},400)
   if(!await limit(env,'register:'+mail,3,3600))return reply({error:'Attendi prima di riprovare.'},429)
   const existing=await env.DB.prepare('SELECT * FROM customers WHERE email=?').bind(mail).first()
-  if(!existing){const id=crypto.randomUUID();await env.DB.batch([env.DB.prepare('INSERT INTO customers(id,email,name,password,marketing,consent_at) VALUES(?,?,?,?,?,?)').bind(id,mail,clean(b.name,120),await passwordHash(b.password),b.marketing===true?1:0,b.marketing===true?new Date().toISOString():null),savePhone(env,id,phone)]);const raw=await issue(env,'verify',id,86400000);await enqueue(env,'verify-'+await digest(raw),mail,'Conferma il tuo account DeLù','Conferma la tua email entro 24 ore: '+origin(r,env)+'/account#verify='+raw)}
+  if(!existing){const id=crypto.randomUUID();await env.DB.batch([env.DB.prepare('INSERT INTO customers(id,email,name,password,marketing,consent_at) VALUES(?,?,?,?,?,?)').bind(id,mail,clean(b.name,120),await passwordHash(b.password),b.marketing===true?1:0,b.marketing===true?new Date().toISOString():null),savePhone(env,id,phone),...(delivery?[saveDelivery(env,id,delivery)]:[])]);const raw=await issue(env,'verify',id,86400000);await enqueue(env,'verify-'+await digest(raw),mail,'Conferma il tuo account DeLù','Conferma la tua email entro 24 ore: '+origin(r,env)+'/account#verify='+raw)}
   return reply({message:'Se la registrazione può essere completata riceverai una email. Se hai già un account, accedi o recupera la password.'})
  }
  if(path==='customer/verify'&&method==='POST'){const row=await consume(env,'verify',clean(b.token,100));if(!row)return reply({error:'Link non valido o scaduto. Richiedi una nuova email.'},400);await env.DB.prepare('UPDATE customers SET verified=1 WHERE id=?').bind(row.subject).run();return reply({ok:true},200,await customerCookie(env,row.subject))}
@@ -171,6 +195,7 @@ export async function communityRoute(r:Request,env:any,path:string,admin:boolean
    await env.DB.prepare("INSERT OR IGNORE INTO customers(id,email,name,verified) VALUES(?,?,'Cliente demo DeLù',1)").bind(demoId,demoEmail).run()
    const demo=await env.DB.prepare('SELECT id FROM customers WHERE id=? AND email=?').bind(demoId,demoEmail).first()
    if(!demo)return reply({error:'Account demo non disponibile.'},409)
+   await initializeDemoDelivery(env)
    return reply({ok:true},200,await customerCookie(env,demoId))
   }
   const c=await env.DB.prepare('SELECT * FROM customers WHERE email=?').bind(mail).first()
@@ -225,7 +250,22 @@ export async function communityRoute(r:Request,env:any,path:string,admin:boolean
  }
  if(path.startsWith('customer/')){
   if(!c)return reply({error:'Accedi al tuo account.'},401)
-  if(path==='customer/me')return reply(c)
+  if(path==='customer/me'){
+   let stored=await env.DB.prepare('SELECT data FROM customer_delivery WHERE customer_id=?').bind(c.id).first()
+   if(c.id===demoId&&!stored){
+    await initializeDemoDelivery(env)
+    stored=await env.DB.prepare('SELECT data FROM customer_delivery WHERE customer_id=?').bind(c.id).first()
+    const contact=await env.DB.prepare('SELECT phone FROM customer_contacts WHERE customer_id=?').bind(c.id).first()
+    c.phone=contact?.phone||null
+   }
+   return reply({...c,delivery:stored?JSON.parse(stored.data):null})
+  }
+  if(path==='customer/delivery'&&method==='POST'){
+   const phone=contactPhone(b.phone),delivery=deliveryDetails(b.delivery)
+   if(!phone||!delivery)return reply({error:'Completa cellulare e indirizzo di spedizione.'},400)
+   await env.DB.batch([savePhone(env,c.id,phone),saveDelivery(env,c.id,delivery)])
+   return reply({ok:true})
+  }
   if(path==='customer/preferences'&&method==='POST'){
    const phone=contactPhone(b.phone)
    if(phone===null)return reply({error:'Inserisci il cellulare con prefisso internazionale, ad esempio +39.'},400)

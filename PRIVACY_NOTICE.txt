@@ -6,7 +6,7 @@ Titolare del trattamento
 DELU CLOTHES SHOP, Via Roma 27, 58022 Follonica (GR), Italia. Per informazioni e richieste relative ai dati personali scrivi a info@deluclothesshop.it. Puoi anche contattare il negozio al +39 331 786 2178.
 
 Dati e provenienza
-Per gestire il tuo account trattiamo nome, email, dati di autenticazione e sessione e, se scegli di salvarlo, il cellulare. Quando usi l’accesso social riceviamo dal provider scelto l’identificativo dell’account, il nome e l’email necessari per l’accesso. I provider possono includere Google, Facebook e GitHub secondo le opzioni attive sul portale.
+Per gestire il tuo account trattiamo nome, email, dati di autenticazione e sessione e, per il profilo di acquisto, cellulare e indirizzo di spedizione. Quando usi l’accesso social riceviamo dal provider scelto l’identificativo dell’account, il nome e l’email necessari per l’accesso. I provider possono includere Google, Facebook e GitHub secondo le opzioni attive sul portale.
 
 Per gli ordini, anche come ospite, trattiamo nome, contatti, indirizzo di consegna, articoli, importi, note, esito del pagamento e dati relativi a spedizione, assistenza e resi. Il cellulare indicato nel checkout è usato per contattarti in merito all’ordine, anche tramite WhatsApp. I dati della carta vengono forniti direttamente al servizio di pagamento Nexi. Se aderisci alla fidelity, trattiamo i dati necessari a gestire l’adesione ed emettere la tessera. Per mantenere il servizio sicuro trattiamo anche informazioni tecniche sulla connessione, sulle sessioni e sui tentativi di accesso.
 
@@ -17,7 +17,7 @@ Proteggiamo il sito e gli account, preveniamo abusi e tuteliamo i nostri diritti
 Inviamo offerte e novità via email soltanto con il tuo consenso (art. 6, par. 1, lett. a GDPR). Puoi revocarlo in qualsiasi momento dalle preferenze account o dal link di disiscrizione. La revoca non incide sui trattamenti già effettuati.
 
 Conferimento dei dati
-L’account è facoltativo per acquistare. I dati richiesti per registrarti servono a creare e gestire l’account. Contatti, cellulare e indirizzo richiesti nel checkout servono per esaminare, confermare e consegnare l’ordine. Il cellulare nel profilo e il consenso marketing sono facoltativi.
+L’account è facoltativo per acquistare. I dati richiesti per registrarti servono a creare e gestire l’account. Contatti, cellulare e indirizzo richiesti nel checkout servono per esaminare, confermare e consegnare l’ordine. Per la registrazione via email chiediamo anche il cellulare e l’indirizzo di spedizione per precompilare gli acquisti successivi. Per gli account social questi dati possono essere completati nel profilo o al primo ordine con la stessa email. Il consenso marketing è facoltativo.
 
 Destinatari e trasferimenti
 I dati possono essere trattati dal personale autorizzato e dai fornitori necessari a erogare i servizi, tra cui Cloudflare per l’infrastruttura, Resend per l’invio di email, Nexi per i pagamenti, i corrieri ed eventualmente Sendcloud per la spedizione. Se scegli le relative funzioni, intervengono il provider di accesso social, WhatsApp per le comunicazioni d’ordine e Apple o Samsung per il salvataggio della tessera. Possono ricevere i dati anche consulenti e autorità competenti nei casi previsti. I provider che operano come titolari autonomi trattano i dati secondo le proprie informative.

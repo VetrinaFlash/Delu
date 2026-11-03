@@ -10,12 +10,23 @@ export default function OrderDrawer({order,onClose,onSaved}:{order:ApiOrder;onCl
   const[trackingCode,setTrackingCode]=useState(order.fulfillment?.trackingCode||'')
   const[trackingUrl,setTrackingUrl]=useState(order.fulfillment?.trackingUrl||'')
   const[loading,setLoading]=useState(false),[error,setError]=useState('')
-  async function save(){
+  function shipmentLink(){
+    const detail=[carrier,trackingCode,trackingUrl].filter(Boolean).join(' · ')
+    return 'https://wa.me/'+order.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(`Ciao, l’ordine #${order.id} è stato spedito.${detail?'\nTracking: '+detail:''}\nGrazie, DeLù!`)
+  }
+  async function save(notify=false){
+    const tab=notify?window.open('about:blank','_blank'):null
+    if(tab)tab.opener=null
+
     setLoading(true);setError('')
     try{
       await api(`/api/admin/orders/${order.id}`,{method:'PATCH',body:JSON.stringify({status,fulfillment:{carrier,trackingCode,trackingUrl}})})
+      if(notify){
+        if(tab)tab.location.href=shipmentLink()
+        else window.location.assign(shipmentLink())
+      }
       onSaved({...order,status,fulfillment:{carrier,trackingCode,trackingUrl}})
-    }catch(e:any){setError(e.message)}finally{setLoading(false)}
+    }catch(e:any){tab?.close();setError(e.message)}finally{setLoading(false)}
   }
   return <>
     <motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/>
@@ -33,8 +44,10 @@ export default function OrderDrawer({order,onClose,onSaved}:{order:ApiOrder;onCl
         </div>
         }
         {error&&<div className="form-error">{error}</div>}
+        {order.phone&&order.status==='Spedito'&&<a href={shipmentLink()} target="_blank" rel="noreferrer">Notifica spedizione su WhatsApp</a>}
+        {order.phone&&status==='Spedito'&&(!reviewState||reviewState==='PAID')&&<button type="button" disabled={loading} onClick={()=>save(true)}>Salva spedizione e apri WhatsApp</button>}
       </div>
-      {(!reviewState||reviewState==='PAID')&&<button type="button" className="save-product" disabled={loading} onClick={save}><Truck/>{loading?'SALVATAGGIO…':'SALVA ORDINE'}</button>}
+      {(!reviewState||reviewState==='PAID')&&<button type="button" className="save-product" disabled={loading} onClick={()=>save()}><Truck/>{loading?'SALVATAGGIO…':'SALVA ORDINE'}</button>}
     </motion.aside>
   </>
 }
