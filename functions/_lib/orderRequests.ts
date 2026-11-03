@@ -8,6 +8,7 @@ export async function requestTables(env:any){await env.DB.batch([
 const base=(env:any)=>(env.SITE_URL||'').replace(/\/$/,'')
 export async function requestedOrder(request:Request,env:any,shippingFor:(env:any,country:string,subtotal:number)=>Promise<number>){
  await requestTables(env)
+ if(!env.PRIVACY_NOTICE)return reply({error:'Il negozio deve completare l’informativa privacy prima di ricevere richieste.'},503)
  if(!await limit(env,'order-request:'+(request.headers.get('cf-connecting-ip')||'unknown'),10,900))return reply({error:'Troppi invii. Riprova più tardi.'},429)
  const b:any=await request.json().catch(()=>({})),phone=clean(b.customer?.phone,30).replace(/[\s()-]/g,'')
  if(!b.termsAccepted||!validEmail(email(b.customer?.email))||!clean(b.customer?.name,160)||!/^\+[1-9]\d{7,14}$/.test(phone)||!clean(b.shipping?.address,250)||!clean(b.shipping?.postcode,30)||!clean(b.shipping?.city,120)||!Array.isArray(b.items)||!b.items.length||b.items.length>40)return reply({error:'Completa contatti e indirizzo. Per WhatsApp inserisci il telefono con prefisso internazionale, ad esempio +39.'},400)
@@ -46,9 +47,11 @@ export async function orderRequestRoute(r:Request,env:any,path:string,admin:bool
  await requestTables(env);const method=r.method,b:any=method==='POST'?await r.json().catch(()=>({})):{}
  if(path.startsWith('admin/')){
  if(!admin)return reply({error:'Non autorizzato'},401)
- const match=path.match(/^admin\/order-requests\/([^/]+)(?:\/(approve|reject|edit|label))?$/);if(!match)return reply({error:'Non trovato'},404)
+ const match=path.match(/^admin\/order-requests\/([^/]+)(?:\/(approve|reject|edit|label|methods))?$/);if(!match)return reply({error:'Non trovato'},404)
  const id=match[1],action=match[2],o=await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(id).first(),review=await env.DB.prepare('SELECT * FROM order_reviews WHERE order_id=?').bind(id).first()
  if(!o||!review)return reply({error:'Richiesta non trovata'},404)
+ if(method==='GET'&&action==='methods'){if(!env.SENDCLOUD_PUBLIC_KEY||!env.SENDCLOUD_SECRET_KEY)return reply({error:'Collega Sendcloud per scegliere il servizio corriere.'},503);const res=await fetch('https://panel.sendcloud.sc/api/v2/shipping_methods',{headers:{authorization:'Basic '+btoa(env.SENDCLOUD_PUBLIC_KEY+':'+env.SENDCLOUD_SECRET_KEY)}}),d:any=await res.json();if(!res.ok)return reply({error:'Servizi corriere non disponibili. Verifica Sendcloud.'},502);return reply((d.shipping_methods||[]).map((m:any)=>({id:m.id,name:m.name,carrier:m.carrier,minWeight:m.min_weight,maxWeight:m.max_weight})))}
+ if(method==='GET'&&action==='label')return downloadLabel(env,id)
  if(method==='GET')return reply({review,items:JSON.parse(o.items_json),shipping:JSON.parse(o.shipping_json),total:o.total_cents/100,label:await env.DB.prepare('SELECT * FROM shipping_labels WHERE order_id=?').bind(id).first(),share:JSON.parse((await env.DB.prepare("SELECT snapshot FROM order_audit WHERE order_id=? AND action='SHARE' ORDER BY id DESC LIMIT 1").bind(id).first())?.snapshot||'null')})
  if(action==='label'&&method==='POST')return createLabel(env,o,b)
  if(method!=='POST')return reply({error:'Metodo non consentito'},405)
@@ -110,4 +113,14 @@ export async function paymentFailed(env:any,id:string,operation:any){
  const current=await env.DB.prepare('SELECT status FROM payments WHERE order_id=?').bind(id).first();if(!current||['PAID','PAID_STOCK_REVIEW'].includes(current.status))return
  await env.DB.prepare("UPDATE orders SET status='Pagamento fallito',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(id).run()
  if(env.ADMIN_EMAIL)await enqueue(env,'failed-admin-'+id+'-'+clean(operation?.operationId,100),env.ADMIN_EMAIL,'DeLù · pagamento non riuscito '+id,'Il pagamento per ordine '+id+' non è riuscito: '+clean(operation?.operationResult,80)+'. Verifica Nexi prima di creare un nuovo tentativo. Dashboard: '+base(env)+'/admin')
+}
+
+async function downloadLabel(env:any,id:string){
+ const paid=await env.DB.prepare("SELECT status FROM payments WHERE order_id=? AND status='PAID'").bind(id).first();if(!paid)return reply({error:'Pagamento non verificato'},409)
+ let label=await env.DB.prepare('SELECT * FROM shipping_labels WHERE order_id=?').bind(id).first();if(!label?.parcel_id)return reply({error:'Etichetta non disponibile'},404)
+ const headers={authorization:'Basic '+btoa(env.SENDCLOUD_PUBLIC_KEY+':'+env.SENDCLOUD_SECRET_KEY)}
+ if(!label.label_url){const res=await fetch('https://panel.sendcloud.sc/api/v2/parcels/'+encodeURIComponent(label.parcel_id),{headers}),d:any=await res.json();const url=d.parcel?.label?.normal_printer?.[0];if(!res.ok||!url)return reply({error:'Etichetta in elaborazione. Riprova più tardi o verifica Sendcloud.'},409);await env.DB.prepare("UPDATE shipping_labels SET state='CREATED',label_url=? WHERE order_id=?").bind(url,id).run();label={...label,label_url:url}}
+ const url=new URL(label.label_url);if(url.protocol!=='https:'||url.hostname!=='panel.sendcloud.sc'||!url.pathname.startsWith('/api/v2/labels/'))return reply({error:'Formato link etichetta non riconosciuto. Apri il pannello Sendcloud.'},409)
+ const res=await fetch(url.toString(),{headers,redirect:'error'});if(!res.ok)return reply({error:'Download etichetta non riuscito. Verifica Sendcloud.'},502)
+ return new Response(await res.arrayBuffer(),{headers:{'content-type':'application/pdf','content-disposition':'inline; filename="delu-'+id+'.pdf"','cache-control':'no-store'}})
 }

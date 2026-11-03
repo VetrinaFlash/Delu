@@ -74,8 +74,8 @@ test('request -> review -> WhatsApp link -> verified payment, without relying on
  env.DB.db.prepare(`INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('p','Dress','dress',10000,'Abiti','["Nero","Rosa"]','["M","L"]',0)`).run()
  env.DB.db.prepare("INSERT INTO customer_discounts VALUES('PROMO','anna@example.test',20,?,1)").run(Date.now()+86400000)
  assert.equal((await request(env,'discount',{code:'PROMO',email:'other@example.test'})).status,400)
- const original=globalThis.fetch;let charged=null
- globalThis.fetch=async(url,options)=>{if(String(url).includes('resend'))return new Response('{"id":"test"}',{status:200});charged=JSON.parse(options.body);return new Response(JSON.stringify({hostedPage:'https://pay.test',securityToken:'secret'}),{status:200})}
+ const original=globalThis.fetch;let charged=null,labels=0
+ globalThis.fetch=async(url,options)=>{if(String(url).includes('/api/v2/labels/'))return new Response('%PDF-1.4 test',{headers:{'content-type':'application/pdf'}});if(String(url).includes('sendcloud')){labels++;return new Response(JSON.stringify({parcel:{id:123,label:{normal_printer:['https://panel.sendcloud.sc/api/v2/labels/normal_printer/123']},tracking_number:'TRACK'}}),{status:200})}if(String(url).includes('resend'))return new Response('{"id":"test"}',{status:200});charged=JSON.parse(options.body);return new Response(JSON.stringify({hostedPage:'https://pay.test',securityToken:'secret'}),{status:200})}
  try{
  const r=await request(env,'checkout/nexi',{termsAccepted:true,discountCode:'PROMO',customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'p',qty:1,size:'M',color:'Nero'}]})
  assert.equal(r.status,201);const {orderId}=await r.json();assert.equal(charged,null)
@@ -94,10 +94,10 @@ test('request -> review -> WhatsApp link -> verified payment, without relying on
  const callback={securityToken:'secret',operation:{orderId,operationId:'op',operationResult:'EXECUTED',operationAmount:'17500',operationCurrency:'EUR'}}
  assert.equal((await request(env,'payments/nexi/notification',{...callback,securityToken:'wrong'})).status,401)
  assert.equal((await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationAmount:'1'}})).status,400)
- assert.equal((await request(env,'payments/nexi/notification',callback)).status,200)
+ await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}});assert.ok(env.DB.db.prepare("SELECT id FROM email_outbox WHERE id LIKE 'failed-admin-%'").get());assert.equal((await request(env,'payments/nexi/notification',callback)).status,200)
  assert.equal(env.DB.db.prepare('SELECT status FROM orders WHERE id=?').get(orderId).status,'Pagato - da preparare')
  assert.equal(env.DB.db.prepare('SELECT stock FROM products').get().stock,0)
- assert.equal(env.DB.db.prepare('SELECT state FROM shipping_labels').get().state,'READY')
+ assert.equal(env.DB.db.prepare('SELECT state FROM shipping_labels').get().state,'READY');env.SENDCLOUD_PUBLIC_KEY='test';env.SENDCLOUD_SECRET_KEY='test';env.SENDCLOUD_SENDER_ID='1';const labelBody={street:'Via Test',houseNumber:'1',weight:1,shippingMethod:1};assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,200);assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,409);assert.equal(labels,1);const pdf=await request(env,'admin/order-requests/'+orderId+'/label',undefined,c);assert.equal(pdf.status,200);assert.equal(pdf.headers.get('content-type'),'application/pdf')
  await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}})
  assert.equal(env.DB.db.prepare('SELECT status FROM payments').get().status,'PAID')
  assert.equal((await handler.onRequest({request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie:c},body:JSON.stringify({status:'Annullato'})}),env,params:{},waitUntil:()=>{}})).status,409)

@@ -62,7 +62,7 @@ Prima del lancio, Samsung deve accettare template, certificati, dominio e serviz
 
 ## Etichette Sendcloud
 
-La preparazione si abilita soltanto dopo pagamento verificato. Si crea un'etichetta corriere reale attraverso Sendcloud v2; lo staff conferma peso effettivo, via senza civico, civico e ID servizio di spedizione. L'operazione può avere costi del corriere.
+La preparazione si abilita soltanto dopo pagamento verificato. Si crea un'etichetta corriere reale attraverso Sendcloud v2; lo staff conferma peso effettivo, via senza civico, civico e servizio di spedizione disponibile nel menu. L'operazione può avere costi del corriere.
 
 Configurare:
 
@@ -72,7 +72,7 @@ Configurare:
 | SENDCLOUD_SECRET_KEY | Secret |
 | SENDCLOUD_SENDER_ID | Testo, ID indirizzo mittente configurato in Sendcloud |
 
-Connettere il corriere/contratto in Sendcloud e recuperare l'ID del servizio disponibile. Non inventare il servizio o il peso. L'integrazione automatica è limitata alle destinazioni UE previste; per extra UE servono dati doganali e la spedizione va gestita nel pannello del corriere finché questi dati non sono integrati.
+Connettere il corriere/contratto in Sendcloud e verificare i servizi disponibili (il menu li recupera via API). Non inventare il servizio o il peso. L'integrazione automatica è limitata alle destinazioni UE previste; per extra UE servono dati doganali e la spedizione va gestita nel pannello del corriere finché questi dati non sono integrati.
 
 La richiesta di etichetta è bloccata dopo il primo avvio per evitare doppie spese. Se Sendcloud risponde con etichetta ancora in elaborazione oppure l'esito è incerto, verificare il pannello Sendcloud: nessun secondo acquisto automatico. Tracking e parcel ID sono conservati quando confermati.
 
