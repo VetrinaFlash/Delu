@@ -1,7 +1,7 @@
 import { ChapterNav, ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
-import { ArrowDownRight, ArrowRight, AtSign, Globe2, Heart, MapPin, Search } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, AtSign, Globe2, UserRound, Heart, MapPin, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { products } from './data'
 import { LocaleProvider, useLocale, type Locale } from './i18n'
@@ -92,7 +92,7 @@ function HomeInner(){
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/><span className="delu-tagline">{t('brandTagline')}</span></Link>
       <div className="ph-head-actions">
         <Link to="/shop?search=1" aria-label={c.search}><Search/></Link>
-        <Link to="/wishlist" aria-label={c.wishlist}><Heart/></Link>
+        <Link to="/account" aria-label={t('account')}><UserRound/></Link>
         <label className="ph-language"><Globe2 aria-hidden="true"/><select aria-label="Language" value={locale} onChange={e=>setLocale(e.target.value as Locale)}>{Object.entries(localeNames).map(([key,label])=><option key={key} value={key}>{key.toUpperCase()} · {label}</option>)}</select></label>
       </div>
     </header>

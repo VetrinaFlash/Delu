@@ -16,6 +16,8 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - name: Security and commerce API tests
+        run: npm run test:security
       - name: Type-check Cloudflare Pages API
         run: npx tsc --ignoreConfig --noEmit --target ES2022 --lib ES2022,DOM --skipLibCheck --module ESNext --moduleResolution Bundler 'functions/api/[[path]].ts'
       - name: Install Chromium for browser QA
@@ -31,3 +33,4 @@ jobs:
             playwright-report
             test-results
           retention-days: 7
+

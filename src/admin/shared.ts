@@ -5,7 +5,7 @@ export type ApiOrder={
   shipping:any;notes:string;createdAt:string;
   fulfillment?:{carrier:string;trackingCode:string;trackingUrl:string}
 }
-export type Tab='dashboard'|'products'|'orders'|'settings'
+export type Tab='dashboard'|'products'|'orders'|'settings'|'customers'
 export const money=(n:number)=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n)
 export const split=(v:string)=>v.split(',').map(x=>x.trim()).filter(Boolean)
 
@@ -18,3 +18,4 @@ export async function api<T=any>(url:string,init?:RequestInit):Promise<T>{
 }
 
 export function upsertProduct(list:Product[],product:Product){return list.some(x=>x.id===product.id)?list.map(x=>x.id===product.id?product:x):[product,...list]}
+

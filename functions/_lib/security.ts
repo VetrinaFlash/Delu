@@ -1,0 +1,19 @@
+export const digest=async(v:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)))).map(x=>x.toString(16).padStart(2,'0')).join('')
+export const token=()=>Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('')
+export const cookieValue=(r:Request,name:string)=>r.headers.get('cookie')?.split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.slice(name.length+1)||''
+export const cookie=(name:string,value:string,age=2592000)=>`${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`
+export const reply=(body:any,status=200,headers:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store','x-content-type-options':'nosniff',...headers}})
+export const clean=(v:any,max=500)=>String(v??'').trim().slice(0,max)
+export const email=(v:any)=>clean(v,220).toLowerCase()
+export const validEmail=(v:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+export async function securityTables(env:any){await env.DB.batch([
+ env.DB.prepare('CREATE TABLE IF NOT EXISTS sessions (hash TEXT PRIMARY KEY,subject TEXT NOT NULL,role TEXT NOT NULL,expires INTEGER NOT NULL,absolute_expires INTEGER NOT NULL,created INTEGER NOT NULL)'),
+ env.DB.prepare('CREATE TABLE IF NOT EXISTS rate_limits (key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)')
+])}
+export async function limit(env:any,key:string,max=10,seconds=900){await securityTables(env);const k=await digest(key),now=Date.now();const row=await env.DB.prepare('INSERT INTO rate_limits(key,count,until) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN until<? THEN 1 ELSE count+1 END,until=CASE WHEN until<? THEN excluded.until ELSE until END RETURNING count').bind(k,now+seconds*1000,now,now).first();return row.count<=max}
+export async function createSession(env:any,subject:string,role:string){await securityTables(env);const raw=token(),now=Date.now();await env.DB.prepare('INSERT INTO sessions VALUES(?,?,?,?,?,?)').bind(await digest(raw),subject,role,now+30*86400000,now+90*86400000,now).run();return cookie(role==='admin'?'delu_admin':'delu_customer',raw)}
+export async function session(r:Request,env:any,role:string){await securityTables(env);const raw=cookieValue(r,role==='admin'?'delu_admin':'delu_customer');if(!raw)return null;const hash=await digest(raw),s=await env.DB.prepare('SELECT * FROM sessions WHERE hash=? AND role=? AND expires>? AND absolute_expires>?').bind(hash,role,Date.now(),Date.now()).first();return s?{...s,hash}:null}
+export async function renewSession(env:any,s:any){await env.DB.prepare('UPDATE sessions SET expires=? WHERE hash=?').bind(Math.min(Date.now()+30*86400000,s.absolute_expires),s.hash).run()}
+export async function logoutSession(r:Request,env:any,role:string){const name=role==='admin'?'delu_admin':'delu_customer';await securityTables(env);await env.DB.prepare('DELETE FROM sessions WHERE hash=? AND role=?').bind(await digest(cookieValue(r,name)),role).run();return cookie(name,'',0)}
+export async function passwordHash(password:string,salt=token()){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);const bits=await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:100000},key,256);return salt+':'+Array.from(new Uint8Array(bits)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+export async function passwordMatches(password:string,stored:string){if(!stored)return false;const hash=await passwordHash(password,stored.split(':')[0]);if(hash.length!==stored.length)return false;let diff=0;for(let i=0;i<hash.length;i++)diff|=hash.charCodeAt(i)^stored.charCodeAt(i);return diff===0}

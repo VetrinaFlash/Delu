@@ -22,6 +22,7 @@ import './wow-v3.css'
 import './immersive-v4.css'
 import './experience-details.css'
 import './brand-fit.css'
+import './community.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))
@@ -45,6 +46,7 @@ window.addEventListener('vite:preloadError',event=>{
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 const isAdminRoute = window.location.pathname.startsWith('/admin')
+if(isAdminRoute){document.querySelector('link[rel=manifest]')?.setAttribute('href','/admin.webmanifest')}
 
 function RouteFallback(){
   return <div className="route-fallback" role="status" aria-label="Caricamento DeLù"><img src="/delu-logo.svg" alt=""/></div>
@@ -82,3 +84,4 @@ if (!isAdminRoute) {
       // Seed products keep the storefront instantly usable if D1 is unavailable.
     })
 }
+
