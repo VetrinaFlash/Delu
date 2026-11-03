@@ -460,3 +460,14 @@ test('document category rules, multi-select facets, price and localized product 
  await expect(page.getByText('Creato da Daniele Zobel',{exact:true})).toBeVisible()
  await expectNoHorizontalOverflow(page)
 })
+
+test('new arrivals can return to the full catalogue from the heading or all categories',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ await page.goto('/shop?new=1')
+ await page.getByRole('link',{name:'Torna al catalogo completo',exact:true}).click()
+ await expect(page).toHaveURL(/\/shop$/)
+ await page.locator('.quick-navigation').getByRole('link',{name:'Nuovi arrivi',exact:true}).click()
+ await page.locator('.catalog-categories').getByRole('button',{name:'Tutti',exact:true}).click()
+ await expect(page).toHaveURL(/\/shop$/)
+ await expectNoHorizontalOverflow(page)
+})

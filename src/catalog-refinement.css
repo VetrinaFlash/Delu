@@ -156,3 +156,21 @@
 }
 
 .checkout-phone { grid-column: 1 / -1; display: grid; gap: 7px; }
+
+.catalog-exit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid #5e3c4d45;
+  border-radius: 24px;
+  background: #fff9fc;
+  color: #34232d;
+  font-size: 12px;
+  font-weight: 650;
+}
+.catalog-exit:hover { background: #f8e7ef; }
+.catalog-exit:focus-visible { outline: 2px solid #874763; outline-offset: 2px; }

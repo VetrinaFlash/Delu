@@ -2,7 +2,7 @@ INFORMATIVA SUL TRATTAMENTO DEI DATI PERSONALI — DELÙ
 Bozza da completare con i dati del titolare prima della pubblicazione.
 
 Titolare e contatti
-Il titolare è [ragione sociale e dati identificativi], con sede in [indirizzo completo], contattabile a [email privacy]. [Contatti del responsabile della protezione dei dati, se designato.]
+Il titolare è [ragione sociale o nome del titolare], con sede in [indirizzo legale completo]. Per domande o richieste sui tuoi dati puoi scrivere a [email privacy] o telefonare al +39 331 786 2178. Il negozio DeLù si trova in Via Roma 27, 58022 Follonica (GR). [Aggiungere i contatti del responsabile della protezione dei dati se designato.]
 
 Dati trattati
 Per l’account trattiamo nome, email, credenziale protetta, dati di sessione e, se scegli di salvarlo, numero di cellulare per gli aggiornamenti sull’ordine. Se scegli l’accesso social, riceviamo dal provider scelto (Google, Facebook o GitHub, secondo disponibilità) il suo identificativo dell’utente, il nome e l’email. Per gli ordini, anche come ospite, trattiamo dati di contatto e consegna, articoli, importi, esito del pagamento e comunicazioni su ordine e resi. I dati della carta sono inseriti nel servizio di pagamento Nexi. Per la fidelity trattiamo identificativo della tessera, stato di adesione e dati necessari alla sua emissione. Per sicurezza trattiamo anche i dati tecnici necessari a gestire le sessioni e limitare tentativi abusivi.
@@ -17,9 +17,9 @@ Conservazione
 Conserviamo i dati account e fidelity per [periodo o criterio effettivo], i dati degli ordini e dei resi per [periodi applicabili e obblighi legali], i dati tecnici di sicurezza per [periodo effettivo] e i dati marketing fino alla revoca o a [limite effettivo]. Verifica email e recupero password usano link a scadenza. [Verificare le politiche di cancellazione operative, incluse copie e fornitori.]
 
 Conferimento e diritti
-I dati richiesti per ciascun servizio servono a erogarlo. L’account è facoltativo per acquistare. Il consenso marketing è facoltativo. Puoi chiedere accesso, rettifica, cancellazione, limitazione, portabilità e, dove applicabile, opporti al trattamento o revocare il consenso. Puoi contattare il titolare e presentare reclamo al Garante per la protezione dei dati personali (garanteprivacy.it).
+I dati richiesti per ciascun servizio servono a erogarlo. L’account è facoltativo per acquistare. Il consenso marketing è facoltativo. Puoi chiedere accesso, rettifica, cancellazione, limitazione, portabilità e, dove applicabile, opporti al trattamento o revocare il consenso. Puoi contattare il titolare e presentare reclamo al Garante per la protezione dei dati personali (garanteprivacy.it). Le richieste di ordine vengono valutate dal negozio prima della conferma. Il portale non adotta decisioni basate unicamente su trattamenti automatizzati che producono effetti giuridici o analogamente significativi.
 
 Cookie di servizio
-Utilizziamo cookie tecnici per sessione, autenticazione e protezione del flusso social. [Integrare con la descrizione effettiva di altri cookie o strumenti attivati prima della pubblicazione.]
+Utilizziamo cookie tecnici per sessione, autenticazione e protezione del flusso social. Il browser conserva le preferenze di lingua, carrello e preferiti per ripristinarli nelle visite successive. [Integrare con la descrizione effettiva di altri cookie o strumenti attivati prima della pubblicazione.]
 
 Versione e data: [data di pubblicazione]
