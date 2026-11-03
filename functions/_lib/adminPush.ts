@@ -126,10 +126,17 @@ export async function adminPushRoute(request:Request,env:any,path:string,admin:b
   if(!sub)return reply({error:'Attiva le notifiche su questo dispositivo.'},400)
   try{
    const sent=await send(env,sub,{title:'DeLù · notifica di prova',body:'Le notifiche push del pannello admin sono attive su questo dispositivo.',tag:'delu-test'})
-   if(sent.status===404||sent.status===410)await removeDevice(env,sub.endpoint)
    if(sent.ok)return reply({ok:true})
-  }catch{/* report failure below */}
-  return reply({error:'Il servizio push non ha accettato la notifica.'},502)
+   if(sent.status===404||sent.status===410){
+    await removeDevice(env,sub.endpoint)
+    return reply({error:'Iscrizione scaduta. Disattiva e riattiva le push su questo dispositivo.'},410)
+   }
+   if(sent.status===401||sent.status===403)return reply({error:`Autorizzazione push rifiutata (HTTP ${sent.status}). Verifica la coppia di chiavi Cloudflare e riattiva le push sul dispositivo.`},502)
+   return reply({error:`Servizio push: HTTP ${sent.status}. Riprova e comunica questo codice se persiste.`},502)
+  }catch(error){
+   if(error instanceof DOMException&&error.name==='DataError')return reply({error:'Chiavi push non valide. Verifica che chiave pubblica e privata siano della stessa coppia.'},502)
+   return reply({error:'Connessione al servizio push non riuscita. Riprova tra poco.'},502)
+  }
  }
  return reply({error:'Non trovato'},404)
 }
