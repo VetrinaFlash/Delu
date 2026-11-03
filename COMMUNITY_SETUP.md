@@ -81,7 +81,7 @@ Prima della vendita sono necessari identità legale e P.IVA del venditore, email
 
 ## Provider social e demo
 
-Inserire l'informativa definitiva nel valore di produzione `PRIVACY_NOTICE`. Il file `PRIVACY_NOTICE_DRAFT.txt` è la bozza da completare, in particolare per titolare, recapito privacy, conservazione e trasferimenti. Copiare il testo dopo aver sostituito i campi tra parentesi quadre.
+Inserire l'informativa definitiva nel valore di produzione `PRIVACY_NOTICE`. Copiare integralmente il file `PRIVACY_NOTICE.txt` con i dati del titolare confermati. Verificare con il titolare che le prassi di conservazione e i fornitori attivi corrispondano al testo.
 
 | Provider | Variabili di produzione | Callback con il dominio attuale |
 | --- | --- | --- |
