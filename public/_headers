@@ -28,3 +28,7 @@
 /admin*
   Cache-Control: no-store
 
+
+/pay/*
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer

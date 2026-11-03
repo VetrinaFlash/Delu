@@ -75,7 +75,7 @@ if (!isAdminRoute) {
   fetch('/api/products', { headers: { accept: 'application/json' } })
     .then(async response=>response.ok?response.json():null)
     .then(liveProducts=>{
-      if (Array.isArray(liveProducts) && liveProducts.length) {
+      if (Array.isArray(liveProducts)) {
         products.splice(0, products.length, ...liveProducts)
         renderApp()
       }
