@@ -15,7 +15,7 @@ export default function CatalogShop({renderProduct}:{renderProduct:(p:Product)=>
  const keys=['color','size','fabric',...(category==='all'?[]:filtersFor(category))]
  const values=(p:Product,k:string)=>k==='color'?p.colors:k==='size'?p.sizes:k==='fabric'?p.fabrics||[]:p.attributes?.values[k]||[]
  const matches=(p:Product,except?:string)=>Object.entries(selected).every(([k,chosen])=>k===except||!chosen.length||chosen.some(v=>values(p,k).includes(v)))&&(!min||p.price>=Number(min))&&(!max||p.price<=Number(max))
- const visible=useMemo(()=>{const result=base.filter(p=>matches(p));if(sort==='low')result.sort((a,b)=>a.price-b.price);if(sort==='high')result.sort((a,b)=>b.price-a.price);if(sort==='new')result.sort((a,b)=>Number(b.new)-Number(a.new));return result},[category,selected,min,max,sort,params.toString()])
+ const visible=useMemo(()=>{const result=base.filter(p=>matches(p));if(sort==='low')result.sort((a,b)=>a.price-b.price);if(sort==='high')result.sort((a,b)=>b.price-a.price);if(sort==='new')result.sort((a,b)=>Number(b.new)-Number(a.new));return result},[base,category,selected,min,max,sort,params.toString()])
  const toggle=(key:string,v:string)=>setSelected(old=>({...old,[key]:(old[key]||[]).includes(v)?old[key].filter(x=>x!==v):[...(old[key]||[]),v]}))
  const clear=()=>{setSelected({});setMin('');setMax('')},count=Object.values(selected).reduce((s,v)=>s+v.length,0)+(min?1:0)+(max?1:0)
  const title=query?`${t('search')}: “${params.get('q')}”`:newOnly?t('newIn'):category!=='all'?label(category):editOnly?t('edit'):t('shopMood')

@@ -318,6 +318,7 @@ test('mobile runway scrolls horizontally and depth frames approach the viewer',a
 })
 
 test('fabric filter combines with category and resets',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
  await page.route('**/api/products',route=>route.fulfill({json:[
  {id:'fabric-a',name:'Abito lino',price:50,category:'Abiti',colors:['Bianco'],sizes:['M'],tags:[],stock:3,image:'/delu-logo.svg',active:true,fabrics:['Lino','Cotone']},
  {id:'fabric-b',name:'Top seta',price:40,category:'Top',colors:['Nero'],sizes:['S'],tags:[],stock:3,image:'/delu-logo.svg',active:true,fabrics:['Seta']}
@@ -416,10 +417,11 @@ test('Fidelity is optional and requires a verified account',async({page})=>{
 })
 
 test('document category rules, multi-select facets, price and localized product details',async({page})=>{
- await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ await page.addInitScript(()=>{if(!localStorage.getItem('delu_locale'))localStorage.setItem('delu_locale','it')})
  const item={colors:['Nero'],sizes:['S','M'],tags:[],stock:0,image:'/delu-logo.svg',active:true,fabrics:['Viscosa'],attributes:{values:{length:['Midi'],model:['A tubino'],occasion:['Da sera','Da cerimonia'],craft:['Ricamato a mano']},compositions:{Composizione:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}]}}}
  await page.route('**/api/products',r=>r.fulfill({json:[{...item,id:'dress-1',name:'Abito sera',price:89,category:'Abiti'},{...item,id:'dress-2',name:'Abito mini',price:60,category:'Abiti',attributes:{values:{length:['Mini'],occasion:['Casual']},compositions:{}}},{...item,id:'trousers-1',name:'Pantaloni palazzo',price:79,category:'Pantaloni',attributes:{values:{model:['Palazzo'],length:['Lungo'],fit:['Slim fit'],rise:['Vita alta']},compositions:{}}}]}))
  await page.goto('/shop?category=Abiti')
+ await expect(page.locator('.catalog-categories button.active')).toHaveCSS('color','rgb(255, 255, 255)')
  await page.locator('.ds-toolbar>button').click()
  const filters=page.locator('#catalog-filters')
  await expect(filters.locator('fieldset')).toHaveCount(6)
