@@ -25,6 +25,7 @@ import './brand-fit.css'
 import './community.css'
 import './catalog-refinement.css'
 import './final-layout.css'
+import './atelier.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))

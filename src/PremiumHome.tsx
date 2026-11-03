@@ -37,6 +37,14 @@ function HomeInner(){
   const [scene,setScene]=useState(0)
   const [scrolled,setScrolled]=useState(false)
   const [travel,setTravel]=useState(0)
+  const {scrollYProgress:pageProgress}=useScroll()
+  const readingProgress=useSpring(pageProgress,{stiffness:100,damping:30})
+  function chooseScene(index:number){
+    const element=campaignRef.current
+    if(!element)return
+    const progress=[.05,.46,.86][index]
+    window.scrollTo({top:element.offsetTop+(element.offsetHeight-window.innerHeight)*progress,behavior:reducedMotion?"instant":"smooth"})
+  }
   const trackRef=useRef<HTMLDivElement>(null)
   const heroRef=useRef<HTMLElement>(null)
   const campaignRef=useRef<HTMLElement>(null)
@@ -89,7 +97,8 @@ function HomeInner(){
   const editorialY=useTransform(editorialProgress,[0,1],['-4%','4%'])
   const featured=(products.filter(p=>p.active!==false&&p.new).length?products.filter(p=>p.active!==false&&p.new):products.filter(p=>p.active!==false)).slice(0,4)
 
-  return <main className="ph-root">
+  return <main className={`ph-root ph-atelier${scrolled?" atelier-scrolled":""}`}>
+    <motion.div className="atelier-reading-progress" aria-hidden="true" style={{scaleX:readingProgress}}/>
     <header className={`ph-header${scrolled?' is-scrolled':''}`}>
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/><span className="delu-tagline">{t('brandTagline')}</span></Link>
@@ -105,14 +114,15 @@ function HomeInner(){
         <img fetchPriority="high" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90" alt="DeLù editorial"/>
       </motion.div>
       <div className="ph-hero-shade"/>
+      <div className="atelier-photo-caption" aria-hidden="true"><span>DELÙ / THE EDIT</span><span>01 — 03</span></div>
       <motion.div className="ph-hero-copy" style={reducedMotion?undefined:{y:heroTextY}}>
-        <motion.span initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.95,duration:.7}}>{c.season}</motion.span>
+        <motion.span initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.15,duration:.7}}>{c.season}</motion.span>
         <div className="ph-hero-title" role="heading" aria-level={1} aria-label={`${c.heroA} ${c.heroB}`}>
-          <motion.div initial={{y:'115%'}} animate={{y:0}} transition={{delay:.82,duration:.9,ease:[.16,1,.3,1]}}>{c.heroA}</motion.div>
-          <motion.div className="is-italic" initial={{y:'115%'}} animate={{y:0}} transition={{delay:.92,duration:.95,ease:[.16,1,.3,1]}}>{c.heroB}</motion.div>
+          <motion.div initial={{y:'115%'}} animate={{y:0}} transition={{delay:.2,duration:.9,ease:[.16,1,.3,1]}}>{c.heroA}</motion.div>
+          <motion.div className="is-italic" initial={{y:'115%'}} animate={{y:0}} transition={{delay:.3,duration:.95,ease:[.16,1,.3,1]}}>{c.heroB}</motion.div>
         </div>
-        <motion.p initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:1.08,duration:.75}}>{c.heroText}</motion.p>
-        <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:1.18,duration:.7}}><Link className="ph-hero-cta" to="/shop">{c.discover}<ArrowDownRight/></Link></motion.div>
+        <motion.p initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.4,duration:.75}}>{c.heroText}</motion.p>
+        <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:.5,duration:.7}}><Link className="ph-hero-cta" to="/shop">{c.discover}<ArrowDownRight/></Link></motion.div>
       </motion.div>
       <motion.div className="ph-hero-watermark" initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.05,duration:1.2}}>DELÙ</motion.div>
       <div className="ph-hero-side"><span>01</span><i/><b>{c.place}</b></div>
@@ -125,7 +135,7 @@ function HomeInner(){
       <motion.p initial={{opacity:0,y:26}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.7}} transition={{duration:.8}}>{c.statementText}</motion.p>
     </section>
 
-    <ScrollSignature/>
+    <ScrollSignature words={[c.campaignA,c.campaignB,c.campaignC]}/>
     <section id="experience" ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
       <div className="ph-campaign-sticky">
         <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignOneOpacity,scale:campaignOneScale,y:campaignOneY,z:depthA,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2000&q=88" alt="DeLù feminine edit"/></motion.div>
@@ -138,6 +148,7 @@ function HomeInner(){
         <motion.div className="ph-campaign-copy ph-campaign-copy--a" inert={!reducedMotion&&scene!==0} aria-hidden={!reducedMotion&&scene!==0} style={{opacity:campaignCopyA}}><small>01</small><h2>{c.campaignA}</h2><p>{c.campaignAText}</p></motion.div>
         <motion.div className="ph-campaign-copy ph-campaign-copy--b" inert={!reducedMotion&&scene!==1} aria-hidden={!reducedMotion&&scene!==1} style={{opacity:campaignCopyB}}><small>02</small><h2>{c.campaignB}</h2><p>{c.campaignBText}</p></motion.div>
         <motion.div className="ph-campaign-copy ph-campaign-copy--c" inert={!reducedMotion&&scene!==2} aria-hidden={!reducedMotion&&scene!==2} style={{opacity:campaignCopyC}}><small>03</small><h2>{c.campaignC}</h2><p>{c.campaignCText}</p><Link to="/shop">{c.discover}<ArrowRight/></Link></motion.div>
+        <div className="atelier-scene-picker" role="group" aria-label={c.campaignLabel}>{[c.campaignA,c.campaignB,c.campaignC].map((label,index)=><button type="button" key={index} aria-pressed={scene===index} onClick={()=>chooseScene(index)}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}</div>
         <div className="ph-campaign-progress"><motion.i style={{scaleX:campaignProgress}}/></div>
       </div>
     </section>

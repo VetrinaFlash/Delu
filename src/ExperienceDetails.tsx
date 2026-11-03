@@ -17,14 +17,14 @@ export function TiltCard({children}:{children:ReactNode}){
     onPointerCancel={()=>{rx.set(0);ry.set(0)}}>{children}</motion.div>
 }
 
-export function ScrollSignature(){
+export function ScrollSignature({words}:{words:string[]}){
   const ref=useRef<HTMLDivElement>(null)
   const reduced=useReducedMotion()
   const {scrollYProgress}=useScroll({target:ref,offset:['start end','end start']})
   const x=useTransform(scrollYProgress,[0,1],['3%','-18%'])
   return <div className="ph-signature" ref={ref} aria-hidden="true">
     <span className="ph-signature-label">FOLLONICA, TOSCANA / DELÙ</span>
-    <motion.div style={reduced?undefined:{x}}><span>Femminile.</span><i>Decisa.</i><span>Tua.</span><b>✳</b><span>DeLù.</span></motion.div>
+    <motion.div style={reduced?undefined:{x}}><span>{words[0]}</span><i>{words[1]}</i><span>{words[2]}</span><b>✳</b><span>DeLù.</span></motion.div>
   </div>
 }
 
@@ -51,3 +51,4 @@ export function ChapterNav({labels}:{labels:string[]}){
     </a>)}
   </nav>
 }
+
