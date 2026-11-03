@@ -342,6 +342,7 @@ test('home shop entry is legible and has a touch target',async({page})=>{
 
 
 test('account registration keeps marketing optional and offers guest checkout',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
  await page.route('**/api/customer/config',r=>r.fulfill({json:{email:true,google:true}}))
  await page.route('**/api/customer/me',r=>r.fulfill({status:401,json:{error:'Accedi'}}))
  await page.goto('/account')
@@ -354,6 +355,7 @@ test('account registration keeps marketing optional and offers guest checkout',a
  await expectNoHorizontalOverflow(page)
 })
 test('guest returns show lawful timing and email access without requiring an account',async({page})=>{
+ await page.route('**/api/customer/me',r=>r.fulfill({status:401,json:{error:'Accedi'}}))
  await page.goto('/returns')
  await expect(page.getByRole('heading',{name:'Resi, con chiarezza.'})).toBeVisible()
  await expect(page.locator('.customer-page')).toContainText('14 giorni dalla consegna')
@@ -362,6 +364,7 @@ test('guest returns show lawful timing and email access without requiring an acc
  await expectNoHorizontalOverflow(page)
 })
 test('customer registration submits verification request without logging in before confirmation',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
  await page.route('**/api/customer/config',r=>r.fulfill({json:{email:true,google:false}}))
  await page.route('**/api/customer/me',r=>r.fulfill({status:401,json:{error:'Accedi'}}))
  let payload:any

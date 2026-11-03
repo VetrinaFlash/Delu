@@ -8,3 +8,7 @@
 .withdrawal-link{display:inline-flex;align-items:center;min-height:44px;padding:12px 0;text-decoration:underline;font-size:13px;position:relative;z-index:2}
 
 @media(max-width:620px){.ds-account-link{display:none!important}}
+
+.ds-footer>div:nth-of-type(3){display:flex!important;flex-direction:column;gap:14px}.ds-footer{grid-template-columns:1.3fr .8fr 1fr .8fr!important}
+@media(max-width:980px){.ds-footer{grid-template-columns:1fr 1fr!important}}
+@media(max-width:620px){.ds-actions .ds-account-link{display:none!important}.ds-footer{grid-template-columns:1fr!important}}

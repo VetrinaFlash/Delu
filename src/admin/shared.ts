@@ -12,7 +12,7 @@ export const split=(v:string)=>v.split(',').map(x=>x.trim()).filter(Boolean)
 export async function api<T=any>(url:string,init?:RequestInit):Promise<T>{
   const isForm=typeof FormData!=='undefined'&&init?.body instanceof FormData
   const response=await fetch(url,{credentials:'include',...init,headers:{...(isForm?{}:{'content-type':'application/json'}),...(init?.headers||{})}})
-  const data=await response.json().catch(()=>({}))
+  const data=await response.json().catch(()=>{throw new Error('Risposta del servizio non valida. Riprova più tardi.')})
   if(!response.ok)throw new Error(data.error||'Operazione non riuscita')
   return data
 }
