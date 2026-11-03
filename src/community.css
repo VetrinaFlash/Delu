@@ -4,3 +4,7 @@
 
 .ds-account-link{display:inline-flex!important;align-items:center;justify-content:center;min-width:36px;min-height:44px}.ds-account-link svg{width:18px;height:18px}.ds-product-page,.ds-checkout{overflow-wrap:anywhere}
 @media(max-width:620px){.ds-actions{gap:5px!important}.ds-account-link{min-width:30px;width:30px}.ds-account-link svg{width:17px}}
+
+.withdrawal-link{display:inline-flex;align-items:center;min-height:44px;padding:12px 0;text-decoration:underline;font-size:13px;position:relative;z-index:2}
+
+@media(max-width:620px){.ds-account-link{display:none!important}}

@@ -173,7 +173,7 @@ function HomeInner(){
       <motion.h2 initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.5}} transition={{duration:.85,ease:[.16,1,.3,1]}}>{c.visit}</motion.h2>
       <p>{c.visitText}</p>
       <div className="ph-visit-links"><a href="https://maps.google.com/?q=Via+Roma+27+Follonica" target="_blank" rel="noreferrer">VIA ROMA 27 <ArrowRight/></a><a href="https://instagram.com/delu.clotheshop" target="_blank" rel="noreferrer"><AtSign/> @DELU.CLOTHESHOP</a></div>
-      <div className="ph-visit-ghost">DELÙ</div>
+      <Link className="withdrawal-link" to="/returns">{t('withdrawHere')}</Link><div className="ph-visit-ghost">DELÙ</div>
     </section>
     <ChapterNav labels={[c.campaignLabel.split(' / ').pop()!,c.newIn,'EDITORIAL','FOLLONICA']}/>
   </main>

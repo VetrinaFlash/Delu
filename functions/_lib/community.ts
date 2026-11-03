@@ -83,13 +83,13 @@ export async function communityRoute(r:Request,env:any,path:string,admin:boolean
  if(path==='customer/unsubscribe'&&method==='POST'){const row=await consume(env,'unsubscribe',clean(b.token,100));if(!row)return reply({message:'Link già usato o scaduto. Puoi verificare o revocare il consenso dal tuo account.'});await env.DB.prepare('UPDATE customers SET marketing=0,consent_at=? WHERE id=?').bind(new Date().toISOString(),row.subject).run();return reply({message:'Non riceverai più email promozionali.'})}
  const c=await customer(r,env)
  if(path==='customer/returns'&&method==='POST'){
-  let orderId=clean(b.orderId,80)
+  if(!clean(b.name,120))return reply({error:'Indica il tuo nome e cognome per confermare la comunicazione.'},400);let orderId=clean(b.orderId,80)
   if(!c){const row=await consume(env,'return',clean(b.token,100));if(!row)return reply({error:'Accedi oppure richiedi un nuovo link per il tuo ordine.'},401);orderId=row.subject}
   const order=await env.DB.prepare('SELECT * FROM orders WHERE id=?'+(c?' AND lower(customer_email)=?':'')).bind(...(c?[orderId,c.email]:[orderId])).first()
   if(!order)return reply({error:'Ordine non trovato.'},404)
   const kind=b.kind==='defect'?'defect':'withdrawal',id=crypto.randomUUID()
   await env.DB.prepare('INSERT OR IGNORE INTO returns_requests(id,order_id,email,kind,message) VALUES(?,?,?,?,?)').bind(id,order.id,order.customer_email,kind,clean(b.message,2000)).run()
-  await enqueue(env,'return-receipt-'+order.id+'-'+kind,order.customer_email,'DeLù · richiesta di reso ricevuta','Abbiamo ricevuto la tua comunicazione di reso per ordine '+order.id+'. Tipo: '+kind+'.\n'+clean(b.message,2000)+'\nPer ripensamento, rispedisci entro 14 giorni da questa comunicazione; il costo diretto di restituzione è a tuo carico. Per difetti, contatta il negozio per la gestione a carico del venditore.\nIndirizzo e istruzioni di reso: '+(env.RETURNS_ADDRESS||'contatta il negozio al +39 331 786 2178')+'. Non inviare carte di pagamento o dati sensibili.')
+  await enqueue(env,'return-receipt-'+order.id+'-'+kind,order.customer_email,'DeLù · richiesta di reso ricevuta','Abbiamo ricevuto la tua comunicazione di reso per ordine '+order.id+'. Nome: '+clean(b.name,120)+'. Tipo: '+kind+'. Data e ora UTC: '+new Date().toISOString()+'.\n'+clean(b.message,2000)+'\nPer ripensamento, rispedisci entro 14 giorni da questa comunicazione; il costo diretto di restituzione è a tuo carico. Per difetti, contatta il negozio per la gestione a carico del venditore.\nIndirizzo e istruzioni di reso: '+(env.RETURNS_ADDRESS||'contatta il negozio al +39 331 786 2178')+'. Non inviare carte di pagamento o dati sensibili.')
   if(env.ADMIN_EMAIL)await enqueue(env,'return-admin-'+order.id+'-'+kind,env.ADMIN_EMAIL,'DeLù · nuovo reso '+order.id,'Apri '+origin(r,env)+'/admin per gestire la richiesta.')
   const receipt=await env.DB.prepare('SELECT created_at FROM returns_requests WHERE order_id=? AND kind=?').bind(order.id,kind).first();return reply({message:'Comunicazione ricevuta. La conferma email è in invio. Conserva ordine e data di questa comunicazione.',receivedAt:receipt.created_at+'Z',orderId:order.id})
  }

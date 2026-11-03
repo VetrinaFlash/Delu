@@ -62,7 +62,10 @@ Il modulo è facoltativo: il negozio deve accettare anche una dichiarazione espl
 
 Il cambio di stato “Rimborsato” è solo amministrativo: eseguire il rimborso nel back office Nexi e riconciliarlo prima di registrarlo. Non sono automatizzate etichette corriere o restituzioni di denaro.
 
+La funzione online include il collegamento “Recedere dal contratto qui” e il pulsante “Conferma recesso” (art. 54-bis). Il nome è confermato prima dell’invio, la ricevuta include contenuto e data/ora.
+
 Fonti ufficiali da verificare con il professionista che approva i testi:
+- https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticoloDefault/originario?atto.codiceRedazionale=26G00002&atto.dataPubblicazioneGazzetta=2026-01-08&atto.tipoProvvedimento=DECRETO+LEGISLATIVO
 - https://www.mimit.gov.it/index.php/it/assistenza/domande-frequenti/diritto-di-recesso-domande-frequenti-faq
 - https://www.garanteprivacy.it/it/home/i-miei-diritti/diritti
 - https://developers.google.com/identity/openid-connect/openid-connect

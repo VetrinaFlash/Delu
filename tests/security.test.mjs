@@ -51,13 +51,13 @@ test('guest returns require email proof; receipt is durable and request is not r
  const env=await setup();const original=globalThis.fetch;globalThis.fetch=async()=>new Response('{"id":"test"}',{status:200})
  try{
  env.DB.db.prepare("INSERT INTO orders(id,customer_name,customer_email,total_cents,items_json,status) VALUES('order-1','Anna','anna@example.test',5000,'[]','Spedito')").run()
- assert.equal((await request(env,'customer/returns',{orderId:'order-1'})).status,401)
+ assert.equal((await request(env,'customer/returns',{orderId:'order-1',name:'Anna'})).status,401)
  await request(env,'customer/return-access',{orderId:'order-1',email:'wrong@example.test'});assert.equal(env.DB.db.prepare('SELECT count(*) n FROM email_outbox').get().n,0)
  await request(env,'customer/return-access',{orderId:'order-1',email:'anna@example.test'})
  const mail=env.DB.db.prepare('SELECT * FROM email_outbox').get(),raw=mail.body.match(/token=([a-f0-9]+)/)[1]
- assert.equal((await request(env,'customer/returns',{token:raw,kind:'withdrawal',message:'Una giacca'})).status,200)
+ assert.equal((await request(env,'customer/returns',{token:raw,name:'Anna',kind:'withdrawal',message:'Una giacca'})).status,200)
  assert.equal(env.DB.db.prepare('SELECT count(*) n FROM returns_requests').get().n,1)
- assert.equal((await request(env,'customer/returns',{token:raw})).status,401)
+ assert.equal((await request(env,'customer/returns',{name:'Anna',token:raw})).status,401)
  assert.ok(env.DB.db.prepare("SELECT * FROM email_outbox WHERE id='return-receipt-order-1-withdrawal'").get())
  }finally{globalThis.fetch=original}
 })
