@@ -26,3 +26,77 @@
 .catalog-shop .ds-toolbar>button,.catalog-shop .ds-toolbar select{font-size:11px!important}
 @media(max-width:1100px){.catalog-shop .ds-toolbar{flex-wrap:wrap!important}.catalog-shop .ds-toolbar>.catalog-categories{flex-basis:100%;order:3}}
 @media(max-width:600px){.catalog-shop .ds-shop-hero{min-height:195px!important;padding:28px 5vw 24px!important}.catalog-shop .ds-shop-hero h1{font-size:clamp(36px,10vw,50px)!important}.catalog-shop .ds-toolbar{padding:12px 5vw!important;gap:6px!important}.catalog-shop .ds-toolbar>.catalog-categories button{font-size:10px!important;padding:10px 13px!important}}
+
+@media (max-width: 600px) {
+  .quick-navigation {
+    margin: 0;
+    max-width: none;
+    padding: 7px 4vw;
+    gap: 4px;
+    border-radius: 0;
+    border-block-end: 1px solid #eadce4;
+    background: #fff8fb;
+    box-shadow: none;
+    color: #30232c;
+  }
+  .quick-navigation > a,
+  .quick-navigation > button {
+    min-height: 56px;
+    gap: 5px;
+    padding: 6px 4px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 650;
+    letter-spacing: .02em;
+    text-wrap: balance;
+  }
+  .quick-navigation svg {
+    width: 18px;
+    height: 18px;
+    color: #874763;
+  }
+  .home-service-links .quick-navigation {
+    border: 1px solid #eadce4;
+    border-radius: 14px;
+    padding-inline: 5px;
+  }
+  .catalog-shop .ds-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 8px 4vw 10px !important;
+    background: #fffafd !important;
+    border-bottom-color: #e9dce5 !important;
+  }
+  .catalog-shop .ds-toolbar > .catalog-categories {
+    order: -1;
+    grid-column: 1 / -1;
+    padding: 1px 0 6px !important;
+    border-bottom: 1px solid #efe2ea;
+  }
+  .catalog-shop .ds-toolbar > .catalog-categories button {
+    min-height: 44px;
+  }
+  .catalog-shop .ds-toolbar > button,
+  .catalog-shop .ds-toolbar > select {
+    width: 100%;
+    max-width: none !important;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 11px !important;
+    border: 1px solid #e3d3dd !important;
+    border-radius: 10px;
+    background: white !important;
+    color: #30232c;
+    text-align: start !important;
+    letter-spacing: .04em !important;
+  }
+  .catalog-shop .ds-toolbar > button[aria-expanded="true"] {
+    border-color: #874763 !important;
+    background: #f6e6ee !important;
+  }
+  .catalog-shop .ds-toolbar :focus-visible {
+    outline: 2px solid #874763 !important;
+    outline-offset: -2px;
+  }
+}
