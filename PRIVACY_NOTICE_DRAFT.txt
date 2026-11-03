@@ -1,0 +1,25 @@
+INFORMATIVA SUL TRATTAMENTO DEI DATI PERSONALI — DELÙ
+Bozza da completare con i dati del titolare prima della pubblicazione.
+
+Titolare e contatti
+Il titolare è [ragione sociale e dati identificativi], con sede in [indirizzo completo], contattabile a [email privacy]. [Contatti del responsabile della protezione dei dati, se designato.]
+
+Dati trattati
+Per l’account trattiamo nome, email, credenziale protetta, dati di sessione e, se scegli di salvarlo, numero di cellulare per gli aggiornamenti sull’ordine. Se scegli l’accesso social, riceviamo dal provider scelto (Google, Facebook o GitHub, secondo disponibilità) il suo identificativo dell’utente, il nome e l’email. Per gli ordini, anche come ospite, trattiamo dati di contatto e consegna, articoli, importi, esito del pagamento e comunicazioni su ordine e resi. I dati della carta sono inseriti nel servizio di pagamento Nexi. Per la fidelity trattiamo identificativo della tessera, stato di adesione e dati necessari alla sua emissione. Per sicurezza trattiamo anche i dati tecnici necessari a gestire le sessioni e limitare tentativi abusivi.
+
+Finalità e basi giuridiche
+Gestiamo account, ordini, pagamenti, spedizioni, assistenza, resi e fidelity richiesta per eseguire il contratto o le misure precontrattuali richieste (art. 6, par. 1, lett. b GDPR). Adempiamo agli obblighi fiscali, contabili e di legge sulla base dell’art. 6, par. 1, lett. c. Proteggiamo il sito, gli account e i nostri diritti sulla base del legittimo interesse alla sicurezza e alla tutela giuridica (art. 6, par. 1, lett. f). Inviamo offerte e novità solo con consenso facoltativo e revocabile (art. 6, par. 1, lett. a), tramite preferenze account o link di disiscrizione.
+
+Destinatari e trasferimenti
+Possono accedere ai dati i soggetti autorizzati e i fornitori necessari ai servizi scelti, tra cui Cloudflare per infrastruttura, Resend per email, Nexi per pagamenti, corrieri e, se attivo, Sendcloud per spedizioni. Se scegli queste funzioni, intervengono il provider social selezionato, WhatsApp per le comunicazioni d’ordine al numero indicato al checkout e Apple o Samsung per il salvataggio della tessera. Possono inoltre riceverli consulenti e autorità nei casi previsti. [Completare ruoli, paesi e garanzie effettive per eventuali trasferimenti fuori dallo SEE e modalità per ottenere copia delle garanzie.]
+
+Conservazione
+Conserviamo i dati account e fidelity per [periodo o criterio effettivo], i dati degli ordini e dei resi per [periodi applicabili e obblighi legali], i dati tecnici di sicurezza per [periodo effettivo] e i dati marketing fino alla revoca o a [limite effettivo]. Verifica email e recupero password usano link a scadenza. [Verificare le politiche di cancellazione operative, incluse copie e fornitori.]
+
+Conferimento e diritti
+I dati richiesti per ciascun servizio servono a erogarlo. L’account è facoltativo per acquistare. Il consenso marketing è facoltativo. Puoi chiedere accesso, rettifica, cancellazione, limitazione, portabilità e, dove applicabile, opporti al trattamento o revocare il consenso. Puoi contattare il titolare e presentare reclamo al Garante per la protezione dei dati personali (garanteprivacy.it).
+
+Cookie di servizio
+Utilizziamo cookie tecnici per sessione, autenticazione e protezione del flusso social. [Integrare con la descrizione effettiva di altri cookie o strumenti attivati prima della pubblicazione.]
+
+Versione e data: [data di pubblicazione]

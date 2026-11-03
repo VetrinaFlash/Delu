@@ -152,3 +152,65 @@ test('category attributes round-trip, custom translations and composition valida
  const preserved=await patch({description:'Only description changes'});assert.deepEqual((await preserved.json()).attributes.values.length,['Maxi'])
  const invalid=await patch({attributes:{values:{unknown:['Invented']}}});assert.equal(invalid.status,400)
 })
+
+test('the demo customer requires the configured secret and can manage its own international phone',async()=>{
+ const env=await setup()
+ const email='cliente.demo@delu.example',password='Local demo password 123!'
+ assert.equal((await request(env,'customer/login',{email,password})).status,401)
+ env.DEMO_CUSTOMER_PASSWORD_HASH=await security.passwordHash(password)
+ const login=await request(env,'customer/login',{email,password})
+ assert.equal(login.status,200)
+ const cookie=login.headers.get('set-cookie').split(';')[0]
+ assert.equal((await request(env,'customer/preferences',{phone:'331123'} ,cookie)).status,400)
+ assert.equal((await request(env,'customer/preferences',{phone:'+39 331 123 4567',marketing:false},cookie)).status,200)
+ const profile=await(await request(env,'customer/me',undefined,cookie)).json()
+ assert.equal(profile.phone,'+393311234567')
+ assert.equal((await request(env,'customer/preferences',{phone:'',marketing:false},cookie)).status,200)
+ assert.equal((await(await request(env,'customer/me',undefined,cookie)).json()).phone,null)
+ delete env.DEMO_CUSTOMER_PASSWORD_HASH
+ assert.equal((await request(env,'customer/me',undefined,cookie)).status,401)
+})
+
+test('Facebook requires email proof in the initiating browser and GitHub requires verified primary email',async()=>{
+ const env=await setup()
+ Object.assign(env,{FACEBOOK_CLIENT_ID:'fb',FACEBOOK_CLIENT_SECRET:'secret',GITHUB_CLIENT_ID:'gh',GITHUB_CLIENT_SECRET:'secret'})
+ const originalFetch=globalThis.fetch
+ let verified=false,mail
+ globalThis.fetch=async(url,options)=>{
+  const u=new URL(url)
+  if(u.hostname==='api.resend.com'){mail=JSON.parse(options.body);return Response.json({id:'mock'})}
+  if(u.pathname.endsWith('/access_token'))return Response.json({access_token:'mock'})
+  if(u.hostname==='graph.facebook.com')return Response.json({id:'12345',name:'Facebook Demo',email:'fb@example.test'})
+  if(u.pathname==='/user/emails')return Response.json([{email:'gh@example.test',verified,primary:true}])
+  if(u.pathname==='/user')return Response.json({id:67890,name:'GitHub Demo'})
+  throw new Error('Unexpected OAuth URL '+u.hostname+u.pathname)
+ }
+ try{
+  async function start(provider){
+   const begin=await request(env,'customer/'+provider)
+   assert.equal(begin.status,302)
+   const location=new URL(begin.headers.get('location'))
+   const cookie=begin.headers.get('set-cookie').split(';')[0]
+   const callback='customer/'+provider+'/callback?code=demo&state='+location.searchParams.get('state')
+   return {callback,cookie,location}
+  }
+  const fb=await start('facebook')
+  assert.equal((await request(env,fb.callback)).status,400)
+  const confirmation=await request(env,fb.callback,undefined,fb.cookie)
+  assert.equal(confirmation.status,302)
+  assert.equal(confirmation.headers.get('location'),'/account?social=verify')
+  assert.equal(env.DB.db.prepare("SELECT count(*) AS n FROM customers WHERE email='fb@example.test'").get().n,0)
+  const token=mail.text.match(/#socialVerify=(\w+)/)[1]
+  assert.equal((await request(env,'customer/socialVerify',{token})).status,400)
+  const proofCookie=confirmation.headers.get('set-cookie').split(';')[0]
+  const confirmed=await request(env,'customer/socialVerify',{token},proofCookie)
+  assert.equal(confirmed.status,200)
+  assert.equal((await request(env,'customer/socialVerify',{token},proofCookie)).status,400)
+  const gh=await start('github')
+  assert.equal(gh.location.searchParams.get('code_challenge_method'),'S256')
+  assert.equal((await request(env,gh.callback,undefined,gh.cookie)).status,400)
+  verified=true
+  const ghVerified=await start('github')
+  assert.equal((await request(env,ghVerified.callback,undefined,ghVerified.cookie)).status,302)
+ }finally{globalThis.fetch=originalFetch}
+})

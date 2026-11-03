@@ -7,6 +7,7 @@ export async function ensureDatabase(env:any){
  if(!await env.DB.prepare('SELECT version FROM _delu_migrations WHERE version=?').bind(schemaVersion).first())
  await env.DB.batch([...statements.map(s=>env.DB.prepare(s)),env.DB.prepare('INSERT OR IGNORE INTO _delu_migrations(version) VALUES(?)').bind(schemaVersion)])
  await seedCatalog(env)
+ await seedDemoAttributes(env)
 }
 
 async function seedCatalog(env:any){
@@ -18,4 +19,36 @@ async function seedCatalog(env:any){
  for(const v of p.variants||[])statements.push(env.DB.prepare('INSERT OR IGNORE INTO product_variants(product_id,sku,color,size,stock) SELECT ?,?,?,?,? WHERE changes()>0').bind(p.id,'',v.color,v.size,v.stock))
  }
  statements.push(env.DB.prepare('INSERT OR IGNORE INTO _delu_migrations(version) VALUES(?)').bind(version));await env.DB.batch(statements)
+}
+
+const demoAttributes=[
+ {fabrics:['Twill'],composition:[{material:'Poliestere',percent:70},{material:'Viscosa',percent:27},{material:'Elastan',percent:3}],values:{fit:['Regular fit'],closure:['Bottoni'],lining:['Con fodera']}},
+ {fabrics:['Raso','Viscosa'],composition:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}],values:{model:['A tubino'],length:['Midi'],occasion:['Da sera','Da cocktail'],neckline:['A V'],care:['Lavaggio a mano']}},
+ {fabrics:['Jersey','Cotone'],composition:[{material:'Cotone',percent:100}],values:{fit:['Comfort fit'],sleeves:['Corte'],care:['Lavaggio 30°C']}},
+ {fabrics:['Denim','Cotone'],composition:[{material:'Cotone',percent:98},{material:'Elastan',percent:2}],values:{model:['Straight'],length:['Lungo'],rise:['Vita alta'],leg:['Dritto']}},
+ {fabrics:['Lino','Viscosa'],composition:[{material:'Lino',percent:55},{material:'Viscosa',percent:45}],values:{fit:['Relaxed fit'],occasion:['Da vacanza'],care:['Non candeggiare']}},
+ {fabrics:['Ecopelle'],composition:[{material:'Ecopelle',percent:100}],values:{closure:['Cerniera']}}
+]
+
+async function seedDemoAttributes(env:any){
+ if(env.CATALOG_SEED_DISABLED==='true')return
+ const version='repository-catalog-demo-attributes-v1'
+ if(await env.DB.prepare('SELECT version FROM _delu_migrations WHERE version=?').bind(version).first())return
+ const writes=[]
+ for(const [i,p] of catalogSeed.entries()){
+  const demo=demoAttributes[i]
+  writes.push(env.DB.prepare(`UPDATE products SET tags_json=json_insert(tags_json,'$[#]','demo-specifications')
+   WHERE id=? AND name=? AND description=? AND category=?
+   AND NOT EXISTS (SELECT 1 FROM product_attributes WHERE product_id=products.id)
+   AND NOT EXISTS (SELECT 1 FROM product_fabrics WHERE product_id=products.id)
+   AND NOT EXISTS (SELECT 1 FROM json_each(tags_json) WHERE value='demo-specifications')`).bind(p.id,p.name,p.description,p.category))
+  writes.push(env.DB.prepare('INSERT OR IGNORE INTO product_attributes(product_id,attributes_json) SELECT ?,? WHERE changes()=1')
+   .bind(p.id,JSON.stringify({values:demo.values,compositions:{Composizione:demo.composition}})))
+  for(const fabric of demo.fabrics){
+   writes.push(env.DB.prepare(`INSERT OR IGNORE INTO product_fabrics(product_id,fabric)
+    SELECT id,? FROM products WHERE id=? AND EXISTS(SELECT 1 FROM json_each(tags_json) WHERE value='demo-specifications')`).bind(fabric,p.id))
+  }
+ }
+ writes.push(env.DB.prepare('INSERT OR IGNORE INTO _delu_migrations(version) VALUES(?)').bind(version))
+ await env.DB.batch(writes)
 }

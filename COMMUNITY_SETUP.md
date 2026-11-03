@@ -78,3 +78,19 @@ Esegui npm run test:security, npm run build, type-check Functions e test browser
 Verifica registrazione e email già esistente, token riutilizzato/scaduto, recupero password con revoca delle sessioni, isolamento clienti/admin, consenso/disiscrizione, codice scaduto o email differente, reso ospite con email errata, invio duplicato, ordine pagato e aggiornamento dashboard. I test non generano pagamenti né inviano email reali.
 
 Prima della vendita sono necessari identità legale e P.IVA del venditore, email assistenza, indirizzo resi effettivo, testi privacy/condizioni approvati e scelte documentate di conservazione/cancellazione. Il software da solo non certifica la conformità del negozio.
+
+## Provider social e demo
+
+Inserire l'informativa definitiva nel valore di produzione `PRIVACY_NOTICE`. Il file `PRIVACY_NOTICE_DRAFT.txt` è la bozza da completare, in particolare per titolare, recapito privacy, conservazione e trasferimenti. Copiare il testo dopo aver sostituito i campi tra parentesi quadre.
+
+| Provider | Variabili di produzione | Callback con il dominio attuale |
+| --- | --- | --- |
+| Google | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | `https://delu-49u.pages.dev/api/customer/google/callback` |
+| Facebook | `FACEBOOK_CLIENT_ID` (App ID), `FACEBOOK_CLIENT_SECRET` (App Secret), `FACEBOOK_GRAPH_VERSION` (versione Graph API dell'app, default v23.0) | `https://delu-49u.pages.dev/api/customer/facebook/callback` |
+| GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | `https://delu-49u.pages.dev/api/customer/github/callback` |
+
+Inserire i client secret come Secret. Facebook richiede l'app Meta con Facebook Login, redirect autorizzato, email disponibile, app abilitata per i clienti e Resend configurato. Il cliente conferma il link nello stesso browser usato per iniziare la registrazione. GitHub usa una OAuth App e richiede l'email primaria verificata. Un account già esistente si collega dal profilo autenticato. Dopo una variazione di dominio aggiornare le callback e `SITE_URL`.
+
+Per il cliente demo impostare `DEMO_CUSTOMER_PASSWORD_HASH` come Secret di produzione e ridistribuire. Al primo accesso corretto con `cliente.demo@delu.example` il portale crea il cliente dimostrativo con email già confermata. Rimuovendo il Secret si disabilitano accesso e sessione demo. La casella è fittizia e non riceve email.
+
+La migrazione aggiunge tessuti e caratteristiche dimostrative ai sei prodotti campione originali privi di dati. Prima della vendita sostituire le specifiche con quelle reali e rimuovere il tag `demo-specifications` dalla scheda del prodotto.
