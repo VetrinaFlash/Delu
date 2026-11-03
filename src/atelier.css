@@ -77,3 +77,41 @@
 .ds-product-detail>.ds-pay{font-size:11px!important;letter-spacing:.08em!important}
 .ds-checkout .checkout-card label{font-size:12px;line-height:1.5}
 .ds-checkout .checkout-card :is(input,select,textarea){font-size:16px}
+
+.admin-section-menu-label { display: none; }
+
+@media (max-width: 760px) {
+  .admin-shell .admin-sidebar .admin-section-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding: 10px 0 4px;
+    border-top: 1px solid #ffffff24;
+  }
+
+  .admin-section-menu-label {
+    display: block;
+    grid-column: 1 / -1;
+    margin: 0 0 3px;
+    color: #dfd4da;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .admin-shell .admin-sidebar .admin-section-menu button {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    white-space: normal;
+    text-align: left;
+    background: #ffffff0c;
+    border: 1px solid #ffffff1f;
+  }
+
+  .admin-shell .admin-sidebar .admin-section-menu button.active {
+    background: #ffffff20;
+    color: white;
+  }
+}
