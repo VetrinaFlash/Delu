@@ -571,3 +571,46 @@ test('admin insights are drawn from real API orders and CSV exports are availabl
   expect((await ordersDownload).suggestedFilename()).toBe('delu-ordini.csv')
   await expectNoHorizontalOverflow(page)
 })
+
+
+test('product gallery zoom and configurable free-shipping target work together',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  const product={id:'zoom-demo',name:'Abito gallery',price:45,category:'Abiti',colors:['Nero'],sizes:['S'],tags:[],stock:5,image:'/delu-logo.svg',images:['/delu-logo.svg','/admin-icon-192.png'],active:true,variants:[{color:'Nero',size:'S',stock:5}]}
+  await page.route('**/api/products',r=>r.fulfill({json:[product]}))
+  await page.route('**/api/config',r=>r.fulfill({json:{currency:'EUR',shipping:{italy:{price:6.9,freeFrom:79},eu:{price:14.9,freeFrom:150},europe:{price:19.9,freeFrom:null},world:{price:29.9,freeFrom:null}}}}))
+  await page.goto('/product/zoom-demo')
+  await page.getByRole('button',{name:'Ingrandisci foto prodotto'}).click()
+  const gallery=page.getByRole('dialog',{name:'Galleria fotografica: Abito gallery'})
+  await expect(gallery).toBeVisible()
+  await gallery.getByRole('button',{name:'Foto successiva'}).click()
+  await expect(gallery.locator('.ds-lightbox-heading')).toContainText('2 / 2')
+  await page.keyboard.press('Escape')
+  await expect(gallery).toHaveCount(0)
+  await page.locator('.ds-product-detail > .ds-pay').click()
+  await expect(page.locator('.ds-shipping-goal')).toContainText('Ti mancano')
+  await page.locator('.ds-cart-row .ds-qty button').last().click()
+  await expect(page.locator('.ds-shipping-goal')).toContainText('Spedizione gratuita in Italia raggiunta')
+  await expectNoHorizontalOverflow(page)
+})
+
+test('admin product editor keeps SKU and allows rearranging photos',async({page})=>{
+  const item={id:'sku-demo',name:'Abito SKU',price:59,category:'Abiti',colors:['Nero'],sizes:['S'],tags:[],stock:4,image:'/delu-logo.svg',images:['/delu-logo.svg','/admin-icon-192.png'],active:true,variants:[{color:'Nero',size:'S',stock:4,sku:'DL-OLD'}]}
+  let submitted:any
+  await page.route('**/api/auth/me',r=>r.fulfill({json:{ok:true}}))
+  await page.route('**/api/admin/products',r=>r.fulfill({json:[item]}))
+  await page.route('**/api/admin/orders',r=>r.fulfill({json:[]}))
+  await page.route('**/api/admin/settings',r=>r.fulfill({json:{}}))
+  await page.route('**/api/admin/products/sku-demo',async r=>{submitted=r.request().postDataJSON();await r.fulfill({json:{...item,...submitted}})})
+  await page.goto('/admin')
+  await page.locator('.admin-sidebar').getByRole('button',{name:/^Prodotti/}).click()
+  await page.locator('.table-actions button[title="Modifica"]').click()
+  const form=page.locator('.product-form')
+  await expect(form).toBeVisible()
+  await expect(form.getByRole('textbox',{name:'SKU Nero S'})).toHaveValue('DL-OLD')
+  await form.getByRole('textbox',{name:'SKU Nero S'}).fill('DL-NEW')
+  await form.locator('.image-strip > div').nth(1).getByRole('button',{name:'Sposta foto a sinistra'}).click()
+  await form.locator('.save-product').click()
+  await expect(form).toHaveCount(0)
+  expect(submitted.images[0]).toBe('/admin-icon-192.png')
+  expect(submitted.variants[0].sku).toBe('DL-NEW')
+})
