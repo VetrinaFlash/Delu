@@ -1,0 +1,55 @@
+/* DELÙ admin commerce intelligence — real data, never seeded demo statistics. */
+.admin-insights{margin:26px 0 28px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.admin-insights-title{display:flex;align-items:end;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.admin-insights-title>div:first-child>span,.admin-insights-panel-head span{font-size:10px;letter-spacing:.16em;color:#af6e8e;font-weight:750}
+.admin-insights-title h2{font-family:Georgia,serif;font-size:clamp(26px,3.2vw,36px);font-weight:400;line-height:1.1;margin:6px 0}
+.admin-insights-title p{font-size:12px;color:#8b7581;margin:0}
+.admin-insights-period{display:flex;border:1px solid #eadde4;background:#fff;border-radius:10px;padding:3px;gap:3px}
+.admin-insights-period button{border:0;background:transparent;color:#766471;border-radius:7px;min-height:35px;padding:0 12px;font-size:11px;font-weight:650;cursor:pointer}
+.admin-insights-period button[aria-pressed="true"]{background:#34242e;color:white}
+.admin-insights-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.admin-insights-metrics>div{background:white;border:1px solid #eadde4;border-radius:13px;display:flex;flex-direction:column;gap:9px;padding:20px 16px;min-width:0}
+.admin-insights-metrics span{display:flex;gap:8px;align-items:center;font-size:11px;color:#806772}
+.admin-insights-metrics strong{font-family:Georgia,serif;font-size:clamp(25px,2.8vw,33px);font-weight:400;color:#2f2029;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.admin-insights-metrics small{color:#886e7d;font-size:10px;line-height:1.4;display:flex;align-items:center;gap:4px}
+.admin-insights-bottom{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(270px,1fr);gap:14px}
+.admin-insights-panel{background:white;border:1px solid #eadde4;border-radius:13px;padding:20px;min-width:0}
+.admin-insights-panel-head{display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:16px}
+.admin-insights-panel-head h3{font-size:17px;font-weight:600;margin:5px 0}
+.admin-insights-panel-head>b{font-size:11px;color:#806772;font-weight:500}
+.admin-insights-chart{height:210px;display:flex;align-items:stretch;gap:clamp(2px,.3vw,6px);border-bottom:1px solid #eedfe5;padding:0 1px 30px}
+.admin-insights-bar{height:100%;min-width:0;flex:1;position:relative;display:flex;align-items:flex-end}
+.admin-insights-bar>div{background:#f0d9e4;width:100%;min-height:2px;border-radius:3px 3px 0 0;transition:height .3s ease}
+.admin-insights-bar>div.has-value{background:linear-gradient(0deg,#9d5477,#d7a0bc)}
+.admin-insights-bar>small{position:absolute;top:calc(100% + 5px);left:0;font-size:9px;color:#8d7a85;white-space:nowrap}
+.admin-insights-empty{font-size:11px;line-height:1.5;color:#8d7a85;margin:10px 0 0}
+.admin-insights-stock-totals{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.admin-insights-stock-totals span{background:#fff6fa;border:1px solid #f0e0e8;padding:12px 8px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#7a5265}
+.admin-insights-stock-totals strong{color:#362631;font-size:18px}
+.admin-insights-stock-row{display:flex;gap:11px;align-items:center;padding:9px 0;border-top:1px solid #f2e9ed}
+.admin-insights-stock-row img{width:40px;height:46px;object-fit:cover;border-radius:5px;background:#f5edf0}
+.admin-insights-stock-row>div{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.admin-insights-stock-row b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-insights-stock-row small{color:#8d7a85;font-size:10px}
+.admin-insights-stock-row>strong{font-size:11px;white-space:nowrap;color:#a04b73}
+.admin-csv-export{display:inline-flex!important;gap:8px;align-items:center;justify-content:center;min-height:40px;padding:8px 13px;background:#fff;border:1px solid #ddc8d4;border-radius:9px;color:#49303e;font-weight:700;font-size:11px;cursor:pointer;white-space:nowrap}
+.admin-csv-export:hover{border-color:#9c5777;background:#fff5fa}
+.admin-insights :focus-visible,.admin-csv-export:focus-visible{outline:2px solid #a34c76;outline-offset:3px}
+@media(max-width:1050px){.admin-insights-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-insights-bottom{grid-template-columns:1fr}}
+@media(max-width:620px){.admin-insights-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-insights-metrics>div{padding:12px}.admin-insights-metrics strong{font-size:23px}.admin-insights-stock-totals{grid-template-columns:1fr 1fr}.admin-insights-panel{padding:14px}.admin-insights-period{width:100%}.admin-insights-period button{flex:1}.admin-csv-export{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.admin-insights-bar>div{transition:none}}
+
+
+/* Richer stock editor and photo priority controls without breaking narrow drawers. */
+.product-form .image-strip .image-controls{position:absolute;top:5px;right:5px;display:flex;gap:2px;align-items:center;z-index:1}
+.product-form .image-strip .image-controls button{position:static;display:grid;place-items:center;width:25px;height:26px;background:#fffc;border:1px solid #e6d7df;border-radius:5px;cursor:pointer}
+.product-form .image-strip .image-controls button:disabled{opacity:.35;cursor:not-allowed}
+.product-form .image-strip .image-controls button svg{width:13px}
+.product-form .variant-grid{overflow-x:auto}
+.product-form .variant-head,.product-form .variant-line{grid-template-columns:minmax(64px,1.2fr) minmax(42px,.7fr) minmax(64px,80px) minmax(95px,1.2fr)}
+.product-form .variant-line input{min-width:0}
+@media(max-width:760px){
+ .product-form .variant-head,.product-form .variant-line{min-width:320px;grid-template-columns:74px 45px 67px 95px;gap:7px;padding:8px}
+ .product-form .image-strip .image-controls{right:3px;top:3px;gap:1px}
+ .product-form .image-strip .image-controls button{width:22px;height:25px}
+}

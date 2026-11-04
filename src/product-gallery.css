@@ -1,0 +1,26 @@
+/* Raye-inspired gallery and helpful shipping goal. No business logic changes. */
+.ds-product-main-image{position:relative}
+.ds-product-zoom{position:absolute;right:18px;bottom:18px;z-index:5;width:46px;height:46px;display:grid;place-items:center;border:1px solid #e8d6de;border-radius:50%;background:#fffe;color:#402b37;cursor:pointer;box-shadow:0 4px 17px #28162119}
+.ds-product-zoom:hover{background:#3a2430;color:white}
+.ds-lightbox{position:fixed;inset:0;margin:auto;max-width:none;max-height:none;width:min(1120px,calc(100% - 32px));height:min(94dvh,920px);border:1px solid #56424c;border-radius:12px;padding:0;background:#1b171b;color:white;overflow:hidden;box-shadow:0 25px 110px #0008}
+.ds-lightbox[open]{display:flex;align-items:stretch}
+.ds-lightbox::backdrop{background:rgba(12,8,12,.85);backdrop-filter:blur(6px)}
+.ds-lightbox-content{display:flex;flex-direction:column;min-height:0;width:100%}
+.ds-lightbox-heading{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 16px;font-size:11px;letter-spacing:.15em;color:#e7c1d0}
+.ds-lightbox-heading>span:first-child{margin-right:auto}
+.ds-lightbox-heading>button{width:42px;height:42px;flex:0 0 auto;border:1px solid #ffffff40;background:#ffffff12;color:white;display:grid;place-items:center;border-radius:50%;cursor:pointer}
+.ds-lightbox-view{min-height:0;flex:1;display:flex;align-items:center;justify-content:center;gap:clamp(4px,1vw,16px);padding:8px 18px 10px;overflow:hidden}
+.ds-lightbox-view>img{display:block;min-width:0;min-height:0;max-width:calc(100% - 104px);height:100%;width:auto;object-fit:contain}
+.ds-lightbox-view>button{width:44px;height:44px;flex:0 0 44px;border:1px solid #ffffff45;border-radius:50%;background:#ffffff10;color:white;display:grid;place-items:center;cursor:pointer}
+.ds-lightbox-view>img:only-child{max-width:100%}
+.ds-lightbox-thumbs{display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 15px 18px;overflow-x:auto}
+.ds-lightbox-thumbs button{flex:0 0 auto;width:45px;height:55px;background:#392732;padding:2px;border:2px solid transparent;border-radius:5px;cursor:pointer}
+.ds-lightbox-thumbs button[aria-pressed="true"]{border-color:#f7c6dd}
+.ds-lightbox-thumbs img{width:100%;height:100%;object-fit:cover}
+.ds-lightbox :focus-visible,.ds-product-zoom:focus-visible{outline:2px solid #efadd0;outline-offset:3px}
+.ds-shipping-goal{display:flex;flex-direction:column;gap:10px;margin:4px 0 10px}
+.ds-shipping-goal>small{font-size:11px;line-height:1.5;color:#66515b;text-align:center}
+.ds-shipping-goal-track{width:100%;height:6px;border-radius:99px;overflow:hidden;background:#f3e7ed}
+.ds-shipping-goal-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#b75a86,#dba0bd);transition:width .2s ease}
+@media(max-width:560px){.ds-product-zoom{right:11px;bottom:11px;width:44px;height:44px}.ds-lightbox{width:100%;height:100dvh;max-height:100dvh;border-radius:0;border:0}.ds-lightbox-heading{padding:12px}.ds-lightbox-view{gap:6px;padding:7px}.ds-lightbox-view>button{width:38px;height:38px;flex-basis:38px}.ds-lightbox-view>img{max-width:calc(100% - 88px)}}
+@media(prefers-reduced-motion:reduce){.ds-shipping-goal-track span{transition:none}}

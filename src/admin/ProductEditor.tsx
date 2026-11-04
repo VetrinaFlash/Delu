@@ -1,7 +1,7 @@
 import AttributeEditor from './AttributeEditor'
 import {categoryList,family,type ProductAttributes,validateAttributes} from '../../shared/catalog'
 import { useMemo, useState } from 'react'
-import { ImagePlus, Save, Sparkles, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ImagePlus, Save, Sparkles, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { Product, ProductVariant } from '../data'
 import { api, split } from './shared'
@@ -21,6 +21,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
   const[attributes,setAttributes]=useState<ProductAttributes>(product?.attributes||{values:{},compositions:{}})
   const[images,setImages]=useState<string[]>(product?.images?.length?product.images:(product?.image?[product.image]:[]))
   const[variantStocks,setVariantStocks]=useState<Record<string,string>>(()=>Object.fromEntries((product?.variants||[]).map(v=>[`${v.color}|${v.size}`,String(v.stock)])))
+  const[variantSkus,setVariantSkus]=useState<Record<string,string>>(()=>Object.fromEntries((product?.variants||[]).map(v=>[`${v.color}|${v.size}`,v.sku||''])))
   const[loading,setLoading]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[manualImage,setManualImage]=useState('')
   const colors=split(f.colors),sizes=split(f.sizes)
   const combos=useMemo(()=>colors.flatMap(color=>sizes.map(size=>({color,size,key:`${color}|${size}`}))),[f.colors,f.sizes])
@@ -53,10 +54,11 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
     }catch(e:any){setError(e.message)}finally{setUploading(false)}
   }
   function addManual(){const v=manualImage.trim();if(v){setImages(x=>[...x,v].slice(0,12));setManualImage('')}}
+  function moveImage(index:number,direction:-1|1){setImages(current=>{const target=index+direction;if(target<0||target>=current.length)return current;const result=[...current];[result[index],result[target]]=[result[target],result[index]];return result})}
   async function submit(e:React.FormEvent){
     e.preventDefault();setLoading(true);setError('')
     try{
-      const variants:ProductVariant[]=combos.map(c=>({color:c.color,size:c.size,stock:Math.max(0,Number(variantStocks[c.key]||0)||0),sku:''}))
+      const variants:ProductVariant[]=combos.map(c=>({color:c.color,size:c.size,stock:Math.max(0,Number(variantStocks[c.key]||0)||0),sku:(variantSkus[c.key]||'').trim()}))
       validateAttributes(attributes)
       const payload={attributes,name:f.name,price:Number(f.price),compareAt:f.compareAt?Number(f.compareAt):null,category:f.category,fabrics:split(f.fabrics),colors,sizes,tags:split(f.tags),description:f.description,featured:f.featured,new:f.isNew,active:f.active,images,variants,stock:variants.reduce((s,v)=>s+v.stock,0)}
       const p=await api<Product>(product?`/api/admin/products/${product.id}`:'/api/admin/products',{method:product?'PATCH':'POST',body:JSON.stringify(payload)})
@@ -83,7 +85,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
         <div className="editor-section"><h4>Foto prodotto</h4>
           <label className="image-upload"><ImagePlus/>{uploading?'CARICAMENTO…':'CARICA FOTO'}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple hidden onChange={e=>upload(e.target.files)}/></label>
           <div className="manual-image"><input value={manualImage} onChange={e=>setManualImage(e.target.value)} placeholder="Oppure incolla URL immagine"/><button type="button" onClick={addManual}>Aggiungi</button></div>
-          {images.length>0&&<div className="image-strip">{images.map((src,i)=><div key={`${src}-${i}`}><img src={src} alt=""/>{i===0&&<span>COPERTINA</span>}<button type="button" onClick={()=>setImages(v=>v.filter((_,n)=>n!==i))}><X/></button></div>)}</div>}
+          {images.length>0&&<div className="image-strip">{images.map((src,i)=><div key={`${src}-${i}`}><img src={src} alt=""/>{i===0&&<span>COPERTINA</span>}<div className="image-controls"><button type="button" title="Sposta foto a sinistra" aria-label="Sposta foto a sinistra" disabled={i===0} onClick={()=>moveImage(i,-1)}><ChevronLeft/></button><button type="button" title="Sposta foto a destra" aria-label="Sposta foto a destra" disabled={i===images.length-1} onClick={()=>moveImage(i,1)}><ChevronRight/></button><button type="button" title="Rimuovi foto" aria-label="Rimuovi foto" onClick={()=>setImages(v=>v.filter((_,n)=>n!==i))}><X/></button></div></div>)}</div>}
           <small className="editor-help">La prima immagine viene usata come copertina. JPG, PNG, WEBP o AVIF, massimo 8 MB per file.</small>
         </div>
         <div className="editor-section"><h4>Varianti e magazzino</h4>
@@ -91,7 +93,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
           {f.category.trim() && suggestions('colors', family(f.category) === 'jewelry'
             ? ['Oro', 'Argento', 'Oro rosa', 'Nero']
             : ['Nero', 'Bianco', 'Beige', 'Blu', 'Rosa', 'Marrone'], 'Colori suggeriti')}
-          {combos.length?<div className="variant-grid"><div className="variant-head"><span>COLORE</span><span>TAGLIA</span><span>Q.TÀ</span></div>{combos.map(c=><div className="variant-line" key={c.key}><b>{c.color}</b><span>{c.size}</span><input type="number" min="0" value={variantStocks[c.key]??'0'} onChange={e=>setVariantStocks(v=>({...v,[c.key]:e.target.value}))}/></div>)}<div className="variant-total"><span>Stock totale</span><b>{combos.reduce((s,c)=>s+(Number(variantStocks[c.key]||0)||0),0)} pezzi</b></div></div>:<div className="form-tip"><Sparkles/><span>Inserisci colori e taglie: il pannello creerà automaticamente le combinazioni e potrai impostare la disponibilità di ciascuna.</span></div>}
+          {combos.length?<div className="variant-grid"><div className="variant-head"><span>COLORE</span><span>TAGLIA</span><span>Q.TÀ</span><span>SKU</span></div>{combos.map(c=><div className="variant-line" key={c.key}><b>{c.color}</b><span>{c.size}</span><input type="number" min="0" value={variantStocks[c.key]??'0'} onChange={e=>setVariantStocks(v=>({...v,[c.key]:e.target.value}))}/><input type="text" maxLength={64} aria-label={'SKU '+c.color+' '+c.size} placeholder="SKU" value={variantSkus[c.key]??''} onChange={e=>setVariantSkus(v=>({...v,[c.key]:e.target.value}))}/></div>)}<div className="variant-total"><span>Stock totale</span><b>{combos.reduce((s,c)=>s+(Number(variantStocks[c.key]||0)||0),0)} pezzi</b></div></div>:<div className="form-tip"><Sparkles/><span>Inserisci colori e taglie: il pannello creerà automaticamente le combinazioni e potrai impostare la disponibilità di ciascuna.</span></div>}
         </div>
         {error&&<div className="form-error">{error}</div>}
       </div>
