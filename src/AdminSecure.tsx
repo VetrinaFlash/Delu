@@ -55,7 +55,7 @@ export default function AdminSecure(){
   return <main className="admin-shell">
     <aside className="admin-sidebar">
       <AdminBrand/>
-      <nav className="admin-section-menu" aria-label="Menu amministrazione">
+      <nav className="admin-section-menu" aria-label="Sezioni amministrazione">
         <p className="admin-section-menu-label" aria-hidden="true">Menu amministrazione</p>
         {adminSections.map(({id,label,Icon})=><button type="button" key={id} className={tab===id?'active':''} aria-current={tab===id?'page':undefined} onClick={()=>setTab(id)}>
           <Icon aria-hidden="true"/>{label}
