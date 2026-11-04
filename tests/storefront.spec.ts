@@ -142,7 +142,9 @@ test('shop logo stays centered when navigation is hidden',async({page})=>{
 test('chapter navigation reaches the collection and editorial aperture responds to scroll',async({page},testInfo)=>{
   await page.goto('/')
   // Hero-first layout intentionally reveals chapter navigation only after scrolling.
-  await page.evaluate(()=>window.scrollTo({top:450,behavior:'instant'}))
+  await expect(page.getByTestId('home-hero')).toBeVisible()
+  await page.evaluate(()=>window.scrollTo({top:Math.max(450,window.innerHeight*.75),behavior:'instant'}))
+  await expect(page.locator('.ph-root')).toHaveClass(/atelier-scrolled/)
   const chapters=page.getByRole('navigation',{name:'DeLù chapters'})
   await expect(chapters).toBeVisible()
   await expect(chapters).toBeInViewport()
@@ -180,7 +182,9 @@ test('chapter dock fits the narrow viewport and reduced motion removes the apert
   await page.setViewportSize({width:320,height:740})
   await page.emulateMedia({reducedMotion:'reduce'})
   await page.goto('/')
-  await page.evaluate(()=>window.scrollTo({top:450,behavior:'instant'}))
+  await expect(page.getByTestId('home-hero')).toBeVisible()
+  await page.evaluate(()=>window.scrollTo({top:Math.max(450,window.innerHeight*.75),behavior:'instant'}))
+  await expect(page.locator('.ph-root')).toHaveClass(/atelier-scrolled/)
   const dock=page.locator('.ph-chapters')
   const bounds=await dock.boundingBox()
   expect(bounds!.x).toBeGreaterThanOrEqual(0)
