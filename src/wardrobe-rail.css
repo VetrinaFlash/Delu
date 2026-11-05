@@ -128,7 +128,7 @@
 @media(max-width:620px){
  .ph-header.ph-header--wardrobe{
   height:66px!important;min-height:66px!important;
-  padding:0 max(13px,env(safe-area-inset-left)) 0 max(13px,env(safe-area-inset-right))!important;
+  padding:0 max(13px,env(safe-area-inset-right)) 0 max(13px,env(safe-area-inset-left))!important;
   grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
   background:rgba(19,17,21,.97)!important;
   box-shadow:0 2px 12px #251e2517;
