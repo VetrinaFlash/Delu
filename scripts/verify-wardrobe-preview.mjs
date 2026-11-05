@@ -34,7 +34,10 @@ try{
   const errors=[]
   page.on('pageerror',error=>errors.push(error.message))
   await page.goto(base,{waitUntil:'domcontentloaded',timeout:45000})
-  await page.getByTestId('intro').waitFor({state:'hidden',timeout:12000})
+  // Wait until React has mounted before checking the intro: absent-before-mount is not dismissed.
+  await page.getByTestId('home-hero').waitFor({state:'visible',timeout:15000})
+  await page.waitForTimeout(1900)
+  await page.getByTestId('intro').waitFor({state:'detached',timeout:15000})
   const rail=page.locator('[data-testid="live-wardrobe"]')
   await rail.scrollIntoViewIfNeeded({timeout:30000})
   await page.waitForTimeout(900)
