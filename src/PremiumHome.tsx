@@ -1,4 +1,5 @@
 import QuickNavigation from './QuickNavigation'
+import WardrobeRail from './WardrobeRail'
 import { ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
@@ -61,9 +62,6 @@ function HomeInner(){
   const{scrollYProgress:campaignProgress}=useScroll({target:campaignRef,offset:['start start','end end']})
   const{scrollYProgress:showcaseProgress}=useScroll({target:showcaseRef,offset:['start start','end end']})
   const{scrollYProgress:editorialProgress}=useScroll({target:editorialRef,offset:['start end','end start']})
-  const heroScale=useTransform(heroProgress,[0,1],[1,1.12])
-  const heroY=useTransform(heroProgress,[0,1],['0%','12%'])
-  const heroTextY=useTransform(heroProgress,[0,1],['0%','-22%'])
   const campaignOneOpacity=useTransform(campaignProgress,[0,.20,.38],[1,1,0])
   const campaignTwoOpacity=useTransform(campaignProgress,[.22,.43,.66],[0,1,0])
   const campaignThreeOpacity=useTransform(campaignProgress,[.52,.75,1],[0,1,1])
@@ -106,7 +104,7 @@ function HomeInner(){
 
   return <main className={`ph-root ph-atelier${scrolled?" atelier-scrolled":""}`}>
     <motion.div className="atelier-reading-progress" aria-hidden="true" style={{scaleX:readingProgress}}/>
-    <header className={`ph-header${scrolled?' is-scrolled':''}`}>
+    <header className={`ph-header ph-header--wardrobe${scrolled?' is-scrolled':''}`}>
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/><span className="delu-tagline">{t('brandTagline')}</span></Link>
       <div className="ph-head-actions">
@@ -116,23 +114,8 @@ function HomeInner(){
       </div>
     </header>
 
-    <section id="home" ref={heroRef} className="ph-hero" data-testid="home-hero">
-      <motion.div className="ph-hero-media" style={reducedMotion?undefined:{scale:heroScale,y:heroY}}>
-        <img fetchPriority="high" src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=2200&q=90" alt="DeLù editorial"/>
-      </motion.div>
-      <div className="ph-hero-shade"/>
-      <motion.div className="ph-hero-copy" style={reducedMotion?undefined:{y:heroTextY}}>
-        <motion.span initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.15,duration:.7}}>{c.season}</motion.span>
-        <div className="ph-hero-title" role="heading" aria-level={1} aria-label={`${c.heroA} ${c.heroB}`}>
-          <motion.div initial={{y:'115%'}} animate={{y:0}} transition={{delay:.2,duration:.9,ease:[.16,1,.3,1]}}>{c.heroA}</motion.div>
-          <motion.div className="is-italic" initial={{y:'115%'}} animate={{y:0}} transition={{delay:.3,duration:.95,ease:[.16,1,.3,1]}}>{c.heroB}</motion.div>
-        </div>
-        <motion.p initial={{opacity:0,y:18}} animate={{opacity:1,y:0}} transition={{delay:.4,duration:.75}}>{c.heroText}</motion.p>
-        <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:.5,duration:.7}}><Link className="ph-hero-cta" to="/shop">{c.discover}<ArrowDownRight/></Link></motion.div>
-      </motion.div>
-      <motion.div className="ph-hero-watermark" initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.05,duration:1.2}}>DELÙ</motion.div>
-      <div className="ph-hero-side"><span>01</span><i/><b>{c.place}</b></div>
-      <motion.div className="ph-scroll-cue" animate={{y:[0,9,0]}} transition={{repeat:Infinity,duration:2,ease:'easeInOut'}}>SCROLL<ArrowDownRight/></motion.div>
+    <section id="home" ref={heroRef} className="ph-hero ph-hero--wardrobe" data-testid="home-hero">
+      <WardrobeRail hero/>
     </section>
 
     <section className="ph-statement">

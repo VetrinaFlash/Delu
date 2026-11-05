@@ -1,0 +1,155 @@
+/* DELÙ Digital Wardrobe — 2.5D photo rail, no WebGL and no added dependencies. */
+.dl-wardrobe{position:relative;isolation:isolate;overflow:hidden;padding:clamp(58px,7vw,96px) 5vw 78px;background:radial-gradient(ellipse at 50% 22%,#fffdfd 0%,#f6eef2 65%,#efe2e8 100%);color:#241b22;text-align:center}
+.dl-wardrobe::before{content:'DELÙ';position:absolute;top:18%;left:50%;transform:translateX(-50%);font:400 clamp(120px,21vw,390px)/1 Georgia,serif;letter-spacing:-.1em;white-space:nowrap;color:#9b718115;pointer-events:none;z-index:0}
+.dl-wardrobe>*{position:relative;z-index:1}
+.dl-wardrobe-heading{margin:0 auto 22px;max-width:700px}
+.dl-wardrobe-heading>span{display:block;color:#945a74;font:700 10px/1.5 var(--sans,Arial,sans-serif);letter-spacing:.2em}
+.dl-wardrobe-heading h2{font:400 clamp(39px,5.3vw,76px)/1.04 var(--serif,Georgia,serif);letter-spacing:-.055em;margin:13px 0 14px;color:#291c25}
+.dl-wardrobe-heading p{margin:0 auto;font-size:13px;line-height:1.65;color:#806873;max-width:480px}
+.dl-wardrobe-stage{--dl-rail-step:220px;position:relative;width:min(100%,1180px);height:475px;margin:0 auto;overflow:hidden;perspective:1100px;touch-action:pan-y;outline-offset:5px;border-radius:22px;background:linear-gradient(180deg,#fdfafd85 0%,#fffafc00 63%,#fff8fc9a 100%)}
+.dl-wardrobe-stage:focus-visible{outline:2px solid #8e496b}
+.dl-wardrobe-rod{height:10px;position:absolute;left:7%;right:7%;top:62px;border-radius:12px;background:linear-gradient(180deg,#a8a8ae,#f1f0f2 35%,#7d7780 62%,#e0dbe0 85%,#a6a1a7);box-shadow:0 7px 9px #51364325,0 1px 1px #fff8 inset}
+.dl-wardrobe-rod::before,.dl-wardrobe-rod::after{content:'';position:absolute;top:-8px;height:28px;width:10px;border-radius:6px;background:linear-gradient(90deg,#aba3ac,#f7f7f7,#817a83)}
+.dl-wardrobe-rod::before{left:0}.dl-wardrobe-rod::after{right:0}
+.dl-wardrobe-item{position:absolute;left:50%;top:40px;display:flex;flex-direction:column;align-items:center;width:270px;opacity:0;transform:translateX(-50%) translateZ(-100px) rotateY(-30deg) scale(.65);transform-origin:50% 26px;transform-style:preserve-3d;visibility:hidden;pointer-events:none;transition:transform .62s cubic-bezier(.2,.7,.14,1),opacity .45s ease,visibility .45s}
+.dl-wardrobe-item[data-offset="0"]{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateZ(0) rotateY(0deg) scale(1)}
+.dl-wardrobe-item[data-offset="-1"]{opacity:.75;visibility:visible;transform:translateX(calc(-50% - var(--dl-rail-step))) translateZ(-24px) rotateY(34deg) scale(.83)}
+.dl-wardrobe-item[data-offset="1"]{opacity:.75;visibility:visible;transform:translateX(calc(-50% + var(--dl-rail-step))) translateZ(-24px) rotateY(-34deg) scale(.83)}
+.dl-wardrobe-item[data-offset="-2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% - var(--dl-rail-step) - var(--dl-rail-step))) translateZ(-70px) rotateY(45deg) scale(.66)}
+.dl-wardrobe-item[data-offset="2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% + var(--dl-rail-step) + var(--dl-rail-step))) translateZ(-70px) rotateY(-45deg) scale(.66)}
+.dl-wardrobe-hook{height:55px;display:grid;place-items:end center;color:#958c91;filter:drop-shadow(0 3px 3px #0001)}
+.dl-wardrobe-hook svg{height:48px}
+.dl-wardrobe-photo{position:relative;display:block;width:270px;height:310px;padding:8px;background:#fff;border:1px solid #f2e4ea;box-shadow:0 20px 46px #3b243b30,0 3px 10px #3420341a;border-radius:4px;overflow:hidden;cursor:pointer}
+.dl-wardrobe-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%;border-radius:2px;user-select:none}
+.dl-wardrobe-photo-tag{position:absolute;left:18px;bottom:17px;padding:6px 10px;letter-spacing:.15em;font-size:9px;font-weight:700;color:#2e222a;background:#fffdf9e8;backdrop-filter:blur(7px)}
+.dl-wardrobe-item.is-current .dl-wardrobe-photo:hover{box-shadow:0 25px 60px #573a5340}
+.dl-wardrobe-photo:focus-visible{outline:3px solid #9b577b;outline-offset:3px}
+.dl-wardrobe-stage-bottom{position:absolute;bottom:17px;left:6%;right:6%;display:flex;align-items:center;justify-content:space-between;color:#8f7885;font:600 10px var(--sans,Arial,sans-serif);letter-spacing:.18em}
+.dl-wardrobe-stage-bottom span{font-size:9px;letter-spacing:.12em}
+.dl-wardrobe-controls{display:grid;grid-template-columns:50px minmax(0,390px) 50px;align-items:center;justify-content:center;gap:12px;margin:7px auto 0}
+.dl-wardrobe-controls>button{width:48px;height:48px;border:1px solid #d6bcc8;border-radius:50%;display:grid;place-items:center;background:#fffd;color:#33202b;cursor:pointer;transition:background .2s ease,transform .2s ease}
+.dl-wardrobe-controls>button:hover:not(:disabled){background:#3b2432;color:white;transform:translateY(-2px)}
+.dl-wardrobe-controls>button:disabled{opacity:.4;cursor:not-allowed}
+.dl-wardrobe-selected{min-width:0;padding:0 6px}
+.dl-wardrobe-selected>span{font:600 10px var(--sans,Arial,sans-serif);letter-spacing:.14em;text-transform:uppercase;color:#95647d}
+.dl-wardrobe-selected h3{font:400 clamp(28px,3vw,39px)/1.08 var(--serif,Georgia,serif);letter-spacing:-.03em;margin:8px 0 10px;overflow-wrap:anywhere}
+.dl-wardrobe-selected-meta{display:flex;align-items:center;justify-content:center;gap:13px;font:12px var(--sans,Arial,sans-serif);color:#876c7d}
+.dl-wardrobe-selected-meta strong{font-size:17px;font-weight:700;color:#2e232a;font-variant-numeric:tabular-nums}
+.dl-wardrobe-selected-meta span{padding-left:13px;border-left:1px solid #d8c2cf}
+.dl-wardrobe-selected>a{display:inline-flex;align-items:center;gap:10px;margin:16px 0 0;padding:11px 18px;border:1px solid #30212b;border-radius:2px;background:#30212b;color:white;letter-spacing:.1em;font:700 10px var(--sans,Arial,sans-serif);text-decoration:none}
+.dl-wardrobe-selected>a:hover{background:#8d4d6e;border-color:#8d4d6e}
+.dl-wardrobe-bottom{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:17px;margin-top:18px;color:#89727f}
+.dl-wardrobe-bottom>span{display:flex;align-items:center;gap:7px;font-size:11px}
+.dl-wardrobe-dots{display:flex;gap:6px}
+.dl-wardrobe-dots button{width:16px;height:16px;display:grid;place-items:center;padding:0;border:0;background:transparent;cursor:pointer}
+.dl-wardrobe-dots button::after{content:'';width:5px;height:5px;border-radius:100%;background:#cba5b8;transition:width .2s ease,background .2s ease}
+.dl-wardrobe-dots button[aria-pressed="true"]::after{width:16px;border-radius:7px;background:#493142}
+.dl-wardrobe-placeholder{min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;color:#806675}
+.dl-wardrobe-placeholder svg{color:#af8599}
+.dl-wardrobe-placeholder p{font-size:13px;margin:0}
+.dl-wardrobe-placeholder a{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#34242e;color:white;font-size:11px;font-weight:600}
+.dl-wardrobe button:focus-visible,.dl-wardrobe-selected>a:focus-visible{outline:2px solid #9b577b;outline-offset:3px}
+@media(max-width:650px){
+ .dl-wardrobe{padding:58px 4vw 67px}
+ .dl-wardrobe-heading{margin-bottom:16px}
+ .dl-wardrobe-heading h2{font-size:clamp(38px,9vw,56px)}
+ .dl-wardrobe-heading p{font-size:12px;padding-inline:12px}
+ .dl-wardrobe-stage{--dl-rail-step:clamp(126px,39vw,190px);height:360px;border-radius:12px}
+ .dl-wardrobe-rod{top:40px;left:3%;right:3%;height:8px}
+ .dl-wardrobe-item{width:200px;top:18px}
+ .dl-wardrobe-hook{height:50px}
+ .dl-wardrobe-hook svg{width:125px;height:43px}
+ .dl-wardrobe-photo{width:200px;height:252px;padding:6px}
+ .dl-wardrobe-stage-bottom{bottom:8px}
+ .dl-wardrobe-controls{grid-template-columns:42px minmax(0,1fr) 42px;gap:7px;max-width:490px}
+ .dl-wardrobe-controls>button{width:42px;height:42px}
+ .dl-wardrobe-selected h3{font-size:clamp(26px,7vw,33px)}
+ .dl-wardrobe-selected-meta{flex-wrap:wrap;gap:8px}
+ .dl-wardrobe-selected>a{margin-top:12px;padding:12px}
+ .dl-wardrobe-bottom{margin-top:20px}
+}
+@media(max-width:360px){.dl-wardrobe-stage{--dl-rail-step:118px;height:330px}.dl-wardrobe-item,.dl-wardrobe-photo{width:180px}.dl-wardrobe-photo{height:235px}.dl-wardrobe-selected h3{font-size:25px}}
+@media(prefers-reduced-motion:reduce){
+ .dl-wardrobe-item,.dl-wardrobe-controls>button,.dl-wardrobe-dots button::after{transition:none!important}
+ .dl-wardrobe-controls>button:hover{transform:none}
+}
+
+.dl-wardrobe-preview-note{max-width:560px;margin:18px auto 0;font-size:11px;line-height:1.55;color:#806675}
+
+
+/* Opening campaign: the interactive wardrobe replaces only the first-page hero.
+   Preserve the three scrolling editorial scenes which follow it. */
+.ph-header--wardrobe{background:#181519!important;border-bottom:1px solid #ffffff1f}
+.ph-hero.ph-hero--wardrobe{height:auto;min-height:100svh;overflow:visible;background:#f8f0f5;color:#2c1c28;isolation:auto}
+.ph-hero--wardrobe .dl-wardrobe--hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:clamp(126px,12vh,175px) 4vw clamp(40px,6vh,68px);background:radial-gradient(ellipse 85% 80% at 50% 32%,#fffefd 0%,#fbf2f6 58%,#efdee8 100%)}
+.ph-hero--wardrobe .dl-wardrobe-heading{margin-bottom:12px}
+.ph-hero--wardrobe .dl-wardrobe-heading :is(h1,h2){font:400 clamp(43px,5.4vw,76px)/1.03 var(--serif,'Italiana',Georgia,serif);letter-spacing:-.055em;margin:10px 0 8px;color:#2a1a25}
+.ph-hero--wardrobe .dl-wardrobe-heading>p{max-width:630px}
+.ph-hero--wardrobe .dl-wardrobe-stage{height:clamp(330px,42svh,450px);background:transparent}
+.ph-hero--wardrobe .dl-wardrobe-selected h3{margin:5px 0 8px}
+.ph-hero--wardrobe .dl-wardrobe-selected>a{min-height:44px}
+.ph-hero--wardrobe .dl-wardrobe-bottom{margin-top:10px}
+@media(max-width:650px){
+ .ph-hero--wardrobe .dl-wardrobe--hero{padding:clamp(112px,13svh,145px) 3vw 54px;min-height:100svh;justify-content:flex-start}
+ .ph-hero--wardrobe .dl-wardrobe-heading{margin-bottom:4px}
+ .ph-hero--wardrobe .dl-wardrobe-heading :is(h1,h2){font-size:clamp(39px,9.7vw,55px);line-height:.98}
+ .ph-hero--wardrobe .dl-wardrobe-heading>p{font-size:11px;line-height:1.45}
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:clamp(288px,39svh,347px);margin-top:8px}
+ .ph-hero--wardrobe .dl-wardrobe-controls{margin-top:0}
+ .ph-hero--wardrobe .dl-wardrobe-selected>a{margin-top:8px}
+ .ph-hero--wardrobe .dl-wardrobe-bottom{margin-top:9px}
+}
+@media(max-width:360px){
+ .ph-hero--wardrobe .dl-wardrobe--hero{padding-top:106px;padding-bottom:40px}
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:290px}
+ .ph-hero--wardrobe .dl-wardrobe-heading :is(h1,h2){font-size:38px}
+ .ph-hero--wardrobe .dl-wardrobe-bottom{gap:7px}
+}
+
+
+/* Keep the entire selected garment and its label inside the first mobile viewport. */
+@media(max-width:650px){
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:clamp(325px,42svh,360px)}
+ .ph-hero--wardrobe .dl-wardrobe-photo{height:230px}
+}
+@media(max-width:360px){
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:312px}
+ .ph-hero--wardrobe .dl-wardrobe-photo{height:213px}
+}
+
+
+/* Compact ONLY the Wardrobe home header, never the shop or admin.
+   The full-height brand-fit header is 108px on phones and obscures the new first fold. */
+@media(min-width:621px) and (max-width:980px){
+ .ph-header.ph-header--wardrobe{height:76px!important;min-height:76px!important}
+ .ph-header--wardrobe .ph-logo{width:145px!important}
+ .ph-header--wardrobe .delu-tagline{font-size:10px!important}
+}
+@media(max-width:620px){
+ .ph-header.ph-header--wardrobe{
+  height:66px!important;min-height:66px!important;
+  padding:0 max(13px,env(safe-area-inset-right)) 0 max(13px,env(safe-area-inset-left))!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  background:rgba(19,17,21,.97)!important;
+  box-shadow:0 2px 12px #251e2517;
+ }
+ .ph-header--wardrobe .ph-logo{width:94px!important;min-width:0;align-self:center}
+ .ph-header--wardrobe .ph-logo img{
+  width:89px!important;height:39px!important;max-width:100%;
+  object-fit:contain!important;
+ }
+ .ph-header--wardrobe .delu-tagline{display:none!important}
+ .ph-header--wardrobe .ph-head-link{font-size:11px;letter-spacing:.13em;min-height:44px}
+ .ph-header--wardrobe .ph-head-actions{min-width:0}
+ .ph-header--wardrobe .ph-language{height:44px;min-width:62px;display:flex;justify-content:flex-end}
+ .ph-header--wardrobe .ph-language select{min-height:44px;max-width:72px;font-size:10px}
+ .ph-hero--wardrobe .dl-wardrobe--hero{
+  padding-top:clamp(82px,10svh,96px);
+ }
+}
+@media(max-width:360px){
+ .ph-header.ph-header--wardrobe{height:62px!important;min-height:62px!important}
+ .ph-header--wardrobe .ph-logo{width:84px!important}
+ .ph-header--wardrobe .ph-logo img{width:80px!important;height:34px!important}
+ .ph-hero--wardrobe .dl-wardrobe--hero{padding-top:78px}
+}

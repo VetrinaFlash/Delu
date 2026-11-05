@@ -11,6 +11,7 @@ async function campaignOpacities(page:any){
 
 test.describe('DeLù customer experience',()=>{
   test('home motion is visible, scroll-linked and leads cleanly to shop',async({page},testInfo)=>{
+    await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
     const pageErrors:string[]=[]
     page.on('pageerror',error=>pageErrors.push(error.message))
 
@@ -20,12 +21,17 @@ test.describe('DeLù customer experience',()=>{
     await page.waitForTimeout(1_750)
     await expect(page.getByTestId('intro')).toHaveCount(0)
 
-    const heroMedia=page.locator('.ph-hero-media')
-    const before=await heroMedia.evaluate(el=>getComputedStyle(el).transform)
+    // The opening hero is the actual interactive wardrobe, not the retired static editorial photo.
+    const wardrobe=page.locator('#home .dl-wardrobe')
+    await expect(wardrobe).toBeVisible()
+    await expect(wardrobe.getByRole('heading',{level:1})).toBeVisible()
+    await expect(wardrobe.locator('.dl-wardrobe-item').first()).toBeVisible()
+    await expect(page.locator('.ph-hero-media')).toHaveCount(0)
+    await expect(page.locator('.ph-root .dl-wardrobe')).toHaveCount(1)
+    await wardrobe.getByRole('button',{name:'Capo successivo'}).click()
+    await expect(wardrobe.locator('.dl-wardrobe-selected h3')).not.toBeEmpty()
     await page.evaluate(()=>window.scrollTo(0,Math.round(window.innerHeight*.72)))
-    await page.waitForTimeout(900)
-    const after=await heroMedia.evaluate(el=>getComputedStyle(el).transform)
-    expect(after).not.toBe(before)
+    await page.waitForTimeout(600)
 
     const campaign=page.getByTestId('immersive-campaign')
     await campaign.scrollIntoViewIfNeeded()
@@ -114,17 +120,18 @@ test('small screens and translated headings stay inside the viewport',async({pag
     await page.setViewportSize({width,height:800})
     await page.goto('/')
     await page.locator('.ph-language select').selectOption('de')
-    await expect(page.locator('.ph-hero-title')).toBeVisible()
+    await expect(page.locator('#home .dl-wardrobe-heading h1')).toBeVisible()
     await expectNoHorizontalOverflow(page)
-    const bounds=await page.locator('.ph-hero-title').boundingBox()
+    const bounds=await page.locator('#home .dl-wardrobe-heading h1').boundingBox()
     expect(bounds!.x).toBeGreaterThanOrEqual(0)
     expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(width+2)
   }
 })
-test('reduced motion retains the hero image and all featured products',async({page})=>{
+test('reduced motion retains the interactive wardrobe and all featured products',async({page})=>{
   await page.emulateMedia({reducedMotion:'reduce'})
   await page.goto('/')
-  await expect(page.locator('.ph-hero-media')).toHaveCSS('clip-path','none')
+  await expect(page.locator('#home .dl-wardrobe-stage')).toBeVisible()
+  await expect(page.locator('#home .dl-wardrobe-item[data-offset="0"]')).toBeVisible()
   await expect(page.locator('.ph-showcase')).toHaveCSS('height',/px/)
   await page.locator('.ph-card').last().scrollIntoViewIfNeeded()
   await expect(page.locator('.ph-card').last()).toBeInViewport()
@@ -462,6 +469,8 @@ test('document category rules, multi-select facets, price and localized product 
  const item={colors:['Nero'],sizes:['S','M'],tags:[],stock:0,image:'/delu-logo.svg',active:true,fabrics:['Viscosa'],attributes:{values:{length:['Midi'],model:['A tubino'],occasion:['Da sera','Da cerimonia'],craft:['Ricamato a mano']},compositions:{Composizione:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}]}}}
  await page.route('**/api/products',r=>r.fulfill({json:[{...item,id:'dress-1',name:'Abito sera',price:89,category:'Abiti'},{...item,id:'dress-2',name:'Abito mini',price:60,category:'Abiti',attributes:{values:{length:['Mini'],occasion:['Casual']},compositions:{}}},{...item,id:'trousers-1',name:'Pantaloni palazzo',price:79,category:'Pantaloni',attributes:{values:{model:['Palazzo'],length:['Lungo'],fit:['Slim fit'],rise:['Vita alta']},compositions:{}}}]}))
  await page.goto('/shop?category=Abiti')
+ // Wait for the mocked D1 catalogue to hydrate before touching filter checkboxes.
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
  await expect(page.locator('.catalog-categories button.active')).toHaveCSS('color','rgb(255, 255, 255)')
  await page.locator('.ds-toolbar>button').click()
  const filters=page.locator('#catalog-filters')
@@ -637,4 +646,119 @@ test('admin product editor keeps SKU and allows rearranging photos',async({page}
   await expect(form).toHaveCount(0)
   expect(submitted.images[0]).toBe('/admin-icon-192.png')
   expect(submitted.variants[0].sku).toBe('DL-NEW')
+})
+
+
+test('wardrobe preview shows snapshot-backed real catalogue prices and safe purchase links',async({page},testInfo)=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  const snapshot={source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
+    {id:'real-rail-a',name:'Abito Rosa Boutique',price:89.95,stock:2,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:['Rosa'],sizes:['S'],tags:[]},
+    {id:'real-rail-b',name:'Blazer da Sera',price:129,stock:4,category:'Blazer',image:'/admin-icon-192.png',active:true,featured:true,colors:['Nero'],sizes:['M'],tags:[]},
+    {id:'sold-rail',name:'Capo Esaurito',price:99,stock:0,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
+  ]}
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:snapshot}))
+  const errors:string[]=[]
+  page.on('pageerror',err=>errors.push(err.message))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(2)
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa Boutique')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('89,95')
+  await expect(rail.locator('.dl-wardrobe-selected-meta')).toContainText('2 disponibili')
+  await expect(rail).not.toContainText('Capo Esaurito')
+  await expect(rail.locator('.dl-wardrobe-preview-note')).toContainText('Disponibilità indicativa')
+  await expect(rail.getByRole('link',{name:'SCOPRI IL CAPO'})).toHaveAttribute('href','https://delu-49u.pages.dev/product/real-rail-a')
+  await rail.getByRole('button',{name:'Capo successivo'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Blazer da Sera')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('129,00')
+  await rail.locator('.dl-wardrobe-stage').focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa Boutique')
+  await expectNoHorizontalOverflow(page)
+  await page.screenshot({path:testInfo.outputPath('wardrobe-desktop-or-mobile.png')})
+  expect(errors).toEqual([])
+})
+
+test('wardrobe renders real snapshot on 320px mobile without horizontal scrolling',async({page},testInfo)=>{
+  await page.setViewportSize({width:320,height:740})
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:{source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
+    {id:'product-a',name:'Vestito Venezia',price:73,stock:3,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]},
+    {id:'product-b',name:'Vestito Milano',price:44,stock:1,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
+  ]}}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Vestito Venezia')
+  await rail.getByRole('button',{name:'Capo successivo'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Vestito Milano')
+  await expectNoHorizontalOverflow(page)
+  await page.screenshot({path:testInfo.outputPath('wardrobe-mobile-320.png')})
+})
+
+test('wardrobe preview does not substitute fake prices if snapshot is invalid',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({status:503,json:{error:'not ready'}}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-placeholder')).toContainText('Non è possibile caricare ora il magazzino.')
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(0)
+  await expectNoHorizontalOverflow(page)
+})
+
+
+
+test('opening wardrobe replaces only first hero while all three scrolling scenes remain',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ await page.goto('/')
+ await expect(page.locator('#home .dl-wardrobe-heading h1')).toContainText('Il guardaroba prende vita')
+ await expect(page.locator('#home .dl-wardrobe-item').first()).toBeVisible()
+ await expect(page.locator('.ph-hero-media')).toHaveCount(0)
+ await expect(page.locator('.dl-wardrobe')).toHaveCount(1)
+ await expect(page.locator('.ph-statement')).toHaveCount(1)
+ const campaign=page.getByTestId('immersive-campaign')
+ await expect(campaign).toHaveCount(1)
+ await expect(campaign.locator('.ph-campaign-media')).toHaveCount(3)
+ await expect(campaign.locator('.ph-campaign-copy')).toHaveCount(3)
+ await expect(campaign.locator('.atelier-scene-picker button')).toHaveCount(3)
+ const hero=page.getByTestId('home-hero')
+ const before=await hero.boundingBox()
+ await expectNoHorizontalOverflow(page)
+ await campaign.scrollIntoViewIfNeeded()
+ await expect(campaign).toBeVisible()
+ const after=await hero.boundingBox()
+ expect(after!.y).toBeLessThan(before!.y)
+})
+
+
+test('mobile wardrobe header is compact, readable and reveals the first garment above fold',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ for(const [width,height] of [[320,740],[390,844],[620,900],[768,900]]){
+  await page.setViewportSize({width,height})
+  await page.goto('/')
+  const header=page.locator('.ph-header--wardrobe')
+  const wardrobe=page.locator('#home .dl-wardrobe')
+  await expect(header).toBeVisible()
+  await expect(wardrobe).toBeVisible()
+  const box=await header.boundingBox()
+  expect(box).not.toBeNull()
+  expect(box!.height).toBeLessThanOrEqual(width<=360?63:width<=620?67:77)
+  await expect(header.locator('.ph-head-link')).toBeVisible()
+  await expect(header.locator('.ph-logo img')).toBeVisible()
+  await expect(header.locator('.ph-language select')).toBeVisible()
+  const heading=await wardrobe.locator('.dl-wardrobe-heading').boundingBox()
+  expect(heading).not.toBeNull()
+  expect(heading!.y).toBeGreaterThanOrEqual(box!.y+box!.height-2)
+  expect(heading!.y).toBeLessThan(height*.28)
+  if(width<=620)await expect(header.locator('.delu-tagline')).toBeHidden()
+  await expectNoHorizontalOverflow(page)
+ }
+ // The shop header isn't changed by the wardrobe-only mobile override.
+ await page.setViewportSize({width:390,height:844})
+ await page.goto('/shop')
+ const shopHeader=await page.locator('.ds-header').boundingBox()
+ expect(shopHeader).not.toBeNull()
+ expect(shopHeader!.height).toBeGreaterThanOrEqual(100)
 })

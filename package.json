@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:security": "node --experimental-strip-types --test tests/security.test.mjs"
+    "test:security": "node --experimental-strip-types --test tests/security.test.mjs",
+    "prebuild": "node scripts/snapshot-wardrobe.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.3",
