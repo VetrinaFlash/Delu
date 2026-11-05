@@ -10,15 +10,34 @@
 .ph-mood-card:focus-visible{outline:3px solid #111;outline-offset:5px}
 .ph-mood-card>div{transition:transform .6s var(--delu-ease)}
 .ph-tilt-card:hover .ph-mood-card>div{transform:translateY(-8px)}
-.ph-chapters{position:fixed;z-index:125;bottom:20px;left:50%;transform:translateX(-50%);display:flex;max-width:calc(100% - 28px);padding:5px;border:1px solid #ffffff26;border-radius:99px;background:rgba(24,20,24,.91);color:#fff;box-shadow:0 8px 35px #0002;backdrop-filter:blur(16px)}
-.ph-chapters a{position:relative;isolation:isolate;display:flex;gap:8px;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:99px;white-space:nowrap}
-.ph-chapters span{font-size:8px;color:#edb4cc;letter-spacing:.08em}
-.ph-chapters b{font-size:9px;letter-spacing:.12em;font-weight:600}
-.ph-chapters i{position:absolute;inset:0;z-index:-1;background:#f0bfd2;border-radius:99px}
-.ph-chapters a[aria-current]{color:#181418}
-.ph-chapters a[aria-current] span{color:#5c3647}
-.ph-chapters a:hover{background:#ffffff16}
-.ph-chapters a:focus-visible{outline:2px solid #f4b4cd;outline-offset:2px}
+/* Fixed homepage navigation now shares the catalogue's QuickNavigation component. */
+.ph-home-shop-dock{
+ position:fixed;
+ z-index:125;
+ bottom:calc(18px + env(safe-area-inset-bottom));
+ left:50%;
+ transform:translateX(-50%);
+ width:min(680px,calc(100vw - 32px));
+ max-width:calc(100vw - 32px);
+}
+.ph-home-shop-dock .quick-navigation{
+ width:100%;
+ max-width:none;
+ margin:0;
+ border:1px solid #ffffff33;
+ background:rgba(21,20,25,.96);
+ color:#fff;
+ box-shadow:0 14px 44px #0005;
+ backdrop-filter:blur(16px);
+ -webkit-backdrop-filter:blur(16px);
+}
+.ph-home-shop-dock .quick-navigation :is(a,button){
+ min-height:52px;
+}
+.ph-home-shop-dock .quick-navigation :is(a,button):focus-visible{
+ outline:2px solid #f0bfd2;
+ outline-offset:2px;
+}
 .ph-visit{padding-bottom:120px}
 .ph-campaign-copy{bottom:110px}
 .ph-campaign-progress{bottom:88px}
@@ -29,10 +48,9 @@
  .ph-signature{padding:32px 0 38px}
  .ph-signature-label{font-size:8px}
  .ph-signature>div{font-size:22vw;gap:8vw}
- .ph-chapters{bottom:calc(12px + env(safe-area-inset-bottom));gap:0;width:max-content;padding:4px}
- .ph-chapters a{padding:0 10px;min-height:42px}
- .ph-chapters b{font-size:7px;letter-spacing:.06em}
- .ph-chapters span{display:none}
+ .ph-home-shop-dock{bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100vw - 24px);max-width:calc(100vw - 24px)}
+ .ph-home-shop-dock .quick-navigation{margin:0;border-radius:22px}
+ .ph-home-shop-dock .quick-navigation :is(a,button){min-height:64px;padding:8px 4px}
  .ph-campaign-copy{bottom:116px}
  .ph-campaign-progress{bottom:95px}
  .ph-hero-copy{bottom:100px}
@@ -42,7 +60,7 @@
  .ph-signature>div{transform:none!important}
  .ph-tilt-card,.ph-tilt-card:hover .ph-mood-card>div{transform:none!important}
  .ph-editorial{clip-path:none!important}
- .ph-chapters *{transition:none!important}
+ .ph-home-shop-dock .quick-navigation *{transition:none!important}
 }
 
 .delu-recovery{min-height:100svh;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:32px;background:#fff5f8;text-align:center}
