@@ -462,6 +462,8 @@ test('document category rules, multi-select facets, price and localized product 
  const item={colors:['Nero'],sizes:['S','M'],tags:[],stock:0,image:'/delu-logo.svg',active:true,fabrics:['Viscosa'],attributes:{values:{length:['Midi'],model:['A tubino'],occasion:['Da sera','Da cerimonia'],craft:['Ricamato a mano']},compositions:{Composizione:[{material:'Viscosa',percent:95},{material:'Elastan',percent:5}]}}}
  await page.route('**/api/products',r=>r.fulfill({json:[{...item,id:'dress-1',name:'Abito sera',price:89,category:'Abiti'},{...item,id:'dress-2',name:'Abito mini',price:60,category:'Abiti',attributes:{values:{length:['Mini'],occasion:['Casual']},compositions:{}}},{...item,id:'trousers-1',name:'Pantaloni palazzo',price:79,category:'Pantaloni',attributes:{values:{model:['Palazzo'],length:['Lungo'],fit:['Slim fit'],rise:['Vita alta']},compositions:{}}}]}))
  await page.goto('/shop?category=Abiti')
+ // Wait for the mocked D1 catalogue to hydrate before touching filter checkboxes.
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
  await expect(page.locator('.catalog-categories button.active')).toHaveCSS('color','rgb(255, 255, 255)')
  await page.locator('.ds-toolbar>button').click()
  const filters=page.locator('#catalog-filters')
