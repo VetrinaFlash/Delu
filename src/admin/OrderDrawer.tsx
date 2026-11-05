@@ -10,23 +10,14 @@ export default function OrderDrawer({order,onClose,onSaved}:{order:ApiOrder;onCl
   const[trackingCode,setTrackingCode]=useState(order.fulfillment?.trackingCode||'')
   const[trackingUrl,setTrackingUrl]=useState(order.fulfillment?.trackingUrl||'')
   const[loading,setLoading]=useState(false),[error,setError]=useState('')
-  function shipmentLink(){
-    const detail=[carrier,trackingCode,trackingUrl].filter(Boolean).join(' · ')
-    return 'https://wa.me/'+order.phone.replace(/\D/g,'')+'?text='+encodeURIComponent(`Ciao, l’ordine #${order.id} è stato spedito.${detail?'\nTracking: '+detail:''}\nGrazie, DeLù!`)
-  }
-  async function save(notify=false){
-    const tab=notify?window.open('about:blank','_blank'):null
-    if(tab)tab.opener=null
+  const prepaid=['Pagato - da preparare','Nuovo','In preparazione','Spedito','Completato'].includes(order.status)
+  async function save(){
 
     setLoading(true);setError('')
     try{
       await api(`/api/admin/orders/${order.id}`,{method:'PATCH',body:JSON.stringify({status,fulfillment:{carrier,trackingCode,trackingUrl}})})
-      if(notify){
-        if(tab)tab.location.href=shipmentLink()
-        else window.location.assign(shipmentLink())
-      }
       onSaved({...order,status,fulfillment:{carrier,trackingCode,trackingUrl}})
-    }catch(e:any){tab?.close();setError(e.message)}finally{setLoading(false)}
+    }catch(e:any){setError(e.message)}finally{setLoading(false)}
   }
   return <>
     <motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/>
@@ -37,17 +28,16 @@ export default function OrderDrawer({order,onClose,onSaved}:{order:ApiOrder;onCl
         <div className="order-detail-block"><span>SPEDIZIONE</span><p>{order.shipping?.address}<br/>{order.shipping?.postcode} {order.shipping?.city} {order.shipping?.province}<br/><b>{order.shipping?.country}</b></p><small>Costo: {money(Number(order.shipping?.cost||0))}</small></div>
         <div className="order-detail-block"><span>ARTICOLI</span>{order.items.map((i:any,n)=><div className="order-item-detail" key={n}><div><b>{i.name}</b><small>{i.color} · {i.size} · × {i.qty}</small></div><strong>{money(Number(i.unitPrice||0)*Number(i.qty||1))}</strong></div>)}</div>
         {order.notes&&<div className="order-detail-block"><span>NOTE</span><p>{order.notes}</p></div>}
-        {(!reviewState||reviewState==='PAID')&&<div className="order-detail-block"><span>GESTIONE</span>
-          <label>Stato<select value={status} onChange={e=>setStatus(e.target.value)}>{['Da confermare','Confermato - da pagare','Rifiutato','Pagato - da preparare','Pagamento in attesa','Pagamento fallito','Pagato - verifica stock','Nuovo','In preparazione','Spedito','Completato','Annullato'].map(s=><option key={s}>{s}</option>)}</select></label>
+        {prepaid&&(!reviewState||reviewState==='PAID')&&<div className="order-detail-block"><span>GESTIONE</span>
+          <label>Stato<select value={status} onChange={e=>setStatus(e.target.value)}>{['Pagato - da preparare','In preparazione','Spedito','Completato','Annullato'].map(s=><option key={s}>{s}</option>)}</select></label>
           <div className="form-grid"><label>Corriere<input value={carrier} onChange={e=>setCarrier(e.target.value)} placeholder="BRT, GLS, DHL…"/></label><label>Codice tracking<input value={trackingCode} onChange={e=>setTrackingCode(e.target.value)}/></label></div>
           <label>Link tracking<input value={trackingUrl} onChange={e=>setTrackingUrl(e.target.value)} placeholder="https://..."/></label>
         </div>
         }
         {error&&<div className="form-error">{error}</div>}
-        {order.phone&&order.status==='Spedito'&&<a href={shipmentLink()} target="_blank" rel="noreferrer">Notifica spedizione su WhatsApp</a>}
-        {order.phone&&status==='Spedito'&&(!reviewState||reviewState==='PAID')&&<button type="button" disabled={loading} onClick={()=>save(true)}>Salva spedizione e apri WhatsApp</button>}
+        {!prepaid&&!reviewState&&<p className="order-payment-pending" role="status">{order.status==='Pagamento in attesa'?'Pagamento Nexi in attesa di conferma. Non è necessaria alcuna conferma manuale.':'Lo stato di pagamento non consente ancora di preparare questo ordine.'}</p>}
       </div>
-      {(!reviewState||reviewState==='PAID')&&<button type="button" className="save-product" disabled={loading} onClick={()=>save()}><Truck/>{loading?'SALVATAGGIO…':'SALVA ORDINE'}</button>}
+      {prepaid&&(!reviewState||reviewState==='PAID')&&<button type="button" className="save-product" disabled={loading} onClick={()=>save()}><Truck/>{loading?'SALVATAGGIO…':'SALVA ORDINE'}</button>}
     </motion.aside>
   </>
 }

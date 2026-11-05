@@ -88,21 +88,22 @@ Configure:
 
 Use the production base URL enabled for the specific merchant contract when moving out of sandbox; do not guess or hard-code it from another merchant.
 
-### Payment lifecycle
+### Payment lifecycle (immediate payment, no manual approval)
 
-1. The browser sends product IDs, variants, quantity, customer and shipping data to `/api/checkout/nexi`.
-2. The server reloads current product prices/stock from D1 and recalculates shipping. Browser totals are never trusted.
-3. The order is created as `Pagamento in attesa`; stock is **not** reduced yet.
-4. The server creates the Nexi HPP and stores the returned `securityToken`.
-5. Nexi redirects the customer to the hosted page.
-6. Nexi sends a server-to-server notification to `/api/payments/nexi/notification`.
-7. The stored `securityToken`, amount and currency are verified.
-8. Only an `EXECUTED` operation is treated as paid. An `AUTHORIZED` operation is not treated as a final captured payment.
-9. Variant stock is decremented conditionally. Concurrent purchases cannot silently push stock below zero.
-10. If paid stock can no longer be allocated, the order becomes `Pagato - verifica stock` for manual intervention rather than losing the payment event.
-11. The browser return page independently polls `/api/payments/nexi/status` to obtain the definitive state from the server/Nexi.
+1. Customer chooses the actual available color/size and proceeds directly to checkout.
+2. Server reads authoritative prices, discounts and variant stock from D1 and calculates shipping.
+3. One transactional D1 batch creates a pending order and reserves its exact quantities by subtracting them from public stock. If any product is sold out at that instant, the **whole transaction rolls back**; Nexi is never contacted.
+4. The server creates a Nexi Hosted Payment Page (HPP) and stores the returned securityToken **only on the server**.
+5. The browser redirects directly to Nexi. There is no WhatsApp approval or payment link to be shared.
+6. After an EXECUTED operation is confirmed through the authenticated webhook or server-side GET order-status endpoint, the reservation becomes a sale and the order becomes Pagato - da preparare. No second deduction happens.
+7. A failed/canceled payment releases its reservation exactly once, restoring product/variant quantities.
+8. Unfinished sessions are reclaimed after 45 minutes, by checking Nexi's authoritative status first. Nexi HPP links last 15 minutes; the longer hold allows authentication and notification delays. If Nexi is unavailable, the hold remains pending until safe reconciliation.
+9. The admin cannot overwrite a reserved product's stock/variants or mark an unpaid order as shipped.
+10. Older manual-review orders retain their legacy flow to avoid breaking already-issued payment links. New checkouts never use it.
 
-Test successful payment, decline, cancellation, 3DS failure, repeated notification and browser refresh in sandbox before enabling production.
+The merchant key must be configured on Cloudflare. Official production API root: https://xpay.nexigroup.com/api/phoenix-0.0/psp. Confirm the merchant's production HPP contract is active and never use sandbox credentials on the live endpoint.
+
+Automated tests mock Nexi, so perform a real sandbox card payment and return/refund test before accepting live card payments.
 
 ## 6. Shipping
 
@@ -129,7 +130,7 @@ Products support:
 - featured/new/visible flags
 - legacy total-stock products for backwards compatibility
 
-Paid orders decrement the matching variant. The product-level total stock is synchronized from its variants.
+Stock is reserved at checkout, removed from public availability while Nexi is in progress, then permanently consumed after verified payment. Failed, canceled or expired sessions restore stock. Product-level total stock stays synchronized with its variants, and active reservations block stock rewrites from the editor.
 
 ## 8. Order fulfillment
 

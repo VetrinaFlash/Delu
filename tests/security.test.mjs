@@ -13,9 +13,9 @@ before(async()=>{
 })
 after(async()=>{await rm(root,{recursive:true,force:true})})
 class DB{
- constructor(){this.db=new DatabaseSync(':memory:')}
+ constructor(){this.db=new DatabaseSync(':memory:');this.queue=Promise.resolve()}
  prepare(sql){const db=this.db;let args=[];const obj={bind(...values){args=values;return obj},async first(){return db.prepare(sql).get(...args)||null},async all(){return {results:db.prepare(sql).all(...args)}},async run(){const r=db.prepare(sql).run(...args);return {meta:{changes:Number(r.changes)}}}};return obj}
- async batch(statements){this.db.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());this.db.exec('COMMIT');return out}catch(e){this.db.exec('ROLLBACK');throw e}}
+ async batch(statements){const perform=async()=>{this.db.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());this.db.exec('COMMIT');return out}catch(e){this.db.exec('ROLLBACK');throw e}};const run=this.queue.then(perform,perform);this.queue=run.catch(()=>{});return run}
 }
 async function setup(){const DBi=new DB();DBi.db.exec(await readFile('database/schema.sql','utf8'));return {DB:DBi,ADMIN_EMAIL:'owner@example.test',ADMIN_PASSWORD_SHA256:await security.digest('OwnerPassword!12345'),AUTH_SECRET:'test-only-secret',SITE_URL:'https://shop.test',RESEND_API_KEY:'test-key',EMAIL_FROM:'DeLu <shop@example.test>',PRIVACY_NOTICE:'Test privacy notice',TERMS_NOTICE:'Test sale terms',RETURNS_ADDRESS:'Test return address'}}
 async function request(env,path,body,sessionCookie,origin='https://shop.test'){
@@ -68,57 +68,125 @@ test('Google callback rejects forged or missing state; promotions require consen
  env.DB.db.prepare("INSERT INTO customers(id,email,name,verified,marketing) VALUES('one','one@example.test','One',1,0)").run()
  assert.equal((await request(env,'admin/community/promotion',{customerId:'one',percent:20,message:'Ciao'},c)).status,400)
 })
-test('request -> review -> WhatsApp link -> verified payment, without relying on local stock',async()=>{
+test('direct Nexi payment reserves variant stock, confirms once and releases failed checkouts',async()=>{
  const env=await setup();env.NEXI_XPAY_API_KEY='test'
  await request(env,'customer/config')
- env.DB.db.prepare(`INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('p','Dress','dress',10000,'Abiti','["Nero","Rosa"]','["M","L"]',0)`).run()
+ env.DB.db.prepare('INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES(?,?,?,?,?,?,?,?)')
+  .run('p','Dress','dress',10000,'Abiti','["Nero","Rosa"]','["M","L"]',2)
+ env.DB.db.prepare("INSERT INTO product_variants(product_id,color,size,stock) VALUES('p','Nero','M',1),('p','Rosa','L',1)").run()
  env.DB.db.prepare("INSERT INTO customer_discounts VALUES('PROMO','anna@example.test',20,?,1)").run(Date.now()+86400000)
- assert.equal((await request(env,'discount',{code:'PROMO',email:'other@example.test'})).status,400)
- const original=globalThis.fetch;let charged=null,labels=0
- globalThis.fetch=async(url,options)=>{if(String(url).includes('/api/v2/labels/'))return new Response('%PDF-1.4 test',{headers:{'content-type':'application/pdf'}});if(String(url).includes('sendcloud')){labels++;return new Response(JSON.stringify({parcel:{id:123,label:{normal_printer:['https://panel.sendcloud.sc/api/v2/labels/normal_printer/123']},tracking_number:'TRACK'}}),{status:200})}if(String(url).includes('resend'))return new Response('{"id":"test"}',{status:200});charged=JSON.parse(options.body);return new Response(JSON.stringify({hostedPage:'https://pay.test',securityToken:'secret'}),{status:200})}
+ const original=globalThis.fetch,charges=[],operations=new Map()
+ globalThis.fetch=async(url,options)=>{
+  const address=String(url)
+  if(address.includes('resend'))return new Response('{"id":"mail-test"}',{status:200})
+  if(address.includes('/api/v1/orders/hpp')){
+   const payload=JSON.parse(options.body);charges.push(payload)
+   if(payload.order.description.includes('REJECT_ME'))return new Response('{}',{status:422})
+   return new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/monetaweb/page/hosted/demo',securityToken:'secret'}),{status:200})
+  }
+  if(address.includes('/api/v1/orders/'))return new Response(JSON.stringify({operations:operations.get(address.split('/').pop())||[]}),{status:200})
+  throw new Error('Unexpected provider: '+address)
+ }
+ const checkout=items=>request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items})
+ const stock=(color,size)=>env.DB.db.prepare('SELECT stock FROM product_variants WHERE product_id=? AND color=? AND size=?').get('p',color,size)?.stock
  try{
- const r=await request(env,'checkout/nexi',{termsAccepted:true,discountCode:'PROMO',customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'p',qty:1,size:'M',color:'Nero'}]})
- assert.equal(r.status,201);const {orderId}=await r.json();assert.equal(charged,null)
- assert.equal(env.DB.db.prepare('SELECT count(*) n FROM payments').get().n,0)
- const login=await request(env,'auth/login',{email:env.ADMIN_EMAIL,password:'OwnerPassword!12345'}),c=login.headers.get('set-cookie')
- assert.equal((await request(env,'admin/order-requests/'+orderId+'/approve',{version:1})).status,401)
- assert.equal((await request(env,'admin/order-requests/'+orderId+'/edit',{version:1,items:[{id:'p',qty:2,unitPrice:90,color:'Rosa',size:'L'}],shippingCost:5,discount:10},c)).status,200)
- assert.equal((await request(env,'admin/order-requests/'+orderId+'/approve',{version:1},c)).status,409)
- const approved=await request(env,'admin/order-requests/'+orderId+'/approve',{version:2},c);assert.equal(approved.status,200);const share=await approved.json();assert.match(share.whatsappUrl,/wa.me\/393331234567/)
- assert.equal(env.DB.db.prepare('SELECT total_cents FROM orders WHERE id=?').get(orderId).total_cents,17500)
- assert.equal((await request(env,'admin/order-requests/'+orderId+'/edit',{version:3,items:[]},c)).status,409)
- assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',{},c)).status,409)
- const raw=share.paymentUrl.split('/').pop();const summary=await (await request(env,'order-requests/'+raw)).json();assert.equal(summary.total,175)
- const pay=await request(env,'order-requests/'+raw,{accepted:true});assert.equal(pay.status,200);assert.equal(charged.order.amount,'17500')
- await request(env,'order-requests/'+raw,{accepted:true});assert.equal(env.DB.db.prepare('SELECT count(*) n FROM payments').get().n,1)
- const callback={securityToken:'secret',operation:{orderId,operationId:'op',operationResult:'EXECUTED',operationAmount:'17500',operationCurrency:'EUR'}}
- assert.equal((await request(env,'payments/nexi/notification',{...callback,securityToken:'wrong'})).status,401)
- assert.equal((await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationAmount:'1'}})).status,400)
- await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}});assert.ok(env.DB.db.prepare("SELECT id FROM email_outbox WHERE id LIKE 'failed-admin-%'").get());assert.equal((await request(env,'payments/nexi/notification',callback)).status,200)
- assert.equal(env.DB.db.prepare('SELECT status FROM orders WHERE id=?').get(orderId).status,'Pagato - da preparare')
- assert.equal(env.DB.db.prepare("SELECT stock FROM products WHERE id='p'").get().stock,0)
- assert.equal(env.DB.db.prepare('SELECT state FROM shipping_labels').get().state,'READY');env.SENDCLOUD_PUBLIC_KEY='test';env.SENDCLOUD_SECRET_KEY='test';env.SENDCLOUD_SENDER_ID='1';const labelBody={street:'Via Test',houseNumber:'1',weight:1,shippingMethod:1};assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,200);assert.equal((await request(env,'admin/order-requests/'+orderId+'/label',labelBody,c)).status,409);assert.equal(labels,1);const pdf=await request(env,'admin/order-requests/'+orderId+'/label',undefined,c);assert.equal(pdf.status,200);assert.equal(pdf.headers.get('content-type'),'application/pdf')
- await request(env,'payments/nexi/notification',{...callback,operation:{...callback.operation,operationResult:'FAILED'}})
- assert.equal(env.DB.db.prepare('SELECT status FROM payments').get().status,'PAID')
- env.DB.db.prepare("INSERT INTO customers(id,email,name,verified) VALUES('loyal','anna@example.test','Anna',1)").run()
- env.DB.db.prepare("INSERT INTO fidelity_members(id,customer_id,terms) VALUES('DL-CARD','loyal','Termini')").run()
- const credit={id:'DL-CARD',points:25,reason:'Scontrino 42',requestId:crypto.randomUUID()}
- assert.equal((await request(env,'admin/fidelity/credit',credit)).status,401)
- assert.equal((await request(env,'admin/fidelity/credit',credit,c)).status,200)
- assert.equal((await request(env,'admin/fidelity/credit',credit,c)).status,200)
- const [member]=await(await request(env,'admin/fidelity',undefined,c)).json()
- assert.equal(member.points,25)
- assert.equal(member.paidOrders,1)
- const rejectedOrder=await request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'p',qty:1,size:'M',color:'Nero'}]})
- const rejectedId=(await rejectedOrder.json()).orderId
- assert.equal((await request(env,'admin/order-requests/'+rejectedId+'/reject',{version:1,reason:''},c)).status,400)
- const rejection=await(await request(env,'admin/order-requests/'+rejectedId+'/reject',{version:1,reason:'Taglia esaurita'},c)).json()
- assert.equal(new URL(rejection.whatsappUrl).pathname,'/393331234567')
- assert.match(new URL(rejection.whatsappUrl).searchParams.get('text'),/Taglia esaurita/)
-
- assert.equal((await handler.onRequest({request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie:c},body:JSON.stringify({status:'Annullato'})}),env,params:{},waitUntil:()=>{}})).status,409)
+  const cart=[{id:'p',qty:1,size:'M',color:'Nero'}]
+  const r=await request(env,'checkout/nexi',{termsAccepted:true,discountCode:'PROMO',customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:cart})
+  assert.equal(r.status,201)
+  const data=await r.json()
+  assert.equal(new URL(data.hostedPage).hostname,'xpaysandbox.nexigroup.com')
+  assert.equal(charges[0].order.amount,'8000')
+  assert.equal(charges[0].paymentSession.captureType,'IMPLICIT')
+  const id=data.orderId
+  assert.equal(env.DB.db.prepare('SELECT status FROM payments WHERE order_id=?').get(id).status,'PENDING')
+  assert.equal(env.DB.db.prepare('SELECT state FROM stock_reservations WHERE order_id=?').get(id).state,'HELD')
+  assert.equal(stock('Nero','M'),0)
+  assert.equal(env.DB.db.prepare('SELECT stock FROM products WHERE id=?').get('p').stock,1)
+  assert.equal((await checkout(cart)).status,409,'a second buyer must not reserve an unavailable variant')
+  assert.equal(charges.length,1,'oversold attempt must never contact Nexi')
+  const wrong={securityToken:'incorrect',operation:{orderId:id,operationId:'nexi-1',operationResult:'EXECUTED',operationAmount:'8000',operationCurrency:'EUR'}}
+  assert.equal((await request(env,'payments/nexi/notification',wrong)).status,401)
+  assert.equal((await request(env,'payments/nexi/notification',{...wrong,securityToken:'secret',operation:{...wrong.operation,operationAmount:'10'}})).status,400)
+  // Simulate a Worker crash after taking the payment lock but before committing inventory.
+  env.DB.db.prepare("UPDATE payments SET status='PROCESSING',updated_at=datetime('now','-6 minutes') WHERE order_id=?").run(id)
+  const paid={...wrong,securityToken:'secret'}
+  assert.equal((await request(env,'payments/nexi/notification',paid)).status,200)
+  assert.equal((await request(env,'payments/nexi/notification',paid)).status,200)
+  assert.equal(stock('Nero','M'),0,'must not decrement twice after webhook retries')
+  assert.equal(env.DB.db.prepare('SELECT status FROM payments WHERE order_id=?').get(id).status,'PAID')
+  assert.equal(env.DB.db.prepare('SELECT status FROM orders WHERE id=?').get(id).status,'Pagato - da preparare')
+  assert.equal(env.DB.db.prepare('SELECT state FROM stock_reservations WHERE order_id=?').get(id).state,'PAID')
+  assert.equal(env.DB.db.prepare('SELECT COUNT(*) count FROM inventory_movements WHERE order_id=?').get(id).count,1)
+  assert.equal((await(await request(env,'payments/nexi/status?orderId='+id)).json()).paid,true)
+  const other=await checkout([{id:'p',qty:1,size:'L',color:'Rosa'}])
+  assert.equal(other.status,201)
+  const otherId=(await other.json()).orderId
+  assert.equal(stock('Rosa','L'),0)
+  const failed={securityToken:'secret',operation:{orderId:otherId,operationId:'nexi-2',operationResult:'FAILED',operationAmount:'10000',operationCurrency:'EUR'}}
+  assert.equal((await request(env,'payments/nexi/notification',failed)).status,200)
+  assert.equal((await request(env,'payments/nexi/notification',failed)).status,200)
+  assert.equal(stock('Rosa','L'),1,'failed payment releases exactly one unit')
+  assert.equal(env.DB.db.prepare('SELECT status FROM orders WHERE id=?').get(otherId).status,'Pagamento fallito')
+  const abandoned=await checkout([{id:'p',qty:1,size:'L',color:'Rosa'}])
+  assert.equal(abandoned.status,201);const abandonedId=(await abandoned.json()).orderId
+  assert.equal(stock('Rosa','L'),0)
+  env.DB.db.prepare('UPDATE stock_reservations SET expires_at=0 WHERE order_id=?').run(abandonedId)
+  const catalogue=await(await request(env,'products')).json()
+  assert.equal(stock('Rosa','L'),1,'expired Nexi session is reconciled and releases inventory')
+  assert.equal(catalogue.find(p=>p.id==='p').stock,1)
+  assert.equal(env.DB.db.prepare('SELECT state FROM stock_reservations WHERE order_id=?').get(abandonedId).state,'RELEASED')
+  const late=await request(env,'payments/nexi/notification',{securityToken:'secret',operation:{orderId:abandonedId,operationId:'nexi-late',operationResult:'EXECUTED',operationAmount:'10000',operationCurrency:'EUR'}})
+  assert.equal(late.status,200)
+  assert.equal(env.DB.db.prepare('SELECT status FROM payments WHERE order_id=?').get(abandonedId).status,'PAID')
+  assert.equal(stock('Rosa','L'),0,'late paid status cannot create free stock')
+  assert.equal((await checkout([{id:'p',qty:2,size:'M',color:'Nero'}])).status,409)
  }finally{globalThis.fetch=original}
 })
+
+test('plain stock checkout cannot oversell and backend refuses unverified manual paid statuses',async()=>{
+ const env=await setup();env.NEXI_XPAY_API_KEY='test';await request(env,'config')
+ env.DB.db.prepare("INSERT INTO products(id,name,slug,price_cents,category,stock) VALUES('simple','One remaining','one',2000,'Accessori',1)").run()
+ const original=globalThis.fetch
+ globalThis.fetch=async url=>String(url).includes('resend')?new Response('{}',{status:200}):new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/hpp',securityToken:'token'}),{status:200})
+ try{
+  const payload={termsAccepted:true,customer:{name:'Cliente',email:'buyer@example.test',phone:'+393331234567'},shipping:{address:'Via 3',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'simple',qty:1,size:'',color:''}]}
+  const first=await request(env,'checkout/nexi',payload)
+  assert.equal(first.status,201)
+  const orderId=(await first.json()).orderId
+  assert.equal(env.DB.db.prepare("SELECT stock FROM products WHERE id='simple'").get().stock,0)
+  assert.equal((await request(env,'checkout/nexi',payload)).status,409)
+  const login=await request(env,'auth/login',{email:env.ADMIN_EMAIL,password:'OwnerPassword!12345'})
+  const cookie=login.headers.get('set-cookie')
+  const update=await handler.onRequest({env,request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie},body:JSON.stringify({status:'Spedito'})}),params:{},waitUntil:()=>{}})
+  assert.equal(update.status,409,'staff cannot mark an unpaid order as shipped')
+  const shipping=await handler.onRequest({env,request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie},body:JSON.stringify({fulfillment:{carrier:'BRT',trackingCode:'FAKE'}})}),params:{},waitUntil:()=>{}})
+  assert.equal(shipping.status,409,'staff cannot add tracking to unpaid orders')
+  const canceled={securityToken:'token',operation:{orderId,operationId:'cancel-1',operationResult:'CANCELED',operationAmount:'2690',operationCurrency:'EUR'}}
+  assert.equal((await request(env,'payments/nexi/notification',canceled)).status,200)
+  assert.equal(env.DB.db.prepare("SELECT stock FROM products WHERE id='simple'").get().stock,1)
+ }finally{globalThis.fetch=original}
+})
+test('concurrent buyers cannot reserve the same last item twice',async()=>{
+ const env=await setup();env.NEXI_XPAY_API_KEY='test';await request(env,'config')
+ env.DB.db.prepare("INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('last-one','One piece','one-piece',5000,'Abiti','[\"Nero\"]','[\"M\"]',1)").run()
+ env.DB.db.prepare("INSERT INTO product_variants(product_id,color,size,stock) VALUES('last-one','Nero','M',1)").run()
+ const original=globalThis.fetch;let nexiStarts=0
+ globalThis.fetch=async(url)=>{
+  if(String(url).includes('resend'))return new Response('{"id":"test"}',{status:200})
+  if(String(url).includes('/api/v1/orders/hpp')){nexiStarts++;return new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/monetaweb/page/hosted/demo',securityToken:'token'}),{status:200})}
+  if(String(url).includes('/api/v1/orders/'))return new Response(JSON.stringify({operations:[]}),{status:200})
+  throw Error('Unexpected provider: '+url)
+ }
+ const payload={termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'last-one',qty:1,color:'Nero',size:'M'}]}
+ try{
+  const responses=await Promise.all([request(env,'checkout/nexi',payload),request(env,'checkout/nexi',payload)])
+  assert.deepEqual(responses.map(r=>r.status).sort(),[201,409])
+  assert.equal(nexiStarts,1)
+  assert.equal(env.DB.db.prepare("SELECT stock FROM product_variants WHERE product_id='last-one'").get().stock,0)
+  assert.equal(env.DB.db.prepare("SELECT COUNT(*) AS n FROM stock_reservations WHERE state='HELD'").get().n,1)
+ }finally{globalThis.fetch=original}
+})
+
 test('first API request bootstraps schema and preserves existing records',async()=>{
  const env=await setup();env.DB=new DB()
  assert.equal((await request(env,'config')).status,200)
@@ -235,7 +303,7 @@ test('Facebook requires email proof in the initiating browser and GitHub require
 })
 
 test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers encrypted order alerts once',async()=>{
- const env=await setup()
+ const env=await setup();env.NEXI_XPAY_API_KEY='test'
  const signing=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify'])
  const subscriber=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits'])
  const userKey=Buffer.from(await crypto.subtle.exportKey('raw',subscriber.publicKey))
@@ -248,6 +316,7 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
  globalThis.fetch=async(url,init)=>{
   if(String(url)===subscription.endpoint){pushes.push(init);return new Response(null,{status:201})}
   if(String(url).includes('resend'))return new Response('{}',{status:200})
+  if(String(url).includes('/api/v1/orders/hpp'))return new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/hpp',securityToken:'push-token'}),{status:200})
   throw new Error('Unexpected provider '+url)
  }
  try{
@@ -257,9 +326,14 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   const bad={...subscription,endpoint:'https://fcm.googleapis.com.example.test/private'}
   assert.equal((await request(env,'admin/push/subscribe',{subscription:bad},cookie)).status,400)
   assert.equal((await request(env,'admin/push/subscribe',{subscription},cookie)).status,200)
-  const product=env.DB.db.prepare("SELECT id,colors_json,sizes_json FROM products WHERE active=1 LIMIT 1").get()
+  env.DB.db.prepare("INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('push-product','Push dress','push-dress',10000,'Abiti','[\"Nero\"]','[\"S\"]',1)").run()
+  const product={id:'push-product',colors_json:'["Nero"]',sizes_json:'["S"]'}
   const order=await request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:product.id,qty:1,size:JSON.parse(product.sizes_json)[0],color:JSON.parse(product.colors_json)[0]}]})
   assert.equal(order.status,201)
+  assert.equal(pushes.length,0,'staff should be notified after payment, not on a pending checkout')
+  const {orderId}=await order.json()
+  const amount=env.DB.db.prepare('SELECT amount_cents FROM payments WHERE order_id=?').get(orderId).amount_cents
+  assert.equal((await request(env,'payments/nexi/notification',{securityToken:'push-token',operation:{orderId,operationId:'push-paid',operationResult:'EXECUTED',operationAmount:String(amount),operationCurrency:'EUR'}})).status,200)
   assert.equal(pushes.length,1)
   assert.equal(pushes[0].headers['Content-Encoding'],'aes128gcm')
   assert.equal(pushes[0].redirect,'manual')
@@ -282,7 +356,7 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   const aes=await crypto.subtle.importKey('raw',cek,'AES-GCM',false,['decrypt'])
   const plaintext=Buffer.from(await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce},aes,payload.subarray(21+keyLength)))
   assert.equal(plaintext.at(-1),2)
-  assert.equal(JSON.parse(plaintext.subarray(0,-1)).title,'DeLù · nuovo ordine')
+  assert.equal(JSON.parse(plaintext.subarray(0,-1)).title,'DeLù · nuovo ordine pagato')
   await request(env,'config')
   assert.equal(pushes.length,1)
   assert.equal((await request(env,'admin/push/unsubscribe',{endpoint:subscription.endpoint},cookie)).status,200)
