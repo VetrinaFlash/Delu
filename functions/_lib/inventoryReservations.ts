@@ -81,12 +81,13 @@ export async function reclaimExpiredInventory(env:Env,finalize:(orderId:string,o
  for(const item of results){
   try{
    const response=await fetch(base+'/api/v1/orders/'+encodeURIComponent(item.order_id),{headers:{'X-API-KEY':env.NEXI_XPAY_API_KEY,'Correlation-Id':crypto.randomUUID()}})
+   if(response.status===404){await releaseInventory(env,item.order_id,'EXPIRED');continue}
    if(!response.ok)continue
    const payload:any=await response.json()
    const ops=payload?.operations||payload?.orderStatus?.operations||[]
    const all=Array.isArray(ops)?ops:[]
    const executed=[...all].reverse().find((x:any)=>x?.operationResult==='EXECUTED')
-   if(executed){await finalize(item.order_id,executed);continue}
+   if(executed){const payment=await env.DB.prepare('SELECT amount_cents FROM payments WHERE order_id=?').bind(item.order_id).first();if(Number(executed.operationAmount)===Number(payment?.amount_cents)&&String(executed.operationCurrency||'').toUpperCase()==='EUR')await finalize(item.order_id,executed);else console.error('Nexi amount mismatch on expired reservation',item.order_id);continue}
    // The 15-minute HPP window is well beyond expiry; no successful charge was reported.
    await releaseInventory(env,item.order_id,'EXPIRED')
    await env.DB.prepare("UPDATE orders SET status='Pagamento scaduto',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='Pagamento in attesa'").bind(item.order_id).run()
