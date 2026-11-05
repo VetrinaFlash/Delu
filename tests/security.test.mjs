@@ -278,7 +278,7 @@ test('Facebook requires email proof in the initiating browser and GitHub require
 })
 
 test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers encrypted order alerts once',async()=>{
- const env=await setup()
+ const env=await setup();env.NEXI_XPAY_API_KEY='test'
  const signing=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify'])
  const subscriber=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits'])
  const userKey=Buffer.from(await crypto.subtle.exportKey('raw',subscriber.publicKey))
@@ -291,6 +291,7 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
  globalThis.fetch=async(url,init)=>{
   if(String(url)===subscription.endpoint){pushes.push(init);return new Response(null,{status:201})}
   if(String(url).includes('resend'))return new Response('{}',{status:200})
+  if(String(url).includes('/api/v1/orders/hpp'))return new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/hpp',securityToken:'push-token'}),{status:200})
   throw new Error('Unexpected provider '+url)
  }
  try{
@@ -300,9 +301,14 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   const bad={...subscription,endpoint:'https://fcm.googleapis.com.example.test/private'}
   assert.equal((await request(env,'admin/push/subscribe',{subscription:bad},cookie)).status,400)
   assert.equal((await request(env,'admin/push/subscribe',{subscription},cookie)).status,200)
-  const product=env.DB.db.prepare("SELECT id,colors_json,sizes_json FROM products WHERE active=1 LIMIT 1").get()
+  env.DB.db.prepare("INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('push-product','Push dress','push-dress',10000,'Abiti','[\"Nero\"]','[\"S\"]',1)").run()
+  const product={id:'push-product',colors_json:'["Nero"]',sizes_json:'["S"]'}
   const order=await request(env,'checkout/nexi',{termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:product.id,qty:1,size:JSON.parse(product.sizes_json)[0],color:JSON.parse(product.colors_json)[0]}]})
   assert.equal(order.status,201)
+  assert.equal(pushes.length,0,'staff should be notified after payment, not on a pending checkout')
+  const {orderId}=await order.json()
+  const amount=env.DB.db.prepare('SELECT amount_cents FROM payments WHERE order_id=?').get(orderId).amount_cents
+  assert.equal((await request(env,'payments/nexi/notification',{securityToken:'push-token',operation:{orderId,operationId:'push-paid',operationResult:'EXECUTED',operationAmount:String(amount),operationCurrency:'EUR'}})).status,200)
   assert.equal(pushes.length,1)
   assert.equal(pushes[0].headers['Content-Encoding'],'aes128gcm')
   assert.equal(pushes[0].redirect,'manual')
@@ -325,7 +331,7 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   const aes=await crypto.subtle.importKey('raw',cek,'AES-GCM',false,['decrypt'])
   const plaintext=Buffer.from(await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce},aes,payload.subarray(21+keyLength)))
   assert.equal(plaintext.at(-1),2)
-  assert.equal(JSON.parse(plaintext.subarray(0,-1)).title,'DeLù · nuovo ordine')
+  assert.equal(JSON.parse(plaintext.subarray(0,-1)).title,'DeLù · nuovo ordine pagato')
   await request(env,'config')
   assert.equal(pushes.length,1)
   assert.equal((await request(env,'admin/push/unsubscribe',{endpoint:subscription.endpoint},cookie)).status,200)
