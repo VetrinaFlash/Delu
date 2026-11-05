@@ -23,11 +23,11 @@ function availableStock(product:Product,size?:string,color?:string){const varian
 
 function useCart(){
   const [stored,setItems]=useState<CartItem[]>(()=>{try{const rows=JSON.parse(localStorage.getItem('delu_cart')||'[]');return Array.isArray(rows)?rows:[]}catch{return[]}})
-  const items=stored.map(x=>({...x,product:products.find(p=>p.id===x.product?.id)||x.product})).filter(x=>x.product?.id)
+  const items=stored.filter(x=>x.product?.id)
   useEffect(()=>localStorage.setItem('delu_cart',JSON.stringify(stored)),[stored])
-  const add=(product:Product,size?:string,color?:string)=>setItems(old=>{const current=products.find(p=>p.id===product.id)||product;const stock=Math.min(20,availableStock(current,size,color));if(stock<=0||current.active===false)return old;const i=old.findIndex(x=>x.product.id===current.id&&x.size===size&&x.color===color);if(i<0)return[...old,{product:current,qty:1,size,color}];return old.map((x,n)=>n===i?{...x,product:current,qty:Math.min(stock,x.qty+1)}:x)})
+  const add=(product:Product,size?:string,color?:string)=>setItems(old=>{const current=product;const stock=Math.min(20,availableStock(current,size,color));if(stock<=0||current.active===false)return old;const i=old.findIndex(x=>x.product.id===current.id&&x.size===size&&x.color===color);if(i<0)return[...old,{product:current,qty:1,size,color}];return old.map((x,n)=>n===i?{...x,product:current,qty:Math.min(stock,x.qty+1)}:x)})
   const remove=(index:number)=>setItems(old=>old.filter((_,i)=>i!==index))
-  const setQty=(index:number,qty:number)=>setItems(old=>old.flatMap((x,i)=>{if(i!==index)return[x];const current=products.find(p=>p.id===x.product.id)||x.product;const max=Math.min(20,availableStock(current,x.size,x.color));const next=Math.min(max,Math.max(0,qty));return next?[{...x,product:current,qty:next}]:[]}))
+  const setQty=(index:number,qty:number)=>setItems(old=>old.flatMap((x,i)=>{if(i!==index)return[x];const current=x.product;const max=Math.min(20,availableStock(current,x.size,x.color));const next=Math.min(max,Math.max(0,qty));return next?[{...x,product:current,qty:next}]:[]}))
   const clear=()=>setItems([])
   const count=items.reduce((s,x)=>s+x.qty,0),subtotal=items.reduce((s,x)=>s+x.product.price*x.qty,0)
   const valid=items.every(x=>x.product.active!==false&&Number.isInteger(x.qty)&&x.qty>=1&&x.qty<=20&&x.qty<=availableStock(x.product,x.size,x.color));return{items,setItems,add,remove,setQty,clear,count,subtotal,valid}
