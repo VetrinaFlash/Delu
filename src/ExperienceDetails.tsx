@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
+import QuickNavigation from './QuickNavigation'
 
 export function TiltCard({children}:{children:ReactNode}){
   const reduced=useReducedMotion()
@@ -28,27 +29,15 @@ export function ScrollSignature({words}:{words:string[]}){
   </div>
 }
 
-export function ChapterNav({labels}:{labels:string[]}){
-  const [active,setActive]=useState('')
-  const ids=['experience','new-icons','editorial','visit']
+/** The home dock uses the very same shopping links as the catalogue.
+ * Preserve deep links to editorial chapters without dedicating the fixed bar to them. */
+export function HomeShopDock(){
   useEffect(()=>{
-    // One observer; no per-frame React state or document-wide mutations.
-    const observer=new IntersectionObserver(entries=>{
-      for(const entry of entries)if(entry.isIntersecting)setActive(entry.target.id)
-    },{rootMargin:'-25% 0px -65% 0px',threshold:0})
-    const elements=['home',...ids].map(id=>document.getElementById(id)).filter(Boolean) as HTMLElement[]
-    elements.forEach(el=>observer.observe(el))
-    const frame=requestAnimationFrame(()=>{
-      const id=window.location.hash.slice(1)
-      if(ids.includes(id))document.getElementById(id)?.scrollIntoView({behavior:'instant',block:'start'})
-    })
-    return()=>{observer.disconnect();cancelAnimationFrame(frame)}
+    const targets=new Set(['experience','new-icons','editorial','visit'])
+    const target=window.location.hash.slice(1)
+    if(!targets.has(target))return
+    const frame=requestAnimationFrame(()=>document.getElementById(target)?.scrollIntoView({behavior:'instant',block:'start'}))
+    return()=>cancelAnimationFrame(frame)
   },[])
-  return <nav className="ph-chapters" aria-label="DeLù chapters">
-    {ids.map((id,index)=><a href={'#'+id} key={id} aria-current={active===id?'location':undefined}>
-      <span>{String(index+1).padStart(2,'0')}</span><b>{labels[index]}</b>
-      {active===id&&<motion.i layoutId="chapter-indicator" transition={{type:'spring',stiffness:340,damping:32}}/>}
-    </a>)}
-  </nav>
+  return <div className="ph-home-shop-dock"><QuickNavigation/></div>
 }
-
