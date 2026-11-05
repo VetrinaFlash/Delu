@@ -34,8 +34,11 @@ try{
   const errors=[]
   page.on('pageerror',error=>errors.push(error.message))
   await page.goto(base,{waitUntil:'domcontentloaded',timeout:45000})
+  await page.getByTestId('intro').waitFor({state:'hidden',timeout:12000})
   const rail=page.locator('[data-testid="live-wardrobe"]')
   await rail.scrollIntoViewIfNeeded({timeout:30000})
+  await page.waitForTimeout(900)
+  await rail.scrollIntoViewIfNeeded({timeout:15000})
   await rail.locator('.dl-wardrobe-item').first().waitFor({state:'visible',timeout:25000})
   const title=await rail.locator('.dl-wardrobe-selected h3').innerText()
   const price=await rail.locator('.dl-wardrobe-selected-meta strong').innerText()
@@ -51,6 +54,9 @@ try{
    await rail.getByRole('button',{name:'Capo successivo'}).click()
    assert.notEqual(await rail.locator('.dl-wardrobe-selected h3').innerText(),title,'Next button should move garment')
   }
+  const stage=await rail.locator('.dl-wardrobe-stage').boundingBox()
+  assert(stage && stage.y < height && stage.y+stage.height > 0,'Rail must be visually in viewport, not hidden behind a splash')
+  assert(await page.getByTestId('intro').count()===0,'Screenshot must not capture intro overlay')
   await page.screenshot({path:'test-results/wardrobe-live-'+width+'.png',fullPage:false})
   assert.deepEqual(errors,[],'No uncaught browser exceptions')
   console.log('LIVE '+width+'x'+height+': '+title+' '+price+' OK; overflow='+overflow)
