@@ -15,8 +15,8 @@
 .dl-wardrobe-item[data-offset="0"]{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateZ(0) rotateY(0deg) scale(1)}
 .dl-wardrobe-item[data-offset="-1"]{opacity:.75;visibility:visible;transform:translateX(calc(-50% - var(--dl-rail-step))) translateZ(-24px) rotateY(34deg) scale(.83)}
 .dl-wardrobe-item[data-offset="1"]{opacity:.75;visibility:visible;transform:translateX(calc(-50% + var(--dl-rail-step))) translateZ(-24px) rotateY(-34deg) scale(.83)}
-.dl-wardrobe-item[data-offset="-2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% - var(--dl-rail-step) * 1.87)) translateZ(-70px) rotateY(45deg) scale(.66)}
-.dl-wardrobe-item[data-offset="2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% + var(--dl-rail-step) * 1.87)) translateZ(-70px) rotateY(-45deg) scale(.66)}
+.dl-wardrobe-item[data-offset="-2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% - var(--dl-rail-step) - var(--dl-rail-step))) translateZ(-70px) rotateY(45deg) scale(.66)}
+.dl-wardrobe-item[data-offset="2"]{opacity:.37;visibility:visible;transform:translateX(calc(-50% + var(--dl-rail-step) + var(--dl-rail-step))) translateZ(-70px) rotateY(-45deg) scale(.66)}
 .dl-wardrobe-hook{height:55px;display:grid;place-items:end center;color:#958c91;filter:drop-shadow(0 3px 3px #0001)}
 .dl-wardrobe-hook svg{height:48px}
 .dl-wardrobe-photo{position:relative;display:block;width:270px;height:310px;padding:8px;background:#fff;border:1px solid #f2e4ea;box-shadow:0 20px 46px #3b243b30,0 3px 10px #3420341a;border-radius:4px;overflow:hidden;cursor:pointer}
