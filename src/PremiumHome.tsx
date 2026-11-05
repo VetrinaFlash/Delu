@@ -1,9 +1,9 @@
 import QuickNavigation from './QuickNavigation'
 import WardrobeRail from './WardrobeRail'
-import { TiltCard } from './ExperienceDetails'
+import { ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
-import { ArrowDownRight, ArrowRight, AtSign, Globe2, UserRound, MapPin, Search } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, AtSign, Globe2, UserRound, Heart, MapPin, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { products } from './data'
 import { LocaleProvider, useLocale, type Locale } from './i18n'
@@ -38,26 +38,55 @@ function HomeInner(){
   // Preserve old section deep links even though the chapter dock is replaced with the shop actions.
   useEffect(()=>{
     const id=window.location.hash.slice(1)
-    if(!['experience','wardrobe','new-icons','editorial','visit'].includes(id))return
+    if(!['experience','new-icons','editorial','visit'].includes(id))return
     const frame=requestAnimationFrame(()=>document.getElementById(id)?.scrollIntoView({behavior:'instant',block:'start'}))
     return()=>cancelAnimationFrame(frame)
   },[])
+  const [scene,setScene]=useState(0)
   const [scrolled,setScrolled]=useState(false)
   const [travel,setTravel]=useState(0)
   const {scrollYProgress:pageProgress}=useScroll()
   const readingProgress=useSpring(pageProgress,{stiffness:100,damping:30})
+  function chooseScene(index:number){
+    const element=campaignRef.current
+    if(!element)return
+    const progress=[.05,.46,.86][index]
+    window.scrollTo({top:element.offsetTop+(element.offsetHeight-window.innerHeight)*progress,behavior:reducedMotion?"instant":"smooth"})
+  }
   const trackRef=useRef<HTMLDivElement>(null)
   const heroRef=useRef<HTMLElement>(null)
+  const campaignRef=useRef<HTMLElement>(null)
   const showcaseRef=useRef<HTMLElement>(null)
   const editorialRef=useRef<HTMLElement>(null)
   const{scrollYProgress:heroProgress}=useScroll({target:heroRef,offset:['start start','end start']})
+  const{scrollYProgress:campaignProgress}=useScroll({target:campaignRef,offset:['start start','end end']})
   const{scrollYProgress:showcaseProgress}=useScroll({target:showcaseRef,offset:['start start','end end']})
   const{scrollYProgress:editorialProgress}=useScroll({target:editorialRef,offset:['start end','end start']})
   const heroScale=useTransform(heroProgress,[0,1],[1,1.12])
   const heroY=useTransform(heroProgress,[0,1],['0%','12%'])
   const heroTextY=useTransform(heroProgress,[0,1],['0%','-22%'])
+  const campaignOneOpacity=useTransform(campaignProgress,[0,.20,.38],[1,1,0])
+  const campaignTwoOpacity=useTransform(campaignProgress,[.22,.43,.66],[0,1,0])
+  const campaignThreeOpacity=useTransform(campaignProgress,[.52,.75,1],[0,1,1])
+  const campaignOneScale=useTransform(campaignProgress,[0,.38],[1.02,1.13])
+  const campaignTwoScale=useTransform(campaignProgress,[.22,.66],[1.12,1.01])
+  const campaignThreeScale=useTransform(campaignProgress,[.52,1],[1.12,1.02])
+  const portalScale=useTransform(campaignProgress,[0,.32,.65,1],[.48,1.12,1.65,2.3])
+  const portalRotate=useTransform(campaignProgress,[0,1],[-12,8])
+  const portalOpacity=useTransform(campaignProgress,[0,.12,.75,1],[.8,.55,.3,0])
+  const depthA=useTransform(campaignProgress,[0,.38],[0,150])
+  const depthB=useTransform(campaignProgress,[.22,.66],[-35,130])
+  const depthC=useTransform(campaignProgress,[.52,1],[-35,100])
+  const campaignOneY=useTransform(campaignProgress,[0,.38],['0%','-6%'])
+  const campaignTwoY=useTransform(campaignProgress,[.22,.66],['5%','-4%'])
+  const campaignThreeY=useTransform(campaignProgress,[.52,1],['6%','-3%'])
+  const campaignCopyA=useTransform(campaignProgress,[0,.16,.32,.40],[1,1,1,0])
+  const campaignCopyB=useTransform(campaignProgress,[.28,.41,.56,.68],[0,1,1,0])
+  const campaignCopyC=useTransform(campaignProgress,[.58,.72,.92,1],[0,1,1,1])
+  const campaignWordX=useTransform(campaignProgress,[0,1],['18vw','-58vw'])
   const trackX=useTransform(showcaseProgress,[0,1],[0,-travel])
   useMotionValueEvent(heroProgress,'change',value=>setScrolled(value>.08))
+  useMotionValueEvent(campaignProgress,'change',value=>setScene(value<.34?0:value<.64?1:2))
   useEffect(()=>{
     const element=trackRef.current
     if(!element)return
@@ -113,9 +142,25 @@ function HomeInner(){
       <motion.p initial={{opacity:0,y:26}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.7}} transition={{duration:.8}}>{c.statementText}</motion.p>
     </section>
 
-    <div id="experience" className="ph-wardrobe-entry" data-testid="wardrobe-first-experience">
-      <WardrobeRail/>
-    </div>
+    <WardrobeRail/>
+
+    <ScrollSignature words={[c.campaignA,c.campaignB,c.campaignC]}/>
+    <section id="experience" ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
+      <div className="ph-campaign-sticky">
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignOneOpacity,scale:campaignOneScale,y:campaignOneY,z:depthA,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2000&q=88" alt="DeLù feminine edit"/></motion.div>
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignTwoOpacity,scale:campaignTwoScale,y:campaignTwoY,z:depthB,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=2000&q=88" alt="DeLù bold edit"/></motion.div>
+        <motion.div className="ph-campaign-media" style={reducedMotion?undefined:{opacity:campaignThreeOpacity,scale:campaignThreeScale,y:campaignThreeY,z:depthC,transformPerspective:1200}}><img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=2000&q=88" alt="DeLù personal style"/></motion.div>
+        <div className="ph-campaign-shade"/>
+        {!reducedMotion&&<motion.div className="ph-depth-portal" aria-hidden="true" style={{scale:portalScale,rotate:portalRotate,opacity:portalOpacity}}><i/><i/><i/></motion.div>}
+        <div className="ph-campaign-top"><span>{c.campaignLabel}</span><i/><b>{String(scene+1).padStart(2,'0')} — 03</b></div>
+        <motion.div className="ph-campaign-word" style={{x:campaignWordX}} aria-hidden="true">DELÙ · DELÙ · DELÙ</motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--a" inert={!reducedMotion&&scene!==0} aria-hidden={!reducedMotion&&scene!==0} style={{opacity:campaignCopyA}}><small>01</small><h2>{c.campaignA}</h2><p>{c.campaignAText}</p></motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--b" inert={!reducedMotion&&scene!==1} aria-hidden={!reducedMotion&&scene!==1} style={{opacity:campaignCopyB}}><small>02</small><h2>{c.campaignB}</h2><p>{c.campaignBText}</p></motion.div>
+        <motion.div className="ph-campaign-copy ph-campaign-copy--c" inert={!reducedMotion&&scene!==2} aria-hidden={!reducedMotion&&scene!==2} style={{opacity:campaignCopyC}}><small>03</small><h2>{c.campaignC}</h2><p>{c.campaignCText}</p><Link to="/shop">{c.discover}<ArrowRight/></Link></motion.div>
+        <div className="atelier-scene-picker" role="group" aria-label={c.campaignLabel}>{[c.campaignA,c.campaignB,c.campaignC].map((label,index)=><button type="button" key={index} aria-pressed={scene===index} onClick={()=>chooseScene(index)}><span>{String(index+1).padStart(2,"0")}</span>{label}</button>)}</div>
+        <div className="ph-campaign-progress"><motion.i style={{scaleX:campaignProgress}}/></div>
+      </div>
+    </section>
 
     <section id="new-icons" ref={showcaseRef} className="ph-showcase">
       <div className="ph-showcase-sticky">
