@@ -11,6 +11,7 @@ async function campaignOpacities(page:any){
 
 test.describe('DeLù customer experience',()=>{
   test('home motion is visible, scroll-linked and leads cleanly to shop',async({page},testInfo)=>{
+    await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
     const pageErrors:string[]=[]
     page.on('pageerror',error=>pageErrors.push(error.message))
 
