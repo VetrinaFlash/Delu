@@ -363,3 +363,35 @@ test('admin Web Push is authenticated, rejects arbitrary endpoints and delivers 
   assert.equal(env.DB.db.prepare('SELECT count(*) AS n FROM admin_push_devices').get().n,0)
  }finally{globalThis.fetch=original}
 })
+
+
+test('Cloudflare preview wardrobe proxy reads only public production products, without credentials',async()=>{
+ const {onRequestGet}=await import('../functions/api/wardrobe-products.ts')
+ const original=globalThis.fetch
+ let called=0
+ globalThis.fetch=async(url,options)=>{
+  called++
+  assert.equal(url,'https://delu-49u.pages.dev/api/products')
+  assert.equal(options.method,'GET')
+  assert.equal(options.headers.accept,'application/json')
+  assert.equal(options.headers.cookie,undefined)
+  assert.equal(options.headers.authorization,undefined)
+  return Response.json([{id:'real-1',name:'Prodotto del negozio',price:129,stock:2,image:'/item.jpg',category:'Abiti',colors:['Nero'],sizes:['M'],tags:[],variants:[],customer_email:'SECRET_SHOULD_NOT_LEAK'}])
+ }
+ try{
+  assert.equal((await onRequestGet({request:new Request('https://delu-49u.pages.dev/api/wardrobe-products')})).status,404)
+  assert.equal((await onRequestGet({request:new Request('https://malicious.example/api/wardrobe-products')})).status,404)
+  assert.equal(called,0)
+  const request=new Request('https://4bf079ca.delu-49u.pages.dev/api/wardrobe-products',{headers:{Cookie:'delu_admin=private','Authorization':'Bearer private'}})
+  const response=await onRequestGet({request})
+  assert.equal(response.status,200)
+  assert.equal(response.headers.get('cache-control'),'no-store')
+  const rows=await response.json()
+  assert.equal(rows.length,1)
+  assert.equal(rows[0].name,'Prodotto del negozio')
+  assert.equal(rows[0].price,129)
+  assert.equal(rows[0].stock,2)
+  assert.equal(rows[0].customer_email,undefined)
+  assert.equal(called,1)
+ }finally{globalThis.fetch=original}
+})
