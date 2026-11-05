@@ -703,3 +703,21 @@ test('digital wardrobe rail never substitutes demo prices when D1 is unavailable
   await expect(rail.getByRole('link',{name:'ESPLORA LO SHOP'})).toHaveAttribute('href','/shop')
   await expectNoHorizontalOverflow(page)
 })
+
+
+test('D1 wardrobe item not in hardcoded seed opens a purchasable product page',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ const item={id:'real-live-boutique-123',name:'Abito Rosa Reale',description:'Capo inserito dal pannello negozio',price:125,stock:2,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:['Rosa'],sizes:['M'],tags:['boutique'],variants:[{color:'Rosa',size:'M',stock:2}]}
+ await page.route('**/api/products',route=>route.fulfill({json:[item]}))
+ await page.goto('/')
+ const rail=page.getByTestId('live-wardrobe')
+ await rail.scrollIntoViewIfNeeded()
+ await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText(item.name)
+ await rail.getByRole('link',{name:'SCOPRI IL CAPO'}).click()
+ await expect(page).toHaveURL(/\/product\/real-live-boutique-123$/)
+ await expect(page.locator('.ds-product-detail h1')).toHaveText(item.name)
+ await expect(page.locator('.ds-product-detail strong').first()).toContainText('125,00')
+ await expect(page.locator('.ds-stock-indicator')).toContainText('2 disponibili')
+ await expect(page.locator('.ds-product-detail > .ds-pay')).toBeEnabled()
+ await expectNoHorizontalOverflow(page)
+})
