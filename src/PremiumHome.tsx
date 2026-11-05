@@ -1,4 +1,5 @@
 import QuickNavigation from './QuickNavigation'
+import WardrobeRail from './WardrobeRail'
 import { ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
@@ -158,6 +159,8 @@ function HomeInner(){
         <div className="ph-campaign-progress"><motion.i style={{scaleX:campaignProgress}}/></div>
       </div>
     </section>
+
+    <WardrobeRail/>
 
     <section id="new-icons" ref={showcaseRef} className="ph-showcase">
       <div className="ph-showcase-sticky">
