@@ -689,6 +689,7 @@ test('wardrobe renders real snapshot on 320px mobile without horizontal scrollin
 })
 
 test('wardrobe preview does not substitute fake prices if snapshot is invalid',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   await page.route('**/wardrobe-catalog.json',r=>r.fulfill({status:503,json:{error:'not ready'}}))
   await page.goto('/')
   const rail=page.getByTestId('live-wardrobe')
