@@ -124,6 +124,8 @@
  .ph-header.ph-header--wardrobe{height:76px!important;min-height:76px!important}
  .ph-header--wardrobe .ph-logo{width:145px!important}
  .ph-header--wardrobe .delu-tagline{font-size:10px!important}
+ /* Give tablet users the same immediate first-fold product focus as phone users. */
+ .ph-hero--wardrobe .dl-wardrobe--hero{justify-content:flex-start;padding-top:104px}
 }
 @media(max-width:620px){
  .ph-header.ph-header--wardrobe{
