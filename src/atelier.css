@@ -115,3 +115,101 @@
     color: white;
   }
 }
+
+
+/* Home navigation mirrors the real shop shortcuts, replacing Experience / Editorial / Follonica.
+ * Retain the existing hero-first reveal and premium black floating dock on every viewport. */
+.ph-atelier .home-shop-dock {
+  position: fixed;
+  z-index: 125;
+  bottom: max(16px, env(safe-area-inset-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 28px));
+  max-width: calc(100% - 28px);
+  border-radius: 999px;
+  background: #171319;
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 12px 36px rgba(21,12,21,.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: opacity .25s ease, visibility .25s ease;
+}
+.ph-atelier:not(.atelier-scrolled) .home-shop-dock {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.ph-atelier .home-shop-dock .quick-navigation {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 5px;
+  gap: 3px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: #fff;
+  box-shadow: none;
+}
+.ph-atelier .home-shop-dock .quick-navigation > :is(a,button) {
+  min-height: 50px;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-decoration: none;
+}
+.ph-atelier .home-shop-dock .quick-navigation svg {
+  width: 18px;
+  height: 18px;
+  color: #f0b4cf;
+}
+.ph-atelier .home-shop-dock .quick-navigation > :is(a,button):hover,
+.ph-atelier .home-shop-dock .quick-navigation > a[aria-current="page"] {
+  background: #f3bfd6;
+  color: #241923;
+}
+.ph-atelier .home-shop-dock .quick-navigation > :is(a,button):hover svg,
+.ph-atelier .home-shop-dock .quick-navigation > a[aria-current="page"] svg {
+  color: #241923;
+}
+.ph-atelier .home-shop-dock .quick-navigation :focus-visible {
+  outline: 2px solid #f6c6dc;
+  outline-offset: -2px;
+}
+@media (max-width: 620px) {
+  .ph-atelier .home-shop-dock {
+    width: min(480px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    bottom: max(10px, env(safe-area-inset-bottom) + 8px);
+    border-radius: 24px;
+  }
+  .ph-atelier .home-shop-dock .quick-navigation {
+    padding: 4px;
+    gap: 1px;
+  }
+  .ph-atelier .home-shop-dock .quick-navigation > :is(a,button) {
+    min-height: 58px;
+    padding: 7px 2px;
+    gap: 5px;
+    flex-direction: column;
+    border-radius: 19px;
+    font-size: clamp(8px, 2.7vw, 10px);
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+  .ph-atelier .home-shop-dock .quick-navigation svg {
+    width: 19px;
+    height: 19px;
+  }
+  .ph-atelier .home-service-links {
+    padding-bottom: 90px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ph-atelier .home-shop-dock {
+    transition: none;
+  }
+}
