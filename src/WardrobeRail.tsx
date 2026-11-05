@@ -35,7 +35,7 @@ function offsetFor(index:number,active:number,count:number){
 function Hanger(){
  return <svg viewBox="0 0 160 50" width="160" height="50" aria-hidden="true"><path d="M79 13c-2-12 14-12 14-1 0 7-9 9-9 14M80 26 15 44q-8 2-8-3t9-7l59-17q5-2 11 0l59 17q10 4 7 9-2 5-11 1Z" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
 }
-export default function WardrobeRail(){
+export default function WardrobeRail({hero=false}:{hero?:boolean}){
  const hostname=typeof window==='undefined'?'':window.location.hostname
  const preview=hostname==='localhost'||hostname==='127.0.0.1'||(hostname.endsWith('.delu-49u.pages.dev')&&hostname!=='delu-49u.pages.dev')
  const linkFor=(id:string)=>preview?'https://delu-49u.pages.dev/product/'+encodeURIComponent(id):'/product/'+encodeURIComponent(id)
@@ -72,8 +72,8 @@ export default function WardrobeRail(){
   const dx=event.clientX-started.x,dy=event.clientY-started.y
   if(Math.abs(dx)>42&&Math.abs(dx)>Math.abs(dy)*1.2){swiped.current=true;go(dx<0?1:-1)}
  }
- return <section ref={section} id="wardrobe" className="dl-wardrobe" data-testid="live-wardrobe" aria-label="DELÙ digital wardrobe">
-  <header className="dl-wardrobe-heading"><span>DELÙ / DIGITAL WARDROBE</span><h2>{t.title}</h2><p>{t.subtitle}</p></header>
+ return <section ref={section} id="wardrobe" className={"dl-wardrobe"+(hero?" dl-wardrobe--hero":"")} data-testid="live-wardrobe" aria-label="DELÙ digital wardrobe">
+  <header className="dl-wardrobe-heading"><span>DELÙ / DIGITAL WARDROBE</span>{hero?<h1>{t.title}</h1>:<h2>{t.title}</h2>}<p>{t.subtitle}</p></header>
   {loading||error||!total?<div className="dl-wardrobe-placeholder" aria-live="polite"><Hanger/><p>{loading?t.loading:error?t.error:t.empty}</p>{!loading&&<Link to="/shop">{t.shop}<ArrowUpRight size={16}/></Link>}</div>:<>
    <div className="dl-wardrobe-stage" role="region" aria-roledescription="carousel" aria-label="DELÙ wardrobe products" tabIndex={0}
      onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={()=>{drag.current=null}}
