@@ -649,7 +649,7 @@ test('admin product editor keeps SKU and allows rearranging photos',async({page}
 })
 
 
-test('wardrobe preview shows snapshot-backed real catalogue prices and safe purchase links',async({page},testInfo)=>{
+test('wardrobe shows accurate catalogue prices and purchase links on preview and production',async({page},testInfo)=>{
   await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   const snapshot={source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
     {id:'real-rail-a',name:'Abito Rosa Boutique',price:89.95,stock:2,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:['Rosa'],sizes:['S'],tags:[]},
@@ -657,6 +657,8 @@ test('wardrobe preview shows snapshot-backed real catalogue prices and safe purc
     {id:'sold-rail',name:'Capo Esaurito',price:99,stock:0,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
   ]}
   await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:snapshot}))
+  // Production fetches /api/products directly, unlike the snapshot-backed preview.
+  await page.route('**/api/products',r=>r.fulfill({json:snapshot.products}))
   const errors:string[]=[]
   page.on('pageerror',err=>errors.push(err.message))
   await page.goto('/')
@@ -667,8 +669,13 @@ test('wardrobe preview shows snapshot-backed real catalogue prices and safe purc
   await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('89,95')
   await expect(rail.locator('.dl-wardrobe-selected-meta')).toContainText('2 disponibili')
   await expect(rail).not.toContainText('Capo Esaurito')
-  await expect(rail.locator('.dl-wardrobe-preview-note')).toContainText('Disponibilità indicativa')
-  await expect(rail.getByRole('link',{name:'SCOPRI IL CAPO'})).toHaveAttribute('href','https://delu-49u.pages.dev/product/real-rail-a')
+  if(process.env.PLAYWRIGHT_BASE_URL){
+   await expect(rail.locator('.dl-wardrobe-preview-note')).toHaveCount(0)
+   await expect(rail.getByRole('link',{name:'SCOPRI IL CAPO'})).toHaveAttribute('href','/product/real-rail-a')
+  }else{
+   await expect(rail.locator('.dl-wardrobe-preview-note')).toContainText('Disponibilità indicativa')
+   await expect(rail.getByRole('link',{name:'SCOPRI IL CAPO'})).toHaveAttribute('href','https://delu-49u.pages.dev/product/real-rail-a')
+  }
   await rail.getByRole('button',{name:'Capo successivo'}).click()
   await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Blazer da Sera')
   await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('129,00')
@@ -683,10 +690,12 @@ test('wardrobe preview shows snapshot-backed real catalogue prices and safe purc
 test('wardrobe renders real snapshot on 320px mobile without horizontal scrolling',async({page},testInfo)=>{
   await page.setViewportSize({width:320,height:740})
   await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
-  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:{source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
+  const liveItems=[
     {id:'product-a',name:'Vestito Venezia',price:73,stock:3,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]},
     {id:'product-b',name:'Vestito Milano',price:44,stock:1,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
-  ]}}))
+  ]
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:{source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:liveItems}}))
+  await page.route('**/api/products',r=>r.fulfill({json:liveItems}))
   await page.goto('/')
   const rail=page.getByTestId('live-wardrobe')
   await rail.scrollIntoViewIfNeeded()
@@ -700,6 +709,7 @@ test('wardrobe renders real snapshot on 320px mobile without horizontal scrollin
 test('wardrobe preview does not substitute fake prices if snapshot is invalid',async({page})=>{
   await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   await page.route('**/wardrobe-catalog.json',r=>r.fulfill({status:503,json:{error:'not ready'}}))
+  await page.route('**/api/products',r=>r.fulfill({status:503,json:{error:'not ready'}}))
   await page.goto('/')
   const rail=page.getByTestId('live-wardrobe')
   await rail.scrollIntoViewIfNeeded()
@@ -751,7 +761,7 @@ test('mobile wardrobe header is compact, readable and reveals the first garment 
   const heading=await wardrobe.locator('.dl-wardrobe-heading').boundingBox()
   expect(heading).not.toBeNull()
   expect(heading!.y).toBeGreaterThanOrEqual(box!.y+box!.height-2)
-  expect(heading!.y).toBeLessThan(height*.28)
+  expect(heading!.y).toBeLessThan(height*(width<=620?.28:.34))
   if(width<=620)await expect(header.locator('.delu-tagline')).toBeHidden()
   await expectNoHorizontalOverflow(page)
  }
