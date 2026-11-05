@@ -104,7 +104,7 @@ function HomeInner(){
 
   return <main className={`ph-root ph-atelier${scrolled?" atelier-scrolled":""}`}>
     <motion.div className="atelier-reading-progress" aria-hidden="true" style={{scaleX:readingProgress}}/>
-    <header className={`ph-header${scrolled?' is-scrolled':''}`}>
+    <header className={`ph-header ph-header--wardrobe${scrolled?' is-scrolled':''}`}>
       <Link className="ph-head-link" to="/shop">{c.shop}</Link>
       <Link className="ph-logo" to="/" aria-label="DeLù Clothes Shop"><img src="/delu-logo.svg" alt="DeLù Clothes Shop"/><span className="delu-tagline">{t('brandTagline')}</span></Link>
       <div className="ph-head-actions">
