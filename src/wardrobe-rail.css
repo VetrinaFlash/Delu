@@ -116,3 +116,40 @@
  .ph-hero--wardrobe .dl-wardrobe-stage{height:312px}
  .ph-hero--wardrobe .dl-wardrobe-photo{height:213px}
 }
+
+
+/* Compact ONLY the Wardrobe home header, never the shop or admin.
+   The full-height brand-fit header is 108px on phones and obscures the new first fold. */
+@media(min-width:621px) and (max-width:980px){
+ .ph-header.ph-header--wardrobe{height:76px!important;min-height:76px!important}
+ .ph-header--wardrobe .ph-logo{width:145px!important}
+ .ph-header--wardrobe .delu-tagline{font-size:10px!important}
+}
+@media(max-width:620px){
+ .ph-header.ph-header--wardrobe{
+  height:66px!important;min-height:66px!important;
+  padding:0 max(13px,env(safe-area-inset-left)) 0 max(13px,env(safe-area-inset-right))!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  background:rgba(19,17,21,.97)!important;
+  box-shadow:0 2px 12px #251e2517;
+ }
+ .ph-header--wardrobe .ph-logo{width:94px!important;min-width:0;align-self:center}
+ .ph-header--wardrobe .ph-logo img{
+  width:89px!important;height:39px!important;max-width:100%;
+  object-fit:contain!important;
+ }
+ .ph-header--wardrobe .delu-tagline{display:none!important}
+ .ph-header--wardrobe .ph-head-link{font-size:11px;letter-spacing:.13em;min-height:44px}
+ .ph-header--wardrobe .ph-head-actions{min-width:0}
+ .ph-header--wardrobe .ph-language{height:44px;min-width:62px;display:flex;justify-content:flex-end}
+ .ph-header--wardrobe .ph-language select{min-height:44px;max-width:72px;font-size:10px}
+ .ph-hero--wardrobe .dl-wardrobe--hero{
+  padding-top:clamp(82px,10svh,96px);
+ }
+}
+@media(max-width:360px){
+ .ph-header.ph-header--wardrobe{height:62px!important;min-height:62px!important}
+ .ph-header--wardrobe .ph-logo{width:84px!important}
+ .ph-header--wardrobe .ph-logo img{width:80px!important;height:34px!important}
+ .ph-hero--wardrobe .dl-wardrobe--hero{padding-top:78px}
+}
