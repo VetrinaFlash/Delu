@@ -88,6 +88,29 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 
+-- Nexi XPay checkout reservations. A reservation temporarily subtracts public stock;
+-- payment turns it into a sale, cancellation/expiry restores it exactly once.
+CREATE TABLE IF NOT EXISTS stock_reservations (
+  order_id TEXT PRIMARY KEY,
+  state TEXT NOT NULL DEFAULT 'HELD',
+  expires_at INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_stock_reservations_expiry ON stock_reservations(state, expires_at);
+CREATE TABLE IF NOT EXISTS stock_reservation_items (
+  order_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  variant_id INTEGER,
+  qty INTEGER NOT NULL CHECK(qty>0),
+  color TEXT NOT NULL DEFAULT '',
+  size TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY(order_id,product_id,color,size),
+  FOREIGN KEY(order_id) REFERENCES stock_reservations(order_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_items_product ON stock_reservation_items(product_id);
+
 CREATE TABLE IF NOT EXISTS inventory_movements (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   product_id TEXT NOT NULL,
