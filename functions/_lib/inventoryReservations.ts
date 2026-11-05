@@ -81,7 +81,7 @@ export async function reclaimExpiredInventory(env:Env,finalize:(orderId:string,o
  for(const item of results){
   try{
    const response=await fetch(base+'/api/v1/orders/'+encodeURIComponent(item.order_id),{headers:{'X-API-KEY':env.NEXI_XPAY_API_KEY,'Correlation-Id':crypto.randomUUID()}})
-   if(response.status===404){await releaseInventory(env,item.order_id,'EXPIRED');continue}
+   if(response.status===404){await releaseInventory(env,item.order_id,'EXPIRED');await env.DB.prepare("UPDATE orders SET status='Pagamento scaduto',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='Pagamento in attesa'").bind(item.order_id).run();continue}
    if(!response.ok)continue
    const payload:any=await response.json()
    const ops=payload?.operations||payload?.orderStatus?.operations||[]
