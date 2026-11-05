@@ -74,6 +74,7 @@ function newOrderId(){return`DL${Date.now().toString().slice(-12)}${crypto.rando
 async function checkoutNexi(request:Request,env:Env){
  if(!env.TERMS_NOTICE||!env.RETURNS_ADDRESS||!env.PRIVACY_NOTICE)return json({error:'Il negozio deve completare privacy, condizioni di vendita e indirizzo per i resi.'},503)
  if(!env.NEXI_XPAY_API_KEY)return json({error:'Pagamento Nexi non ancora configurato.'},503)
+ if(!await limit(env,'instant-checkout:'+(request.headers.get('cf-connecting-ip')||'unknown'),10,900))return json({error:'Troppi tentativi di pagamento. Riprova più tardi.'},429)
  await ensureCommerceTables(env)
  await reclaimExpiredInventory(env,(id,operation)=>finalizePaid(env,id,operation),3).catch(console.error)
  const b:any=await request.json().catch(()=>null)
@@ -116,6 +117,8 @@ async function checkoutNexi(request:Request,env:Env){
  }
  const data:any=await response.json().catch(()=>({}))
  if(!response.ok){
+  // Provider 5xx is ambiguous: it may have created the payment. Never release on uncertainty.
+  if(response.status>=500){await env.DB.prepare("UPDATE payments SET status='CHECK_REQUIRED' WHERE order_id=? AND status='CREATING'").bind(orderId).run();return json({error:'Nexi non ha confermato l’avvio. Verifica il pagamento con il negozio prima di riprovare.'},502)}
   await releaseInventory(env,orderId,'INIT_FAILED')
   await env.DB.prepare("UPDATE orders SET status='Pagamento fallito',updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(orderId).run()
   return json({error:'Nexi non ha accettato l’avvio del pagamento. Riprova.'},502)
