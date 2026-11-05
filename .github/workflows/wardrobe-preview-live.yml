@@ -1,0 +1,27 @@
+name: Wardrobe Preview Live QA
+on:
+  push:
+    branches:
+      - feature/wardrobe-snapshot-working-20261105
+  workflow_dispatch:
+jobs:
+  verify-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - name: Verify live Cloudflare preview against real public production catalogue
+        env:
+          PREVIEW_BASE: https://feature-wardrobe-snapshot-wo.delu-49u.pages.dev
+        run: node scripts/verify-wardrobe-preview.mjs
+      - name: Upload real browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wardrobe-actual-cloudflare
+          path: test-results/wardrobe-live-*.png
+          retention-days: 7
