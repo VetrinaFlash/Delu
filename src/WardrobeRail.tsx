@@ -78,7 +78,7 @@ export default function WardrobeRail(){
      {items.map((item,index)=>{
       const offset=offsetFor(index,active,total),current=index===active
       const style={'--rail-index':offset,'--rail-turn':(offset===0?0:offset<0?34:-34)+'deg','--rail-scale':current?1:Math.abs(offset)===1?.83:.65,'--rail-depth':(current?0:Math.abs(offset)===1?-24:-70)+'px','--rail-opacity':Math.abs(offset)<=2?1:0,zIndex:10-Math.abs(offset)} as CSSProperties
-      return <div key={item.id} className={'dl-wardrobe-item'+(current?' is-current':'')} style={style} aria-hidden={!current}>
+      return <div key={item.id} className={'dl-wardrobe-item'+(current?' is-current':'')} style={style} data-offset={offset} aria-hidden={!current}>
        <div className="dl-wardrobe-hook"><Hanger/></div>
        <Link to={'/product/'+encodeURIComponent(item.id)} tabIndex={current?0:-1} className="dl-wardrobe-photo"
         onClick={event=>{if(swiped.current||!current){event.preventDefault();swiped.current=false;if(!current)setActive(index)}}}
