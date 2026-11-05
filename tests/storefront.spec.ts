@@ -638,3 +638,68 @@ test('admin product editor keeps SKU and allows rearranging photos',async({page}
   expect(submitted.images[0]).toBe('/admin-icon-192.png')
   expect(submitted.variants[0].sku).toBe('DL-NEW')
 })
+
+
+test('digital wardrobe rail uses real API prices and stock without demo products',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  const list=[
+    {id:'rail-01',name:'Abito Rosa in boutique',price:83.5,stock:2,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:['Rosa'],sizes:['S'],tags:[],variants:[{color:'Rosa',size:'S',stock:2}]},
+    {id:'rail-02',name:'Blazer Milano',price:129,stock:4,category:'Blazer',image:'/admin-icon-192.png',active:true,featured:true,colors:['Nero'],sizes:['M'],tags:[],variants:[{color:'Nero',size:'M',stock:4}]},
+    {id:'rail-03',name:'Top Bianca',price:35,stock:5,category:'Top',image:'/delu-logo.svg',active:true,colors:['Bianco'],sizes:['M'],tags:[],variants:[{color:'Bianco',size:'M',stock:5}]},
+    {id:'rail-sold',name:'Prodotto esaurito',price:0.01,stock:0,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[],variants:[]},
+    {id:'rail-hidden',name:'Prodotto nascosto',price:500,stock:10,category:'Abiti',image:'/delu-logo.svg',active:false,colors:[],sizes:[],tags:[],variants:[]}
+  ]
+  await page.route('**/api/products',route=>route.fulfill({json:list}))
+  const errors:string[]=[]
+  page.on('pageerror',e=>errors.push(e.message))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(3)
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa in boutique')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('83,50')
+  await expect(rail.locator('.dl-wardrobe-selected-meta')).toContainText('2 disponibili')
+  await expect(rail).not.toContainText('Prodotto esaurito')
+  await expect(rail).not.toContainText('Prodotto nascosto')
+  const next=rail.getByRole('button',{name:'Capo successivo'})
+  await next.click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Blazer Milano')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('129,00')
+  await rail.locator('.dl-wardrobe-stage').focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Top Bianca')
+  await rail.getByRole('button',{name:'1 / 3: Abito Rosa in boutique'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa in boutique')
+  await rail.getByRole('link',{name:'SCOPRI IL CAPO'}).click()
+  await expect(page).toHaveURL(/\/product\/rail-01$/)
+  expect(errors).toEqual([])
+})
+
+test('digital wardrobe rail fits narrow mobile viewport and supports live selection',async({page})=>{
+  await page.setViewportSize({width:320,height:740})
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  await page.route('**/api/products',route=>route.fulfill({json:[
+    {id:'r1',name:'Abito Uno',price:45,stock:1,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:[],sizes:[],tags:[]},
+    {id:'r2',name:'Abito Due',price:62,stock:3,category:'Abiti',image:'/admin-icon-192.png',active:true,colors:[],sizes:[],tags:[]}
+  ]}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Uno')
+  await expect(rail.locator('.dl-wardrobe-stage')).toBeInViewport()
+  await rail.getByRole('button',{name:'Capo successivo'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Due')
+  await expectNoHorizontalOverflow(page)
+})
+
+test('digital wardrobe rail never substitutes demo prices when D1 is unavailable',async({page})=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  await page.route('**/api/products',route=>route.fulfill({status:503,json:{error:'temporarily unavailable'}}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-placeholder')).toContainText('Non è possibile caricare ora il magazzino.')
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(0)
+  await expect(rail.getByRole('link',{name:'ESPLORA LO SHOP'})).toHaveAttribute('href','/shop')
+  await expectNoHorizontalOverflow(page)
+})
