@@ -107,6 +107,8 @@ test('direct Nexi payment reserves variant stock, confirms once and releases fai
   const wrong={securityToken:'incorrect',operation:{orderId:id,operationId:'nexi-1',operationResult:'EXECUTED',operationAmount:'8000',operationCurrency:'EUR'}}
   assert.equal((await request(env,'payments/nexi/notification',wrong)).status,401)
   assert.equal((await request(env,'payments/nexi/notification',{...wrong,securityToken:'secret',operation:{...wrong.operation,operationAmount:'10'}})).status,400)
+  // Simulate a Worker crash after taking the payment lock but before committing inventory.
+  env.DB.db.prepare("UPDATE payments SET status='PROCESSING',updated_at=datetime('now','-6 minutes') WHERE order_id=?").run(id)
   const paid={...wrong,securityToken:'secret'}
   assert.equal((await request(env,'payments/nexi/notification',paid)).status,200)
   assert.equal((await request(env,'payments/nexi/notification',paid)).status,200)
