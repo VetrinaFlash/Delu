@@ -13,9 +13,9 @@ before(async()=>{
 })
 after(async()=>{await rm(root,{recursive:true,force:true})})
 class DB{
- constructor(){this.db=new DatabaseSync(':memory:')}
+ constructor(){this.db=new DatabaseSync(':memory:');this.queue=Promise.resolve()}
  prepare(sql){const db=this.db;let args=[];const obj={bind(...values){args=values;return obj},async first(){return db.prepare(sql).get(...args)||null},async all(){return {results:db.prepare(sql).all(...args)}},async run(){const r=db.prepare(sql).run(...args);return {meta:{changes:Number(r.changes)}}}};return obj}
- async batch(statements){this.db.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());this.db.exec('COMMIT');return out}catch(e){this.db.exec('ROLLBACK');throw e}}
+ async batch(statements){const perform=async()=>{this.db.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());this.db.exec('COMMIT');return out}catch(e){this.db.exec('ROLLBACK');throw e}};const run=this.queue.then(perform,perform);this.queue=run.catch(()=>{});return run}
 }
 async function setup(){const DBi=new DB();DBi.db.exec(await readFile('database/schema.sql','utf8'));return {DB:DBi,ADMIN_EMAIL:'owner@example.test',ADMIN_PASSWORD_SHA256:await security.digest('OwnerPassword!12345'),AUTH_SECRET:'test-only-secret',SITE_URL:'https://shop.test',RESEND_API_KEY:'test-key',EMAIL_FROM:'DeLu <shop@example.test>',PRIVACY_NOTICE:'Test privacy notice',TERMS_NOTICE:'Test sale terms',RETURNS_ADDRESS:'Test return address'}}
 async function request(env,path,body,sessionCookie,origin='https://shop.test'){
@@ -95,7 +95,7 @@ test('direct Nexi payment reserves variant stock, confirms once and releases fai
   assert.equal(r.status,201)
   const data=await r.json()
   assert.equal(new URL(data.hostedPage).hostname,'xpaysandbox.nexigroup.com')
-  assert.equal(charges[0].order.amount,'8690')
+  assert.equal(charges[0].order.amount,'8000')
   assert.equal(charges[0].paymentSession.captureType,'IMPLICIT')
   const id=data.orderId
   assert.equal(env.DB.db.prepare('SELECT status FROM payments WHERE order_id=?').get(id).status,'PENDING')
@@ -104,7 +104,7 @@ test('direct Nexi payment reserves variant stock, confirms once and releases fai
   assert.equal(env.DB.db.prepare('SELECT stock FROM products WHERE id=?').get('p').stock,1)
   assert.equal((await checkout(cart)).status,409,'a second buyer must not reserve an unavailable variant')
   assert.equal(charges.length,1,'oversold attempt must never contact Nexi')
-  const wrong={securityToken:'incorrect',operation:{orderId:id,operationId:'nexi-1',operationResult:'EXECUTED',operationAmount:'8690',operationCurrency:'EUR'}}
+  const wrong={securityToken:'incorrect',operation:{orderId:id,operationId:'nexi-1',operationResult:'EXECUTED',operationAmount:'8000',operationCurrency:'EUR'}}
   assert.equal((await request(env,'payments/nexi/notification',wrong)).status,401)
   assert.equal((await request(env,'payments/nexi/notification',{...wrong,securityToken:'secret',operation:{...wrong.operation,operationAmount:'10'}})).status,400)
   const paid={...wrong,securityToken:'secret'}
@@ -120,7 +120,7 @@ test('direct Nexi payment reserves variant stock, confirms once and releases fai
   assert.equal(other.status,201)
   const otherId=(await other.json()).orderId
   assert.equal(stock('Rosa','L'),0)
-  const failed={securityToken:'secret',operation:{orderId:otherId,operationId:'nexi-2',operationResult:'FAILED',operationAmount:'10690',operationCurrency:'EUR'}}
+  const failed={securityToken:'secret',operation:{orderId:otherId,operationId:'nexi-2',operationResult:'FAILED',operationAmount:'10000',operationCurrency:'EUR'}}
   assert.equal((await request(env,'payments/nexi/notification',failed)).status,200)
   assert.equal((await request(env,'payments/nexi/notification',failed)).status,200)
   assert.equal(stock('Rosa','L'),1,'failed payment releases exactly one unit')
@@ -133,7 +133,7 @@ test('direct Nexi payment reserves variant stock, confirms once and releases fai
   assert.equal(stock('Rosa','L'),1,'expired Nexi session is reconciled and releases inventory')
   assert.equal(catalogue.find(p=>p.id==='p').stock,1)
   assert.equal(env.DB.db.prepare('SELECT state FROM stock_reservations WHERE order_id=?').get(abandonedId).state,'RELEASED')
-  const late=await request(env,'payments/nexi/notification',{securityToken:'secret',operation:{orderId:abandonedId,operationId:'nexi-late',operationResult:'EXECUTED',operationAmount:'10690',operationCurrency:'EUR'}})
+  const late=await request(env,'payments/nexi/notification',{securityToken:'secret',operation:{orderId:abandonedId,operationId:'nexi-late',operationResult:'EXECUTED',operationAmount:'10000',operationCurrency:'EUR'}})
   assert.equal(late.status,200)
   assert.equal(env.DB.db.prepare('SELECT status FROM payments WHERE order_id=?').get(abandonedId).status,'PAID')
   assert.equal(stock('Rosa','L'),0,'late paid status cannot create free stock')
