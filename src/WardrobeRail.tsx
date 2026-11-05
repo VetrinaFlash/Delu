@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom'
 import {ArrowLeft,ArrowRight,ArrowUpRight,MoveHorizontal} from 'lucide-react'
 import {useLocale,type Locale} from './i18n'
 import type {Product} from './data'
+import {publicCatalogEndpoint} from './productFeed'
 
 const translations:Record<Locale,{title:string;subtitle:string;prev:string;next:string;view:string;stock:string;swipe:string;loading:string;empty:string;error:string;shop:string}>={
  it:{title:'Il guardaroba prende vita.',subtitle:'Scorri i capi della nostra selezione. Scegli il tuo stile.',prev:'Capo precedente',next:'Capo successivo',view:'SCOPRI IL CAPO',stock:'disponibili',swipe:'Trascina o usa le frecce',loading:'Prepariamo il guardaroba…',empty:'La selezione è in aggiornamento.',error:'Non è possibile caricare ora il magazzino.',shop:'ESPLORA LO SHOP'},
@@ -50,7 +51,7 @@ export default function WardrobeRail(){
  useEffect(()=>{
   if(!near)return
   const controller=new AbortController()
-  fetch('/api/products',{signal:controller.signal,cache:'no-store',headers:{accept:'application/json'}})
+  fetch(publicCatalogEndpoint(window.location.hostname),{signal:controller.signal,cache:'no-store',headers:{accept:'application/json'}})
    .then(async r=>{if(!r.ok)throw new Error('Products unavailable');return r.json()})
    .then(data=>{if(controller.signal.aborted)return;setItems(availableRailProducts(data));setActive(0);setLoading(false)})
    .catch(e=>{if(controller.signal.aborted)return;console.error('DELÙ wardrobe API',e);setError(true);setLoading(false)})
