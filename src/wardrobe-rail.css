@@ -105,3 +105,14 @@
  .ph-hero--wardrobe .dl-wardrobe-heading :is(h1,h2){font-size:38px}
  .ph-hero--wardrobe .dl-wardrobe-bottom{gap:7px}
 }
+
+
+/* Keep the entire selected garment and its label inside the first mobile viewport. */
+@media(max-width:650px){
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:clamp(325px,42svh,360px)}
+ .ph-hero--wardrobe .dl-wardrobe-photo{height:230px}
+}
+@media(max-width:360px){
+ .ph-hero--wardrobe .dl-wardrobe-stage{height:312px}
+ .ph-hero--wardrobe .dl-wardrobe-photo{height:213px}
+}
