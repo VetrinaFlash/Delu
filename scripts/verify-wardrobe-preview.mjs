@@ -30,6 +30,7 @@ const browser=await chromium.launch({headless:true})
 try{
  for(const [width,height] of [[390,844],[320,740],[1440,900]]){
   const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1})
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   const errors=[]
   page.on('pageerror',error=>errors.push(error.message))
   await page.goto(base,{waitUntil:'domcontentloaded',timeout:45000})
