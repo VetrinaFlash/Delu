@@ -1,5 +1,4 @@
-import QuickNavigation from './QuickNavigation'
-import { ChapterNav, ScrollSignature, TiltCard } from './ExperienceDetails'
+import { HomeShopDock, ScrollSignature, TiltCard } from './ExperienceDetails'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
 import { ArrowDownRight, ArrowRight, AtSign, Globe2, UserRound, Heart, MapPin, Search } from 'lucide-react'
@@ -188,8 +187,8 @@ function HomeInner(){
       <div className="ph-visit-links"><a href="https://maps.google.com/?q=Via+Roma+27+Follonica" target="_blank" rel="noreferrer">VIA ROMA 27 <ArrowRight/></a><a href="https://instagram.com/delu.clotheshop" target="_blank" rel="noreferrer"><AtSign/> @DELU.CLOTHESHOP</a></div>
       <Link className="withdrawal-link" to="/returns">{t('withdrawHere')}</Link><div className="ph-visit-ghost">DELÙ</div>
     </section>
-    <div className="home-service-links"><QuickNavigation/><small>Creato da Daniele Zobel</small></div>
-    <ChapterNav labels={[c.campaignLabel.split(' / ').pop()!,c.newIn,'EDITORIAL','FOLLONICA']}/>
+    <div className="home-service-links"><small>Creato da Daniele Zobel</small></div>
+    <HomeShopDock/>
   </main>
 }
 
