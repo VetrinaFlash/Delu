@@ -157,11 +157,34 @@ test('plain stock checkout cannot oversell and backend refuses unverified manual
   const cookie=login.headers.get('set-cookie')
   const update=await handler.onRequest({env,request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie},body:JSON.stringify({status:'Spedito'})}),params:{},waitUntil:()=>{}})
   assert.equal(update.status,409,'staff cannot mark an unpaid order as shipped')
+  const shipping=await handler.onRequest({env,request:new Request('https://shop.test/api/admin/orders/'+orderId,{method:'PATCH',headers:{origin:'https://shop.test','content-type':'application/json',cookie},body:JSON.stringify({fulfillment:{carrier:'BRT',trackingCode:'FAKE'}})}),params:{},waitUntil:()=>{}})
+  assert.equal(shipping.status,409,'staff cannot add tracking to unpaid orders')
   const canceled={securityToken:'token',operation:{orderId,operationId:'cancel-1',operationResult:'CANCELED',operationAmount:'2690',operationCurrency:'EUR'}}
   assert.equal((await request(env,'payments/nexi/notification',canceled)).status,200)
   assert.equal(env.DB.db.prepare("SELECT stock FROM products WHERE id='simple'").get().stock,1)
  }finally{globalThis.fetch=original}
 })
+test('concurrent buyers cannot reserve the same last item twice',async()=>{
+ const env=await setup();env.NEXI_XPAY_API_KEY='test';await request(env,'config')
+ env.DB.db.prepare("INSERT INTO products(id,name,slug,price_cents,category,colors_json,sizes_json,stock) VALUES('last-one','One piece','one-piece',5000,'Abiti','[\"Nero\"]','[\"M\"]',1)").run()
+ env.DB.db.prepare("INSERT INTO product_variants(product_id,color,size,stock) VALUES('last-one','Nero','M',1)").run()
+ const original=globalThis.fetch;let nexiStarts=0
+ globalThis.fetch=async(url)=>{
+  if(String(url).includes('resend'))return new Response('{"id":"test"}',{status:200})
+  if(String(url).includes('/api/v1/orders/hpp')){nexiStarts++;return new Response(JSON.stringify({hostedPage:'https://xpaysandbox.nexigroup.com/monetaweb/page/hosted/demo',securityToken:'token'}),{status:200})}
+  if(String(url).includes('/api/v1/orders/'))return new Response(JSON.stringify({operations:[]}),{status:200})
+  throw Error('Unexpected provider: '+url)
+ }
+ const payload={termsAccepted:true,customer:{name:'Anna',email:'anna@example.test',phone:'+393331234567'},shipping:{address:'Via Test 1',city:'Roma',postcode:'00100',country:'IT'},items:[{id:'last-one',qty:1,color:'Nero',size:'M'}]}
+ try{
+  const responses=await Promise.all([request(env,'checkout/nexi',payload),request(env,'checkout/nexi',payload)])
+  assert.deepEqual(responses.map(r=>r.status).sort(),[201,409])
+  assert.equal(nexiStarts,1)
+  assert.equal(env.DB.db.prepare("SELECT stock FROM product_variants WHERE product_id='last-one'").get().stock,0)
+  assert.equal(env.DB.db.prepare("SELECT COUNT(*) AS n FROM stock_reservations WHERE state='HELD'").get().n,1)
+ }finally{globalThis.fetch=original}
+})
+
 test('first API request bootstraps schema and preserves existing records',async()=>{
  const env=await setup();env.DB=new DB()
  assert.equal((await request(env,'config')).status,200)
