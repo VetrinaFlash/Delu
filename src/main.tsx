@@ -29,7 +29,6 @@ import './community.css'
 import './catalog-refinement.css'
 import './final-layout.css'
 import './atelier.css'
-import './wardrobe-rail.css'
 
 const App = React.lazy(()=>import('./App'))
 const AdminSecure = React.lazy(()=>import('./AdminSecure'))
