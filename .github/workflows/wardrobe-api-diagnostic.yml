@@ -1,0 +1,25 @@
+name: Wardrobe API diagnostic
+on:
+  push:
+    branches:
+      - feature/delu-wardrobe-live-rail-20261105
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live catalogue endpoints without exposing private fields
+        shell: bash
+        run: |
+          for target in \
+            "https://delu-49u.pages.dev/api/products" \
+            "https://feature-delu-wardrobe-live-r.delu-49u.pages.dev/api/wardrobe-products" \
+            "https://feature-delu-wardrobe-live-r.delu-49u.pages.dev/api/products"; do
+            echo "::group::${target}"
+            curl --retry 2 --retry-delay 2 --max-time 20 --silent --show-error \
+              -H 'Accept: application/json' -D /tmp/catalog-headers -o /tmp/catalog-body \
+              -w 'HTTP %{http_code} | Content-Type %{content_type} | Bytes %{size_download}\n' "$target" || true
+            grep -Ei '^(HTTP/|content-type:|cf-ray:)' /tmp/catalog-headers || true
+            node -e 'const fs=require("node:fs");try{let a=JSON.parse(fs.readFileSync("/tmp/catalog-body","utf8"));console.log(Array.isArray(a)?"JSON array; length="+a.length+"; product shape="+JSON.stringify(a[0]&&{id:typeof a[0].id,price:typeof a[0].price,stock:typeof a[0].stock,active:typeof a[0].active}):"JSON object keys="+Object.keys(a).join(",")+" error="+String(a.error||"").slice(0,130))}catch(e){console.log("Not JSON; first 100 chars="+fs.readFileSync("/tmp/catalog-body","utf8").slice(0,100))}' || true
+            echo "::endgroup::"
+          done
