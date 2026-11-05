@@ -731,3 +731,34 @@ test('opening wardrobe replaces only first hero while all three scrolling scenes
  const after=await hero.boundingBox()
  expect(after!.y).toBeLessThan(before!.y)
 })
+
+
+test('mobile wardrobe header is compact, readable and reveals the first garment above fold',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ for(const [width,height] of [[320,740],[390,844],[620,900],[768,900]]){
+  await page.setViewportSize({width,height})
+  await page.goto('/')
+  const header=page.locator('.ph-header--wardrobe')
+  const wardrobe=page.locator('#home .dl-wardrobe')
+  await expect(header).toBeVisible()
+  await expect(wardrobe).toBeVisible()
+  const box=await header.boundingBox()
+  expect(box).not.toBeNull()
+  expect(box!.height).toBeLessThanOrEqual(width<=360?63:width<=620?67:77)
+  await expect(header.locator('.ph-head-link')).toBeVisible()
+  await expect(header.locator('.ph-logo img')).toBeVisible()
+  await expect(header.locator('.ph-language select')).toBeVisible()
+  const heading=await wardrobe.locator('.dl-wardrobe-heading').boundingBox()
+  expect(heading).not.toBeNull()
+  expect(heading!.y).toBeGreaterThanOrEqual(box!.y+box!.height-2)
+  expect(heading!.y).toBeLessThan(height*.28)
+  if(width<=620)await expect(header.locator('.delu-tagline')).toBeHidden()
+  await expectNoHorizontalOverflow(page)
+ }
+ // The shop header isn't changed by the wardrobe-only mobile override.
+ await page.setViewportSize({width:390,height:844})
+ await page.goto('/shop')
+ const shopHeader=await page.locator('.ds-header').boundingBox()
+ expect(shopHeader).not.toBeNull()
+ expect(shopHeader!.height).toBeGreaterThanOrEqual(100)
+})
