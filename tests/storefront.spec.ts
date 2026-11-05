@@ -139,25 +139,27 @@ test('shop logo stays centered when navigation is hidden',async({page})=>{
   expect(Math.abs(logo!.x+logo!.width/2-(header!.x+header!.width/2))).toBeLessThan(2)
 })
 
-test('chapter navigation reaches the collection and editorial aperture responds to scroll',async({page},testInfo)=>{
+test('home shop dock uses the catalogue shortcuts and editorial aperture responds to scroll',async({page},testInfo)=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   await page.goto('/')
-  // Hero-first layout intentionally reveals chapter navigation only after scrolling.
   await expect(page.getByTestId('home-hero')).toBeVisible()
+  await expect(page.locator('.home-service-links .quick-navigation')).toHaveCount(0)
   await page.evaluate(()=>window.scrollTo({top:Math.max(450,window.innerHeight*.75),behavior:'instant'}))
   await expect(page.locator('.ph-root')).toHaveClass(/atelier-scrolled/)
-  const chapters=page.getByRole('navigation',{name:'DeLù chapters'})
-  await expect(chapters).toBeVisible()
-  await expect(chapters).toBeInViewport()
-  await chapters.locator('a[href="#new-icons"]').click()
-  await expect(page).toHaveURL(/#new-icons$/)
-  await expect(chapters.locator('a[href="#new-icons"]')).toHaveAttribute('aria-current','location')
+  const dock=page.locator('.ph-home-shop-dock .quick-navigation')
+  await expect(dock).toBeVisible()
+  await expect(dock).toBeInViewport()
+  await expect(dock.locator('a')).toHaveCount(4)
+  await expect(dock.locator('a[href="/shop?search=1"]')).toBeVisible()
+  await expect(dock.locator('a[href="/shop?new=1"]')).toBeVisible()
+  await expect(dock.locator('a[href="/wishlist"]')).toBeVisible()
+  await expect(dock.locator('a[href="/account"]')).toBeVisible()
+  await page.locator('.ph-showcase-title').scrollIntoViewIfNeeded()
   await expect(page.locator('.ph-showcase-title')).toBeInViewport()
   await expectNoHorizontalOverflow(page)
-  await chapters.locator('a[href="#editorial"]').click()
-  await expect(page).toHaveURL(/#editorial$/)
+  await page.locator('.ph-editorial-copy').scrollIntoViewIfNeeded()
   await expect(page.locator('.ph-editorial-copy')).toBeInViewport()
   await expect(page.locator('.ph-editorial-copy h2')).toHaveCSS('opacity','1')
-  await expect(page.locator('.ph-editorial-copy h2')).toHaveCSS('clip-path','none')
   const section=page.locator('.ph-editorial')
   await section.evaluate(el=>window.scrollTo({top:window.scrollY+el.getBoundingClientRect().top-window.innerHeight*.15,behavior:'instant'}))
   await page.waitForTimeout(700)
@@ -178,22 +180,26 @@ test('home search opens the actual search and finds products',async({page})=>{
   await expect(page).toHaveURL(/product/)
   await expect(page.locator('.ds-search-overlay')).toHaveCount(0)
 })
-test('chapter dock fits the narrow viewport and reduced motion removes the aperture',async({page})=>{
+test('home shop dock fits the narrow viewport and reduced motion removes the aperture',async({page})=>{
   await page.setViewportSize({width:320,height:740})
   await page.emulateMedia({reducedMotion:'reduce'})
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
   await page.goto('/')
   await expect(page.getByTestId('home-hero')).toBeVisible()
   await page.evaluate(()=>window.scrollTo({top:Math.max(450,window.innerHeight*.75),behavior:'instant'}))
   await expect(page.locator('.ph-root')).toHaveClass(/atelier-scrolled/)
-  const dock=page.locator('.ph-chapters')
+  const dock=page.locator('.ph-home-shop-dock')
+  await expect(dock).toBeVisible()
   const bounds=await dock.boundingBox()
   expect(bounds!.x).toBeGreaterThanOrEqual(0)
   expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(320)
-  await dock.locator('a[href="#editorial"]').click()
+  await expect(dock.locator('.quick-navigation a')).toHaveCount(4)
+  await page.locator('.ph-editorial').scrollIntoViewIfNeeded()
   await expect(page.locator('.ph-editorial')).toHaveCSS('clip-path','none')
   await expectNoHorizontalOverflow(page)
+  await dock.locator('a[href="/shop?new=1"]').click()
+  await expect(page).toHaveURL(/\/shop\?new=1$/)
 })
-
 test('retired deployment chunks recover instead of leaving a blank screen',async({page})=>{
   let intercepted=0
   await page.route('**/assets/App-*.js',async route=>{
@@ -221,7 +227,7 @@ test('mood cards respond to desktop pointer movement',async({page},testInfo)=>{
 test('shared chapter URL opens the requested section after lazy loading',async({page})=>{
   await page.goto('/#editorial')
   await expect(page.locator('.ph-editorial-copy')).toBeInViewport()
-  await expect(page.locator('.ph-chapters a[href="#editorial"]')).toHaveAttribute('aria-current','location')
+  await expect(page.locator('.ph-home-shop-dock .quick-navigation')).toBeVisible()
 })
 
 test('brand tagline translates in every language without overflowing on mobile',async({page})=>{
