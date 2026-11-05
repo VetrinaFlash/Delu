@@ -67,8 +67,8 @@
  .ph-atelier .ph-showcase{height:auto;padding:55px 5vw}
  .ph-atelier .ph-campaign-copy{bottom:60px}
 }
-.ph-atelier:not(.atelier-scrolled) .ph-chapters{opacity:0;visibility:hidden;pointer-events:none}
-.ph-atelier .ph-chapters{transition:opacity .25s,visibility .25s}
+.ph-atelier:not(.atelier-scrolled) .ph-home-shop-dock{opacity:0;visibility:hidden;pointer-events:none}
+.ph-atelier .ph-home-shop-dock{transition:opacity .25s,visibility .25s}
 @media(max-width:980px){.atelier-scene-picker{bottom:88px}.ph-atelier .ph-campaign-copy{bottom:165px}}
 .ds-product-detail>p{font-size:14px!important;line-height:1.8!important}
 .ds-product-detail .ds-option>div>button{min-width:44px;min-height:44px;font-size:11px}
