@@ -638,3 +638,62 @@ test('admin product editor keeps SKU and allows rearranging photos',async({page}
   expect(submitted.images[0]).toBe('/admin-icon-192.png')
   expect(submitted.variants[0].sku).toBe('DL-NEW')
 })
+
+
+test('wardrobe preview shows snapshot-backed real catalogue prices and safe purchase links',async({page},testInfo)=>{
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  const snapshot={source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
+    {id:'real-rail-a',name:'Abito Rosa Boutique',price:89.95,stock:2,category:'Abiti',image:'/delu-logo.svg',active:true,new:true,colors:['Rosa'],sizes:['S'],tags:[]},
+    {id:'real-rail-b',name:'Blazer da Sera',price:129,stock:4,category:'Blazer',image:'/admin-icon-192.png',active:true,featured:true,colors:['Nero'],sizes:['M'],tags:[]},
+    {id:'sold-rail',name:'Capo Esaurito',price:99,stock:0,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
+  ]}
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:snapshot}))
+  const errors:string[]=[]
+  page.on('pageerror',err=>errors.push(err.message))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(2)
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa Boutique')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('89,95')
+  await expect(rail.locator('.dl-wardrobe-selected-meta')).toContainText('2 disponibili')
+  await expect(rail).not.toContainText('Capo Esaurito')
+  await expect(rail.locator('.dl-wardrobe-preview-note')).toContainText('Disponibilità indicativa')
+  await expect(rail.getByRole('link',{name:'SCOPRI IL CAPO'})).toHaveAttribute('href','https://delu-49u.pages.dev/product/real-rail-a')
+  await rail.getByRole('button',{name:'Capo successivo'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Blazer da Sera')
+  await expect(rail.locator('.dl-wardrobe-selected-meta strong')).toContainText('129,00')
+  await rail.locator('.dl-wardrobe-stage').focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Abito Rosa Boutique')
+  await expectNoHorizontalOverflow(page)
+  await page.screenshot({path:testInfo.outputPath('wardrobe-desktop-or-mobile.png')})
+  expect(errors).toEqual([])
+})
+
+test('wardrobe renders real snapshot on 320px mobile without horizontal scrolling',async({page},testInfo)=>{
+  await page.setViewportSize({width:320,height:740})
+  await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({json:{source:'DELU-public-D1',fetchedAt:'2026-11-05T12:00:00.000Z',products:[
+    {id:'product-a',name:'Vestito Venezia',price:73,stock:3,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]},
+    {id:'product-b',name:'Vestito Milano',price:44,stock:1,category:'Abiti',image:'/delu-logo.svg',active:true,colors:[],sizes:[],tags:[]}
+  ]}}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Vestito Venezia')
+  await rail.getByRole('button',{name:'Capo successivo'}).click()
+  await expect(rail.locator('.dl-wardrobe-selected h3')).toHaveText('Vestito Milano')
+  await expectNoHorizontalOverflow(page)
+  await page.screenshot({path:testInfo.outputPath('wardrobe-mobile-320.png')})
+})
+
+test('wardrobe preview does not substitute fake prices if snapshot is invalid',async({page})=>{
+  await page.route('**/wardrobe-catalog.json',r=>r.fulfill({status:503,json:{error:'not ready'}}))
+  await page.goto('/')
+  const rail=page.getByTestId('live-wardrobe')
+  await rail.scrollIntoViewIfNeeded()
+  await expect(rail.locator('.dl-wardrobe-placeholder')).toContainText('Non è possibile caricare ora il magazzino.')
+  await expect(rail.locator('.dl-wardrobe-item')).toHaveCount(0)
+  await expectNoHorizontalOverflow(page)
+})
