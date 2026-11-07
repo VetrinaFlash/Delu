@@ -840,3 +840,69 @@ test('admin saves photos for five colors on a single product record',async({page
  expect(saved.variants.length).toBe(5)
  expect(saved.colorImages.map((x:any)=>x.color)).toEqual(colors)
 })
+
+
+test('shop facets read all populated admin fields, compositions and preserve filters across categories',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ const products=[
+  {id:'pelliccia-rossa',name:'Pelliccia rossa',price:145,category:'Pellicce',colors:[' ROSSO '],sizes:['Unica'],tags:[],stock:2,image:'/delu-logo.svg',active:true,
+   colorImages:[{color:' ROSSO ',url:'/api/media/rossa.webp'}],variants:[{color:' ROSSO ',size:'Unica',stock:2}],
+   attributes:{values:{fit:[' Oversize '],pile:['Pelo lungo'],craft:['Artigianale'],length:['Al ginocchio']},compositions:{Esterno:[{material:'Ecopelliccia',percent:100}]}}},
+  {id:'pelliccia-nera',name:'Pelliccia nera',price:130,category:'Pellicce',colors:['Nero'],sizes:['Unica'],tags:[],stock:1,image:'/delu-logo.svg',active:true,
+   colorImages:[{color:'Nero',url:'/api/media/nera.webp'}],variants:[{color:'Nero',size:'Unica',stock:1}],
+   attributes:{values:{fit:['Regular fit'],pile:['Pelo corto']},compositions:{Esterno:[{material:'Poliestere',percent:100}]}}},
+  {id:'cappotto-rosso',name:'Cappotto rosso',price:199,category:'Cappotti',colors:['Rosso'],sizes:['M'],tags:[],stock:1,image:'/delu-logo.svg',active:true,
+   colorImages:[{color:'Rosso',url:'/api/media/cappotto-rosso.webp'}],variants:[{color:'Rosso',size:'M',stock:1}],
+   attributes:{values:{fit:['Oversize']},compositions:{Esterno:[{material:'Lana',percent:100}]}}}
+ ]
+ await page.route('**/api/products',r=>r.fulfill({json:products}))
+ await page.goto('/shop')
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(3)
+ await page.locator('.ds-toolbar > button').first().click()
+ const filters=page.locator('#catalog-filters')
+ const color=filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Colore'})})
+ await color.getByRole('checkbox',{name:/Rosso/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await page.locator('.catalog-categories').getByRole('button',{name:'Pellicce'}).click()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await expect(page.locator('.ds-products')).toContainText('Pelliccia rossa')
+ await expect(page.locator('.catalog-chips')).toContainText('Rosso')
+ await expect(filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Vestibilità'})})).toBeVisible()
+ await expect(filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Tipo di pelo'})})).toBeVisible()
+ await expect(filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Lavorazione'})})).toBeVisible()
+ const material=filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Materiale'})})
+ await material.getByRole('checkbox',{name:/Ecopelliccia/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await expect(page.locator('.ds-products .ds-product-image img')).toHaveAttribute('src','/api/media/rossa.webp')
+ const fit=filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Vestibilità'})})
+ await fit.getByRole('checkbox',{name:/Oversize/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ const pile=filters.locator('fieldset').filter({has:page.locator('legend',{hasText:'Tipo di pelo'})})
+ await pile.getByRole('checkbox',{name:/Pelo corto/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(0)
+ await pile.getByRole('checkbox',{name:/Pelo corto/i}).uncheck()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await page.locator('.catalog-reset').click()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await expectNoHorizontalOverflow(page)
+})
+
+test('several selected colors show each matched product photo rather than the first selected color',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ const products=[
+  {id:'one-red',name:'Solo rosso',price:59,category:'Pellicce',colors:['Rosso'],sizes:['Unica'],tags:[],stock:1,image:'/delu-logo.svg',active:true,variants:[{color:'Rosso',size:'Unica',stock:1}],colorImages:[{color:'Rosso',url:'/api/media/solo-rosso.webp'}]},
+  {id:'one-black',name:'Solo nero',price:59,category:'Pellicce',colors:['nero'],sizes:['Unica'],tags:[],stock:1,image:'/delu-logo.svg',active:true,variants:[{color:'nero',size:'Unica',stock:1}],colorImages:[{color:'nero',url:'/api/media/solo-nero.webp'}]}
+ ]
+ await page.route('**/api/products',r=>r.fulfill({json:products}))
+ await page.goto('/shop?category=Pellicce')
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await page.locator('.ds-toolbar > button').first().click()
+ const color=page.locator('#catalog-filters fieldset').filter({has:page.locator('legend',{hasText:'Colore'})})
+ await color.getByRole('checkbox',{name:/Rosso/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await color.getByRole('checkbox',{name:/Nero/i}).check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
+ await expect(page.locator('.ds-products .ds-product').filter({hasText:'Solo rosso'}).locator('img')).toHaveAttribute('src','/api/media/solo-rosso.webp')
+ await expect(page.locator('.ds-products .ds-product').filter({hasText:'Solo nero'}).locator('img')).toHaveAttribute('src','/api/media/solo-nero.webp')
+ await expectNoHorizontalOverflow(page)
+})
