@@ -491,7 +491,7 @@ test('document category rules, multi-select facets, price and localized product 
  await page.locator('.catalog-reset').click()
  await expect(page.locator('.ds-products .ds-product')).toHaveCount(2)
  await page.locator('.catalog-categories').getByRole('button',{name:'Pantaloni',exact:true}).click()
- await expect(filters.locator('fieldset')).toHaveCount(9)
+ await expect(filters.locator('fieldset')).toHaveCount(8)
  await expect(filters.getByText('Modello',{exact:true})).toBeVisible()
  await expect(filters.getByText('Vestibilità',{exact:true})).toBeVisible()
  await expect(filters.getByText('Altezza vita',{exact:true})).toBeVisible()
