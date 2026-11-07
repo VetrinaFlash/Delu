@@ -31,7 +31,7 @@ function useCart(catalog:Product[]){
   const setQty=(index:number,qty:number)=>setItems(old=>old.flatMap((x,i)=>{if(i!==index)return[x];const current=catalog.find(p=>p.id===x.product.id)||x.product;const max=Math.min(20,availableStock(current,x.size,x.color));const next=Math.min(max,Math.max(0,qty));return next?[{...x,product:current,qty:next}]:[]}))
   const clear=()=>setItems([])
   const count=items.reduce((s,x)=>s+x.qty,0),subtotal=items.reduce((s,x)=>s+x.product.price*x.qty,0)
-  const valid=items.every(x=>x.product.active!==false&&Number.isInteger(x.qty)&&x.qty>=1&&x.qty<=20&&x.qty<=availableStock(x.product,x.size,x.color));return{items,setItems,add,remove,setQty,clear,count,subtotal,valid}
+  const valid=!!catalog.length&&items.every(x=>catalog.some(p=>p.id===x.product.id)&&x.product.active!==false&&Number.isInteger(x.qty)&&x.qty>=1&&x.qty<=20&&x.qty<=availableStock(x.product,x.size,x.color));return{items,setItems,add,remove,setQty,clear,count,subtotal,valid}
 }
 function useWishlist(){const[ids,setIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('delu_wishlist')||'[]')}catch{return[]}});useEffect(()=>localStorage.setItem('delu_wishlist',JSON.stringify(ids)),[ids]);const toggle=(id:string)=>setIds(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);return{ids,toggle,has:(id:string)=>ids.includes(id)}}
 
