@@ -1,4 +1,5 @@
 import type {ProductAttributes} from '../shared/catalog'
+export type ProductColorImage = {color:string;url:string}
 export type ProductVariant = {
   sku?: string
   color: string
@@ -25,6 +26,7 @@ export type Product = {
   active?: boolean
   image: string
   images?: string[]
+  colorImages?: ProductColorImage[]
   variants?: ProductVariant[]
   imageAlt?: string
 }
