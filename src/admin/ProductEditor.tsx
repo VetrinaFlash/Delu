@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ImagePlus, Save, Sparkles, X } from 'lucide-
 import { motion } from 'motion/react'
 import type { Product, ProductVariant, ProductColorImage } from '../data'
 import { api, split } from './shared'
+import {colorKey} from '../productColorGallery'
 
 type FormState={name:string;price:string;compareAt:string;category:string;fabrics:string;colors:string;sizes:string;tags:string;description:string;featured:boolean;isNew:boolean;active:boolean}
 
@@ -98,6 +99,10 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
           {f.category.trim() && suggestions('colors', family(f.category) === 'jewelry'
             ? ['Oro', 'Argento', 'Oro rosa', 'Nero']
             : ['Rosso', 'Nero', 'Marrone', 'Bianco', 'Cammello', 'Beige', 'Blu', 'Rosa'], 'Colori suggeriti')}
+          {/pellicc/i.test(f.name+' '+f.category)&&<div className="color-media-presets">
+            <button type="button" onClick={()=>setF(current=>{const existing=split(current.colors);const colors=['Rosso','Nero','Marrone','Bianco','Cammello'].map(label=>existing.find(value=>colorKey(value)===colorKey(label))||label);return {...current,colors:colors.join(', '),sizes:current.sizes.trim()||'Unica'}})}>Configura i 5 colori della pelliccia</button>
+            <small>Se avevi creato due pellicce separate, modifica quella principale, assegna le foto e le quantità a ciascun colore, poi nascondi il duplicato dopo aver verificato le scorte. Gli ordini precedenti non vengono alterati.</small>
+          </div>}
           {combos.length?<div className="variant-grid"><div className="variant-head"><span>COLORE</span><span>TAGLIA</span><span>Q.TÀ</span><span>SKU</span></div>{combos.map(c=><div className="variant-line" key={c.key}><b>{c.color}</b><span>{c.size}</span><input type="number" min="0" value={variantStocks[c.key]??'0'} onChange={e=>setVariantStocks(v=>({...v,[c.key]:e.target.value}))}/><input type="text" maxLength={64} aria-label={'SKU '+c.color+' '+c.size} placeholder="SKU" value={variantSkus[c.key]??''} onChange={e=>setVariantSkus(v=>({...v,[c.key]:e.target.value}))}/></div>)}<div className="variant-total"><span>Stock totale</span><b>{combos.reduce((s,c)=>s+(Number(variantStocks[c.key]||0)||0),0)} pezzi</b></div></div>:<div className="form-tip"><Sparkles/><span>Inserisci colori e taglie: il pannello creerà automaticamente le combinazioni e potrai impostare la disponibilità di ciascuna.</span></div>}
         </div>
         {colors.length>0&&<div className="editor-section color-media-editor"><h4>Fotografie per colore</h4>
