@@ -78,3 +78,7 @@
   .order-drawer .drawer-head { padding-inline: 14px; }
   .order-drawer .form-scroll { padding-inline: 12px; }
 }
+
+
+/* Keep the cart dismissal target at least 44px in fractional mobile layouts. */
+.ds-drawer-head .ds-cart-close{min-width:45px!important;min-height:45px!important;height:45px!important}
