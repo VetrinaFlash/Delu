@@ -34,6 +34,16 @@ CREATE TABLE IF NOT EXISTS product_media (
 );
 CREATE INDEX IF NOT EXISTS idx_product_media_product ON product_media(product_id, sort_order);
 
+CREATE TABLE IF NOT EXISTS product_color_media (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id TEXT NOT NULL,
+  color TEXT NOT NULL,
+  url TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_product_color_media_product ON product_color_media(product_id,color,sort_order);
+
 CREATE TABLE IF NOT EXISTS product_variants (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   product_id TEXT NOT NULL,
