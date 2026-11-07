@@ -5,7 +5,6 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import NavigationGuard from './NavigationGuard'
 import SmoothScroll from './SmoothScroll'
-import { products } from './data'
 import './styles.css'
 import './admin-secure.css'
 import './storefront.css'
@@ -81,17 +80,6 @@ function renderApp(){
 
 renderApp()
 
-if (!isAdminRoute) {
-  fetch('/api/products', { headers: { accept: 'application/json' } })
-    .then(async response=>response.ok?response.json():null)
-    .then(liveProducts=>{
-      if (Array.isArray(liveProducts)) {
-        products.splice(0, products.length, ...liveProducts)
-        renderApp()
-      }
-    })
-    .catch(()=>{
-      // Seed products keep the storefront instantly usable if D1 is unavailable.
-    })
-}
+// Each storefront route reads the public D1 catalogue via useLiveCatalog.
+// Never replace real inventory with demo data or remount the whole app after checkout starts.
 
