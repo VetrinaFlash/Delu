@@ -1,6 +1,6 @@
 import type {Product} from './data'
 
-export const colorKey=(value:string)=>value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it-IT')
+export const colorKey=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleLowerCase('it-IT')
 
 export function availableProductColors(product:Product):string[]{
  const all=[...(product.colors||[]),...(product.variants||[]).map(v=>v.color),...(product.colorImages||[]).map(i=>i.color)]
