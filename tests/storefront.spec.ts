@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test'
+import {products as demoFixture} from '../src/data'
+
+// Browser tests use a deterministic mock catalog; production always reads live D1.
+// A test's own page.route registration overrides this default when it needs custom stock.
+test.beforeEach(async({page})=>{await page.route('**/api/products',route=>route.fulfill({json:demoFixture}))})
 
 async function expectNoHorizontalOverflow(page:any){
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)
