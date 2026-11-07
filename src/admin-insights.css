@@ -53,3 +53,17 @@
  .product-form .image-strip .image-controls{right:3px;top:3px;gap:1px}
  .product-form .image-strip .image-controls button{width:22px;height:25px}
 }
+
+
+/* Product editor: one style with one grouped gallery for every color variant. */
+.product-form .color-media-editor{display:flex;flex-direction:column;gap:12px}
+.product-form .color-media-editor>p{line-height:1.6}
+.product-form .color-media-group{padding:14px;background:rgba(250,242,246,.72);border:1px solid #ead5e0;border-radius:12px;min-width:0}
+.product-form .color-media-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-size:13px}
+.product-form .color-media-heading strong{color:#37202c;font-size:15px}
+.product-form .color-media-heading small{color:#936f83;font-size:10px}
+.product-form .color-media-group .image-upload{margin:0 0 10px;min-height:44px}
+.product-form .color-media-group .manual-image{margin-bottom:12px}
+.product-form .color-media-group .image-strip{overflow-x:auto}
+.product-form .color-media-group .image-controls{z-index:3}
+@media(max-width:620px){.product-form .color-media-group{padding:10px}.product-form .color-media-group .manual-image{display:flex;flex-wrap:wrap;gap:8px}.product-form .color-media-group .manual-image input{min-width:0;flex:1 1 160px}}
