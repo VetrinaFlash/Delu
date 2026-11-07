@@ -25,7 +25,7 @@ export const facetOptions=(products:Product[],key:string):string[]=>{
  const found=new Map<string,string>()
  for(const product of products)for(const value of facetValues(product,key)){
   const normal=filterKey(value)
-  if(!found.has(normal))found.set(normal,value)
+  if(!found.has(normal))found.set(normal,key==='color'?normal.replace(/(^|\s)(\p{L})/gu,(_,space,letter)=>space+letter.toLocaleUpperCase('it-IT')):value)
  }
  return [...found.values()].sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}))
 }
