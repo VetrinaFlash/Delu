@@ -772,3 +772,66 @@ test('mobile wardrobe header is compact, readable and reveals the first garment 
  expect(shopHeader).not.toBeNull()
  expect(shopHeader!.height).toBeGreaterThanOrEqual(100)
 })
+
+
+test('one pelliccia with five colors shows matching images, single filtered card and actual stock',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ const colors=['Rosso','Nero','Marrone','Bianco','Cammello']
+ const product={id:'pelliccia-five',name:'Pelliccia Cinque Colori',category:'Pellicce',price:119,stock:15,active:true,
+  image:'/delu-logo.svg',images:[],colors,sizes:['Unica'],tags:[],description:'Una sola scheda per cinque colori.',
+  variants:colors.map((color,i)=>({color,size:'Unica',stock:i+1,sku:'PEL-'+i})),
+  colorImages:colors.map(color=>({color,url:'/api/media/'+color.toLowerCase()+'.webp'}))}
+ await page.route('**/api/products',r=>r.fulfill({json:[product]}))
+ await page.goto('/shop')
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await page.locator('.ds-toolbar > button').first().click()
+ const filter=page.locator('.catalog-filters fieldset').filter({has:page.locator('legend', {hasText:'Colore'})})
+ await expect(filter).toBeVisible()
+ await expect(filter.getByText('Rosso')).toBeVisible()
+ await expect(filter.getByText('Nero')).toBeVisible()
+ await expect(filter.getByText('Marrone')).toBeVisible()
+ await expect(filter.getByText('Bianco')).toBeVisible()
+ await expect(filter.getByText('Cammello')).toBeVisible()
+ await filter.getByLabel('Rosso').check()
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+ await expect(page.locator('.ds-products .ds-product-image img')).toHaveAttribute('src','/api/media/rosso.webp')
+ await page.locator('.ds-products .ds-product-image').click()
+ await expect(page).toHaveURL(/\/product\/pelliccia-five\?color=Rosso$/)
+ const detail=page.locator('.ds-product-page')
+ await expect(detail.locator('.ds-product-main-image img')).toHaveAttribute('src','/api/media/rosso.webp')
+ await expect(detail.locator('.ds-stock-indicator')).toContainText('1 disponibili')
+ await detail.locator('.ds-option').first().getByRole('button',{name:'Nero'}).click()
+ await expect(detail.locator('.ds-product-main-image img')).toHaveAttribute('src','/api/media/nero.webp')
+ await expect(detail.locator('.ds-stock-indicator')).toContainText('2 disponibili')
+ await detail.locator('.ds-option').first().getByRole('button',{name:'Cammello'}).click()
+ await expect(detail.locator('.ds-product-main-image img')).toHaveAttribute('src','/api/media/cammello.webp')
+ await expect(detail.locator('.ds-stock-indicator')).toContainText('5 disponibili')
+ await expect(detail.locator('.ds-pay')).toBeEnabled()
+ await expectNoHorizontalOverflow(page)
+})
+
+test('admin saves photos for five colors on a single product record',async({page})=>{
+ const colors=['Rosso','Nero','Marrone','Bianco','Cammello']
+ const original={id:'coat-admin',name:'Pelliccia',category:'Pellicce',price:99,stock:5,colors,sizes:['Unica'],tags:[],
+  image:'/delu-logo.svg',images:[],active:true,variants:colors.map(c=>({color:c,size:'Unica',stock:1})),colorImages:[]}
+ let saved:any=null
+ await page.route('**/api/auth/me',r=>r.fulfill({json:{ok:true}}))
+ await page.route('**/api/admin/products',r=>r.fulfill({json:[original]}))
+ await page.route('**/api/admin/orders',r=>r.fulfill({json:[]}))
+ await page.route('**/api/admin/settings',r=>r.fulfill({json:{}}))
+ await page.route('**/api/admin/products/coat-admin',r=>{saved=r.request().postDataJSON();return r.fulfill({json:{...original,...saved}})})
+ await page.goto('/admin')
+ await page.locator('.admin-sidebar').getByRole('button',{name:/^Prodotti/}).click()
+ await page.locator('.table-actions button[title="Modifica"]').click()
+ const form=page.locator('.product-form')
+ await expect(form.locator('.color-media-group')).toHaveCount(5)
+ for(const color of colors) {
+  await form.getByRole('textbox',{name:'URL foto '+color}).fill('/api/media/'+color.toLowerCase()+'.webp')
+  await form.locator('.color-media-group').filter({has:page.locator('.color-media-heading strong',{hasText:color})}).getByRole('button',{name:'Aggiungi'}).click()
+ }
+ await form.locator('.save-product').click()
+ await expect(form).toHaveCount(0)
+ expect(saved.colorImages.length).toBe(5)
+ expect(saved.variants.length).toBe(5)
+ expect(saved.colorImages.map((x:any)=>x.color)).toEqual(colors)
+})
