@@ -7,7 +7,7 @@ export type ApiOrder={
 }
 export type Tab='dashboard'|'products'|'orders'|'settings'|'customers'
 export const money=(n:number)=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n)
-export const split=(v:string)=>v.split(',').map(x=>x.trim()).filter(Boolean)
+export const split=(v:string)=>[...new Map(v.split(/[,;\n]+/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean).map(x=>[x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('it-IT'),x])).values()]
 
 export async function api<T=any>(url:string,init?:RequestInit):Promise<T>{
   const isForm=typeof FormData!=='undefined'&&init?.body instanceof FormData
