@@ -66,7 +66,7 @@ export default function ProductEditor({product,onClose,onSaved}:{product?:Produc
     try{
       const variants:ProductVariant[]=combos.map(c=>({color:c.color,size:c.size,stock:Math.max(0,Number(variantStocks[c.key]||0)||0),sku:(variantSkus[c.key]||'').trim()}))
       validateAttributes(attributes)
-      const payload={colorImages:colorImages.filter(image=>colors.includes(image.color)),attributes,name:f.name,price:Number(f.price),compareAt:f.compareAt?Number(f.compareAt):null,category:f.category,fabrics:split(f.fabrics),colors,sizes,tags:split(f.tags),description:f.description,featured:f.featured,new:f.isNew,active:f.active,images,variants,stock:variants.reduce((s,v)=>s+v.stock,0)}
+      const payload={colorImages:colorImages.flatMap(image=>{const match=colors.find(c=>colorKey(c)===colorKey(image.color));return match?[{...image,color:match}]:[]}),attributes,name:f.name,price:Number(f.price),compareAt:f.compareAt?Number(f.compareAt):null,category:f.category,fabrics:split(f.fabrics),colors,sizes,tags:split(f.tags),description:f.description,featured:f.featured,new:f.isNew,active:f.active,images,variants,stock:variants.reduce((s,v)=>s+v.stock,0)}
       const p=await api<Product>(product?`/api/admin/products/${product.id}`:'/api/admin/products',{method:product?'PATCH':'POST',body:JSON.stringify(payload)})
       onSaved(p)
     }catch(e:any){setError(e.message)}finally{setLoading(false)}
