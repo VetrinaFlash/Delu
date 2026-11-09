@@ -906,3 +906,18 @@ test('several selected colors show each matched product photo rather than the fi
  await expect(page.locator('.ds-products .ds-product').filter({hasText:'Solo nero'}).locator('img')).toHaveAttribute('src','/api/media/solo-nero.webp')
  await expectNoHorizontalOverflow(page)
 })
+
+test('cerimonia section lists ceremony categories and only ceremony products',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ const mk=(id:string,name:string,category:string)=>({id,name,category,price:300,stock:3,active:true,image:'/delu-logo.svg',images:[],colors:['Nero'],sizes:['M'],tags:[],variants:[{color:'Nero',size:'M',stock:3}]})
+ await page.route('**/api/products',r=>r.fulfill({json:[mk('c1','Abito Gala','Abiti da cerimonia'),mk('c2','Abito Mamma','Mamma degli sposi'),mk('a1','Abito Casual','Abiti')]}))
+ await page.goto('/')
+ await page.locator('.ds-header nav').getByRole('link',{name:'Cerimonia'}).click()
+ await expect(page).toHaveURL(/\/cerimonia$/)
+ await expect(page.locator('.ceremony-hero h1')).toHaveText('Cerimonia')
+ await expect(page.locator('.ceremony-sections a')).toHaveCount(6)
+ await expect(page.locator('.ceremony-collection .ds-product')).toHaveCount(2)
+ await page.locator('.ceremony-sections a',{hasText:'Mamma degli sposi'}).click()
+ await expect(page).toHaveURL(/\/shop\?category=Mamma%20degli%20sposi$/)
+ await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
+})
