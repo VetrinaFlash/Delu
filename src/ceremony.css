@@ -3,7 +3,7 @@
 .ceremony-hero h1{font-family:var(--serif,'Italiana',Georgia,serif);font-size:clamp(54px,11vw,128px);font-weight:400;line-height:.95;margin:0}
 .ceremony-hero strong{font-family:var(--serif,'Italiana',Georgia,serif);font-size:clamp(22px,3.4vw,36px);font-weight:400}
 .ceremony-hero p{max-width:560px;margin:0;color:#4a444a}
-.ceremony-hero .ds-button{margin-top:10px;background:#111014;color:#fff}
+.ceremony-hero .ds-button{margin-top:10px;background:#111014;color:#fff!important;-webkit-text-fill-color:#fff}
 .ceremony-sections{padding:56px 6vw 20px;max-width:1280px;margin:0 auto}
 .ceremony-sections h2,.ceremony-collection h2{font-family:var(--serif,'Italiana',Georgia,serif);font-weight:400;font-size:clamp(28px,4vw,42px);text-align:center;margin:0 0 28px}
 .ceremony-sections>div{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -18,10 +18,14 @@
 @media(max-width:520px){.ceremony-hero{min-height:56vh;padding:70px 6vw 54px}.ceremony-sections>div{grid-template-columns:1fr}}
 @media(min-width:561px){.ds-header nav a.nav-ceremony:not(:first-child){display:block!important}}
 
-.ceremony-banner{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:44px 6vw;background:linear-gradient(160deg,#fff3f7 0%,#efbdd0 100%);color:#111014}
-.ceremony-banner span{letter-spacing:.32em;font-size:11px}
-.ceremony-banner h2{font-family:var(--serif,'Italiana',Georgia,serif);font-weight:400;font-size:clamp(36px,6vw,64px);line-height:1;margin:8px 0 10px}
-.ceremony-banner p{margin:0;max-width:560px;color:#4a444a}
-.ceremony-banner-cta{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:15px 26px;background:#111014;color:#fff;text-decoration:none;letter-spacing:.12em;font-size:12px;text-transform:uppercase}
-.ceremony-banner-cta svg{width:16px}
-@media(max-width:700px){.ceremony-banner{flex-direction:column;align-items:flex-start;padding:34px 6vw}}
+.ceremony-banner{display:grid;grid-template-columns:1fr auto;gap:22px 28px;align-items:center;padding:44px 6vw;background:linear-gradient(160deg,#fff3f7 0%,#efbdd0 100%);color:#111014}
+.ceremony-banner-text span{letter-spacing:.32em;font-size:11px}
+.ceremony-banner-text h2{font-family:var(--serif,'Italiana',Georgia,serif);font-weight:400;font-size:clamp(36px,6vw,64px);line-height:1;margin:8px 0 10px;color:#111014}
+.ceremony-banner-text p{margin:0;max-width:560px;color:#4a444a}
+.ceremony-banner-links{grid-column:1/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.ceremony-banner .ceremony-banner-links a{display:inline-block;padding:10px 18px;border:1px solid #111014;border-radius:999px;background:rgba(255,255,255,.55);color:#111014!important;-webkit-text-fill-color:#111014;text-decoration:none;font-size:14px;line-height:1.2}
+.ceremony-banner .ceremony-banner-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap;padding:16px 28px;background:#111014;color:#fff!important;-webkit-text-fill-color:#fff;text-decoration:none;letter-spacing:.12em;font-size:12px;text-transform:uppercase}
+.ceremony-banner .ceremony-banner-cta b{font-weight:600;color:#fff!important;-webkit-text-fill-color:#fff;opacity:1;visibility:visible}
+.ceremony-banner .ceremony-banner-cta svg{width:16px;color:#fff;stroke:#fff}
+@media(max-width:700px){.ceremony-banner{grid-template-columns:1fr;padding:34px 6vw}.ceremony-banner .ceremony-banner-cta{width:100%}}
+@media(min-width:561px){.ds-header nav a.nav-ceremony:not(:first-child){display:block!important}}
