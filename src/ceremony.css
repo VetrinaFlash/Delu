@@ -29,3 +29,12 @@
 .ceremony-banner .ceremony-banner-cta svg{width:16px;color:#fff;stroke:#fff}
 @media(max-width:700px){.ceremony-banner{grid-template-columns:1fr;padding:34px 6vw}.ceremony-banner .ceremony-banner-cta{width:100%}}
 @media(min-width:561px){.ds-header nav a.nav-ceremony:not(:first-child){display:block!important}}
+
+.ds-no-products{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:60px 6vw}
+.ds-no-products h2{margin:0}
+.ds-no-products p{margin:0;color:#716b71}
+.ds-no-products .ds-no-products-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:8px}
+.ds-no-products .ds-no-products-primary,.ds-no-products .ds-no-products-secondary{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 26px;font:600 12px/1 var(--sans,'DM Sans',Arial,sans-serif);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer;border:1px solid #111014}
+.ds-no-products .ds-no-products-primary{background:#111014;color:#fff!important;-webkit-text-fill-color:#fff}
+.ds-no-products .ds-no-products-secondary{background:transparent;color:#111014!important;-webkit-text-fill-color:#111014}
+.ds-no-products .ds-no-products-primary svg{width:16px;stroke:#fff}

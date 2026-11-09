@@ -934,3 +934,12 @@ test('cerimonia banner appears on home and on the full shop only',async({page})=
  await page.goto('/shop?new=1')
  await expect(page.locator('.ceremony-banner')).toHaveCount(0)
 })
+
+test('empty ceremony category shows a clear message and working buttons',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ await page.route('**/api/products',r=>r.fulfill({json:[]}))
+ await page.goto('/shop?category=Abiti%20lunghi%20da%20sera')
+ await expect(page.locator('.ds-no-products h2')).toContainText('Nessun capo in questa categoria')
+ await page.locator('.ds-no-products').getByRole('link',{name:/Torna a Cerimonia/}).click()
+ await expect(page).toHaveURL(/\/cerimonia$/)
+})
