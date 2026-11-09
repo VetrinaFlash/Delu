@@ -920,3 +920,14 @@ test('cerimonia section lists ceremony categories and only ceremony products',as
  await expect(page).toHaveURL(/\/shop\?category=Mamma%20degli%20sposi$/)
  await expect(page.locator('.ds-products .ds-product')).toHaveCount(1)
 })
+
+test('cerimonia banner appears on home and on the full shop only',async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('delu_locale','it'))
+ await page.route('**/api/products',r=>r.fulfill({json:[]}))
+ await page.goto('/')
+ await expect(page.locator('.ceremony-banner a[href="/cerimonia"]')).toHaveCount(1)
+ await page.goto('/shop')
+ await expect(page.locator('.ceremony-banner a[href="/cerimonia"]')).toHaveCount(1)
+ await page.goto('/shop?new=1')
+ await expect(page.locator('.ceremony-banner')).toHaveCount(0)
+})

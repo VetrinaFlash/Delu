@@ -13,6 +13,11 @@ const copy={
 const names:Record<string,string>={'Abiti da cerimonia':'Abiti da cerimonia importanti','Mamma degli sposi':'Mamma degli sposi','Madrine e testimoni':'Madrine e testimoni','Abiti gioiello':'Abiti gioiello','Abiti lunghi da sera':'Abiti lunghi da sera','Collezioni esclusive':'Collezioni esclusive'}
 const namesEn:Record<string,string>={'Abiti da cerimonia':'Statement ceremony dresses','Mamma degli sposi':'Mother of the bride & groom','Madrine e testimoni':'Bridesmaids & witnesses','Abiti gioiello':'Jewel dresses','Abiti lunghi da sera':'Long evening gowns','Collezioni esclusive':'Exclusive collections'}
 
+export function CeremonyBanner(){
+ const {locale}=useLocale(),c=locale==='it'?copy.it:copy.en
+ return <section className="ceremony-banner" aria-label={c.title}><div><span>{c.eyebrow}</span><h2>{c.title}</h2><p>{c.claim} {c.text}</p></div><Link to="/cerimonia" className="ceremony-banner-cta">{c.cta}<ArrowRight/></Link></section>
+}
+
 export default function Ceremony({products,renderProduct}:{products:Product[];renderProduct:(p:Product)=>ReactNode}){
  const {locale}=useLocale(),c=locale==='it'?copy.it:copy.en,label=(k:string)=>(locale==='it'?names:namesEn)[k]||k
  const live=products.filter(p=>p.active!==false&&ceremonyCategories.includes(p.category))

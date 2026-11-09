@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform, useReducedMotion, useMotionValueEvent } from 'motion/react'
 import { ArrowDownRight, ArrowRight, AtSign, Globe2, UserRound, Heart, MapPin, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { CeremonyBanner } from './Ceremony'
 import { products } from './data'
 import { LocaleProvider, useLocale, type Locale } from './i18n'
 
@@ -123,6 +124,8 @@ function HomeInner(){
       <motion.div className="ph-statement-line right" initial={{x:'-8%',opacity:.2}} whileInView={{x:'0%',opacity:1}} viewport={{amount:.4}} transition={{duration:1,ease:[.16,1,.3,1]}}>{c.statementB}</motion.div>
       <motion.p initial={{opacity:0,y:26}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.7}} transition={{duration:.8}}>{c.statementText}</motion.p>
     </section>
+
+    <CeremonyBanner/>
 
     <ScrollSignature words={[c.campaignA,c.campaignB,c.campaignC]}/>
     <section id="experience" ref={campaignRef} className="ph-campaign" data-testid="immersive-campaign">
